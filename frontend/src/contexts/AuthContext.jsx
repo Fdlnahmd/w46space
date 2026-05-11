@@ -1,5 +1,5 @@
 import { createContext, useState, useContext, useEffect } from 'react';
-import { mockLogin, mockRegister } from '../services/mockData';
+import { loginUser, registerUser } from '../services/apiService';
 
 const AuthContext = createContext();
 
@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const userData = await mockLogin(email, password);
+      const userData = await loginUser(email, password);
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
       return userData;
@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (data) => {
     try {
-      const userData = await mockRegister(data);
+      const userData = await registerUser(data);
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
       return userData;

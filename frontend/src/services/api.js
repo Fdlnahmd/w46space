@@ -1,37 +1,29 @@
 import axios from 'axios';
 
+// URL backend Laravel di Docker (biasanya localhost:8000)
+const API_URL = 'https://officerent.nexvol.xyz/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
 });
 
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error('API Error:', error.response?.data || error.message);
-    return Promise.reject(error);
+// Interceptor untuk menambahkan Token ke setiap request jika ada
+api.interceptors.request.use((config) => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    const user = JSON.parse(userStr);
+    if (user && user.token) {
+      config.headers.Authorization = `Bearer ${user.token}`;
+      // console.log('Token sent:', user.token); // Hapus komentar ini jika ingin debug di console
+    }
   }
-);
-
-// Offices
-export const officeService = {
-  getAll: () => api.get('/offices'),
-  getOne: (id) => api.get(`/offices/${id}`),
-  create: (data) => api.post('/offices', data),
-  update: (id, data) => api.put(`/offices/${id}`, data),
-  delete: (id) => api.delete(`/offices/${id}`),
-};
-
-// Bookings
-export const bookingService = {
-  getAll: () => api.get('/bookings'),
-  getOne: (id) => api.get(`/bookings/${id}`),
-  create: (data) => api.post('/bookings', data),
-  update: (id, data) => api.put(`/bookings/${id}`, data),
-  delete: (id) => api.delete(`/bookings/${id}`),
-};
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
 
 export default api;

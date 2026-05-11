@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getPemesanan, updateStatusPemesanan, deletePemesanan } from '../../services/mockData';
+import { getPemesanan, updateStatusPemesanan, deletePemesanan } from '../../services/apiService';
 import { Trash2, Eye } from 'lucide-react';
 
 const statusOptions = ['Pending', 'Dikonfirmasi', 'Selesai', 'Dibatalkan'];
 
 const getStatusStyle = (status) => {
   switch (status) {
-    case 'Dikonfirmasi': return { backgroundColor: '#d1fae5', color: '#065f46', border: '1px solid #6ee7b7' };
-    case 'Pending':      return { backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' };
-    case 'Dibatalkan':   return { backgroundColor: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5' };
-    case 'Selesai':      return { backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1' };
-    default:             return { backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1' };
+    case 'Dikonfirmasi': return { backgroundColor: '#ecfdf5', color: '#059669', border: '1px solid #10b981' };
+    case 'Selesai':      return { backgroundColor: '#f8fafc', color: '#64748b', border: '1px solid #cbd5e1' };
+    case 'Dibatalkan':   return { backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #ef4444' };
+    default:             return { backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fbbf24' };
   }
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '—';
+  return dateString.split('T')[0];
 };
 
 const KelolaPemesanan = () => {
@@ -63,21 +67,21 @@ const KelolaPemesanan = () => {
 
                 {/* Pemesan */}
                 <td style={{ padding: '1rem' }}>
-                  <div style={{ fontWeight: 600 }}>{item.namaPemesan}</div>
+                  <div style={{ fontWeight: 600 }}>{item.nama_pemesan || '—'}</div>
                   {item.perusahaan && (
                     <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{item.perusahaan}</div>
                   )}
                 </td>
 
                 {/* Ruangan */}
-                <td style={{ padding: '1rem' }}>{item.ruangan?.nama || '—'}</td>
+                <td style={{ padding: '1rem' }}>{item.office?.nama || '—'}</td>
 
-                {/* Tanggal Kontrak — FIXED: tampilkan tanggalMulai & tanggalAkhir */}
+                {/* Tanggal Kontrak */}
                 <td style={{ padding: '1rem' }}>
-                  <div style={{ fontWeight: 500 }}>{item.tanggalMulai || '—'}</div>
-                  {item.tanggalAkhir && (
+                  <div style={{ fontWeight: 500 }}>{formatDate(item.tanggal_mulai)}</div>
+                  {item.tanggal_akhir && (
                     <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                      s/d {item.tanggalAkhir}
+                      s/d {formatDate(item.tanggal_akhir)}
                     </div>
                   )}
                 </td>
@@ -89,7 +93,7 @@ const KelolaPemesanan = () => {
 
                 {/* Total Harga */}
                 <td style={{ padding: '1rem', fontWeight: 600 }}>
-                  Rp {item.totalHarga?.toLocaleString('id-ID') || '—'}
+                  Rp {Number(item.total_harga || 0).toLocaleString('id-ID')}
                 </td>
 
                 {/* Status — dropdown */}

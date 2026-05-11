@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getPemesananById, getRuangan, updatePemesanan } from '../../services/mockData';
+import { getPemesananById, getRuangan, updatePemesanan } from '../../services/apiService';
 import { ArrowLeft, Save } from 'lucide-react';
 
 const hitungTanggalAkhir = (tanggalMulai, durasi) => {
@@ -15,17 +15,17 @@ const FormPemesanan = () => {
 
   const [ruanganList, setRuanganList] = useState([]);
   const [formData, setFormData] = useState({
-    namaPemesan: '',
+    nama_pemesan: '',
     perusahaan: '',
-    idRuangan: '',
-    tanggalMulai: '',
+    id_ruangan: '',
+    tanggal_mulai: '',
     durasi: 1,
-    waktuMulai: '08:00',
-    waktuSelesai: '17:00',
+    waktu_mulai: '08:00',
+    waktu_selesai: '17:00',
     status: 'Pending',
-    totalHarga: 0,
+    total_harga: 0,
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!id);
 
   useEffect(() => {
     getRuangan().then(data => setRuanganList(data));
@@ -36,51 +36,51 @@ const FormPemesanan = () => {
       getPemesananById(id).then(data => {
         if (!data) { navigate('/admin/pemesanan'); return; }
         setFormData({
-          namaPemesan:  data.namaPemesan  || '',
-          perusahaan:   data.perusahaan   || '',
-          idRuangan:    data.idRuangan    || '',
-          tanggalMulai: data.tanggalMulai || '',
-          durasi:       data.durasi       || 1,
-          waktuMulai:   data.waktuMulai   || '08:00',
-          waktuSelesai: data.waktuSelesai || '17:00',
-          status:       data.status       || 'Pending',
-          totalHarga:   data.totalHarga   || 0,
+          nama_pemesan:  data.nama_pemesan  || '',
+          perusahaan:    data.perusahaan    || '',
+          id_ruangan:     data.id_ruangan    || data.office_id || '',
+          tanggal_mulai: data.tanggal_mulai || '',
+          durasi:        data.durasi        || 1,
+          waktu_mulai:   data.waktu_mulai   || '08:00',
+          waktu_selesai: data.waktu_selesai || '17:00',
+          status:        data.status        || 'Pending',
+          total_harga:   data.total_harga   || 0,
         });
         setLoading(false);
       });
-    } else {
-      setLoading(false);
     }
   }, [id, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [name]: value };
+      
+      // Hitung harga jika id_ruangan atau durasi berubah
+      if (name === 'id_ruangan' || name === 'durasi') {
+        const rId = name === 'id_ruangan' ? parseInt(value) : parseInt(prev.id_ruangan);
+        const dur = name === 'durasi' ? parseInt(value) : parseInt(prev.durasi);
+        const ruangan = ruanganList.find(r => r.id === rId);
+        if (ruangan) {
+          newData.total_harga = ruangan.harga * 26 * dur;
+        }
+      }
+      return newData;
+    });
   };
-
-  // Auto-hitung total harga ketika ruangan / durasi berubah
-  useEffect(() => {
-    const ruangan = ruanganList.find(r => r.id === parseInt(formData.idRuangan));
-    if (ruangan && formData.durasi) {
-      setFormData(prev => ({
-        ...prev,
-        totalHarga: ruangan.harga * 26 * parseInt(formData.durasi)
-      }));
-    }
-  }, [formData.idRuangan, formData.durasi, ruanganList]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const tanggalAkhir = formData.tanggalMulai
-      ? hitungTanggalAkhir(formData.tanggalMulai, formData.durasi)
+    const tanggal_akhir = formData.tanggal_mulai
+      ? hitungTanggalAkhir(formData.tanggal_mulai, formData.durasi)
       : '';
 
     updatePemesanan(id, {
       ...formData,
-      idRuangan:  parseInt(formData.idRuangan),
-      durasi:     parseInt(formData.durasi),
-      totalHarga: parseInt(formData.totalHarga),
-      tanggalAkhir,
+      id_ruangan:  parseInt(formData.id_ruangan),
+      durasi:      parseInt(formData.durasi),
+      total_harga: parseInt(formData.total_harga),
+      tanggal_akhir,
     }).then(() => {
       navigate(`/admin/pemesanan/${id}`);
     }).catch(err => alert(err.message));
@@ -88,8 +88,8 @@ const FormPemesanan = () => {
 
   if (loading) return <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Memuat...</div>;
 
-  const tanggalAkhirPreview = formData.tanggalMulai
-    ? hitungTanggalAkhir(formData.tanggalMulai, formData.durasi)
+  const tanggal_akhirPreview = formData.tanggal_mulai
+    ? hitungTanggalAkhir(formData.tanggal_mulai, formData.durasi)
     : '—';
 
   return (
@@ -108,7 +108,7 @@ const FormPemesanan = () => {
           {/* Nama Pemesan */}
           <div className="form-group">
             <label className="form-label">Nama Pemesan</label>
-            <input required type="text" name="namaPemesan" value={formData.namaPemesan} onChange={handleChange} className="form-control" />
+            <input required type="text" name="nama_pemesan" value={formData.nama_pemesan} onChange={handleChange} className="form-control" />
           </div>
 
           {/* Perusahaan */}
@@ -120,10 +120,10 @@ const FormPemesanan = () => {
           {/* Ruangan */}
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
             <label className="form-label">Ruangan</label>
-            <select required name="idRuangan" value={formData.idRuangan} onChange={handleChange} className="form-control">
+            <select required name="id_ruangan" value={formData.id_ruangan} onChange={handleChange} className="form-control">
               <option value="">-- Pilih Ruangan --</option>
               {ruanganList.map(r => (
-                <option key={r.id} value={r.id}>{r.nama} (Rp {r.harga.toLocaleString('id-ID')}/hari)</option>
+                <option key={r.id} value={r.id}>{r.nama} (Rp {(r.harga ?? 0).toLocaleString('id-ID')}/hari)</option>
               ))}
             </select>
           </div>
@@ -131,7 +131,7 @@ const FormPemesanan = () => {
           {/* Tanggal Mulai */}
           <div className="form-group">
             <label className="form-label">Tanggal Mulai Kontrak</label>
-            <input required type="date" name="tanggalMulai" value={formData.tanggalMulai} onChange={handleChange} className="form-control" />
+            <input required type="date" name="tanggal_mulai" value={formData.tanggal_mulai} onChange={handleChange} className="form-control" />
           </div>
 
           {/* Durasi */}
@@ -149,11 +149,11 @@ const FormPemesanan = () => {
           {/* Jam Operasional */}
           <div className="form-group">
             <label className="form-label">Jam Masuk</label>
-            <input type="time" name="waktuMulai" value={formData.waktuMulai} onChange={handleChange} className="form-control" />
+            <input type="time" name="waktu_mulai" value={formData.waktu_mulai} onChange={handleChange} className="form-control" />
           </div>
           <div className="form-group">
             <label className="form-label">Jam Keluar</label>
-            <input type="time" name="waktuSelesai" value={formData.waktuSelesai} onChange={handleChange} className="form-control" />
+            <input type="time" name="waktu_selesai" value={formData.waktu_selesai} onChange={handleChange} className="form-control" />
           </div>
 
           {/* Status */}
@@ -170,7 +170,7 @@ const FormPemesanan = () => {
           {/* Total Harga (editable) */}
           <div className="form-group">
             <label className="form-label">Total Harga (Rp) — auto atau ubah manual</label>
-            <input type="number" name="totalHarga" value={formData.totalHarga} onChange={handleChange} className="form-control" />
+            <input type="number" name="total_harga" value={formData.total_harga} onChange={handleChange} className="form-control" />
           </div>
 
           {/* Ringkasan */}
@@ -178,12 +178,12 @@ const FormPemesanan = () => {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
               <div>
                 <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.2rem' }}>Tanggal Akhir Kontrak (otomatis)</p>
-                <p style={{ fontWeight: 700, fontSize: '1.05rem' }}>{tanggalAkhirPreview}</p>
+                <p style={{ fontWeight: 700, fontSize: '1.05rem' }}>{tanggal_akhirPreview}</p>
               </div>
               <div>
                 <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.2rem' }}>Total Harga</p>
                 <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
-                  Rp {parseInt(formData.totalHarga || 0).toLocaleString('id-ID')}
+                  Rp {parseInt(formData.total_harga || 0).toLocaleString('id-ID')}
                 </p>
               </div>
             </div>

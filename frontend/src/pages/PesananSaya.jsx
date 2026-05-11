@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getPemesananByUser, batalkanPemesanan } from '../services/mockData';
-import { ClipboardList, XCircle, Clock, CheckCircle, Building, Eye, Hourglass, BadgeCheck } from 'lucide-react';
+import { getPemesananByUser, batalkanPemesanan } from '../services/apiService';
+import { ClipboardList, XCircle, CheckCircle, Building, Eye, Hourglass, BadgeCheck, AlertCircle } from 'lucide-react';
 
 const statusConfig = {
   Pending:      { class: 'badge-warning', Icon: Hourglass,   label: 'Menunggu Konfirmasi' },
@@ -16,22 +16,30 @@ const PesananSaya = () => {
   const [pesananList, setPesananList] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const loadData = () => {
-    if (!user) return;
-    setLoading(true);
-    getPemesananByUser(user.id).then(data => {
-      setPesananList(data);
-      setLoading(false);
-    });
-  };
+  const loadData = useCallback((showLoading = true) => {
+    if (user) {
+      if (showLoading) setLoading(true);
+      getPemesananByUser().then(data => {
+        setPesananList(data);
+        setLoading(false);
+      });
+    }
+  }, [user]);
 
-  useEffect(() => { loadData(); }, [user]);
+  useEffect(() => { 
+    loadData(false); // Jangan panggil setLoading(true) lagi di sini karena state awal sudah true
+  }, [loadData]);
 
   const handleBatalkan = (id) => {
     if (!window.confirm('Yakin ingin membatalkan pesanan ini?')) return;
     batalkanPemesanan(id)
       .then(() => { alert('Pesanan berhasil dibatalkan.'); loadData(); })
       .catch(err => alert(err.message));
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    return dateString.split('T')[0];
   };
 
   const renderStatus = (status) => {
@@ -82,10 +90,10 @@ const PesananSaya = () => {
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
 
                   {/* Foto ruangan kecil */}
-                  {item.ruangan?.gambar && (
+                  {item.office?.gambar && (
                     <img
-                      src={item.ruangan.gambar}
-                      alt={item.ruangan.nama}
+                      src={item.office.gambar}
+                      alt={item.office.nama}
                       style={{ width: '100px', height: '80px', objectFit: 'cover', borderRadius: 'var(--border-radius)', flexShrink: 0 }}
                     />
                   )}
@@ -96,7 +104,7 @@ const PesananSaya = () => {
                       <div>
                         <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>#{item.id}</p>
                         <h3 style={{ fontSize: '1.15rem', fontWeight: 600 }}>
-                          {item.ruangan?.nama || 'Ruangan tidak ditemukan'}
+                          {item.office?.nama || 'Ruangan tidak ditemukan'}
                         </h3>
                       </div>
                       {renderStatus(item.status)}
@@ -104,17 +112,17 @@ const PesananSaya = () => {
 
                     {/* Info singkat */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem', color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                      {item.tanggalMulai && (
-                        <span>📅 <strong>Mulai:</strong> {item.tanggalMulai}</span>
+                      {item.tanggal_mulai && (
+                        <span>📅 <strong>Mulai:</strong> {formatDate(item.tanggal_mulai)}</span>
                       )}
-                      {item.tanggalAkhir && (
-                        <span>🏁 <strong>Akhir:</strong> {item.tanggalAkhir}</span>
+                      {item.tanggal_akhir && (
+                        <span>🏁 <strong>Akhir:</strong> {formatDate(item.tanggal_akhir)}</span>
                       )}
                       {item.durasi && (
                         <span>⏱ <strong>Durasi:</strong> {item.durasi} Bulan</span>
                       )}
-                      {item.waktuMulai && item.waktuSelesai && (
-                        <span>⏰ {item.waktuMulai} – {item.waktuSelesai}</span>
+                      {item.waktu_mulai && item.waktu_selesai && (
+                        <span>⏰ {item.waktu_mulai} – {item.waktu_selesai}</span>
                       )}
                       {item.perusahaan && (
                         <span>🏢 {item.perusahaan}</span>
@@ -123,11 +131,14 @@ const PesananSaya = () => {
 
                     {/* Footer: harga + aksi */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
-                      <div>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Total Harga: </span>
-                        <span style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.1rem' }}>
-                          Rp {item.totalHarga.toLocaleString('id-ID')}
-                        </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <AlertCircle size={18} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <div>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Total Harga</p>
+                          <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
+                            Rp {Number(item.total_harga || 0).toLocaleString('id-ID')}
+                          </p>
+                        </div>
                       </div>
 
                       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>

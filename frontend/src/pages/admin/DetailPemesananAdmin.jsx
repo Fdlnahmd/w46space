@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getPemesananById } from '../../services/mockData';
+import { getPemesananById } from '../../services/apiService';
 import {
   ArrowLeft, Edit, User, Briefcase, Calendar,
   Clock, Timer, Building, CheckCircle, AlertCircle,
@@ -15,8 +15,10 @@ const statusConfig = {
 };
 
 const hitungSisaWaktu = (tanggalAkhir) => {
+  if (!tanggalAkhir) return null;
+  const dateOnly = tanggalAkhir.split('T')[0];
   const sekarang = new Date().getTime();
-  const akhir = new Date(tanggalAkhir + 'T23:59:59').getTime();
+  const akhir = new Date(dateOnly + 'T23:59:59').getTime();
   const selisih = akhir - sekarang;
   if (selisih <= 0) return null;
   return {
@@ -28,8 +30,12 @@ const hitungSisaWaktu = (tanggalAkhir) => {
 };
 
 const hitungPersen = (tanggalMulai, tanggalAkhir) => {
-  const mulai   = new Date(tanggalMulai).getTime();
-  const akhir   = new Date(tanggalAkhir + 'T23:59:59').getTime();
+  if (!tanggalMulai || !tanggalAkhir) return 0;
+  const startOnly = tanggalMulai.split('T')[0];
+  const endOnly   = tanggalAkhir.split('T')[0];
+  
+  const mulai   = new Date(startOnly).getTime();
+  const akhir   = new Date(endOnly + 'T23:59:59').getTime();
   const sekarang = new Date().getTime();
   const total = akhir - mulai;
   if (total <= 0) return 100;
@@ -65,6 +71,11 @@ const InfoRow = ({ icon: Icon, label, value, highlight }) => (
   </div>
 );
 
+const formatDate = (dateString) => {
+  if (!dateString) return '—';
+  return dateString.split('T')[0];
+};
+
 const DetailPemesananAdmin = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -81,8 +92,8 @@ const DetailPemesananAdmin = () => {
   }, [id, navigate]);
 
   useEffect(() => {
-    if (!pesanan?.tanggalAkhir) return;
-    const tick = () => setSisa(hitungSisaWaktu(pesanan.tanggalAkhir));
+    if (!pesanan?.tanggal_akhir) return;
+    const tick = () => setSisa(hitungSisaWaktu(pesanan.tanggal_akhir));
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
@@ -92,11 +103,11 @@ const DetailPemesananAdmin = () => {
 
   const cfg = statusConfig[pesanan.status] || statusConfig['Pending'];
   const StatusIcon = cfg.Icon;
-  const persen = pesanan.tanggalMulai && pesanan.tanggalAkhir
-    ? hitungPersen(pesanan.tanggalMulai, pesanan.tanggalAkhir)
+  const persen = pesanan.tanggal_mulai && pesanan.tanggal_akhir
+    ? hitungPersen(pesanan.tanggal_mulai, pesanan.tanggal_akhir)
     : 0;
   const kontrakAktif = pesanan.status === 'Dikonfirmasi' && sisa !== null;
-  const kontrakHabis = pesanan.status === 'Dikonfirmasi' && sisa === null && pesanan.tanggalAkhir;
+  const kontrakHabis = pesanan.status === 'Dikonfirmasi' && sisa === null && pesanan.tanggal_akhir;
 
   return (
     <div style={{ paddingBottom: '2rem' }}>
@@ -108,7 +119,7 @@ const DetailPemesananAdmin = () => {
           </button>
           <div>
             <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Detail Pemesanan #{pesanan.id}</p>
-            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>{pesanan.ruangan?.nama || 'Ruangan'}</h1>
+            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>{pesanan.office?.nama || 'Ruangan'}</h1>
           </div>
         </div>
         {/* Tombol Edit */}
@@ -137,19 +148,19 @@ const DetailPemesananAdmin = () => {
         {/* Info Utama */}
         <div className="card" style={{ padding: '2rem' }}>
           <div className="grid md:grid-cols-2" style={{ gap: '0.75rem' }}>
-            <InfoRow icon={User}      label="Nama Pemesan"    value={pesanan.namaPemesan} />
+            <InfoRow icon={User}      label="Nama Pemesan"    value={pesanan.nama_pemesan || '—'} />
             <InfoRow icon={Briefcase} label="Perusahaan"      value={pesanan.perusahaan || '—'} />
-            <InfoRow icon={Calendar}  label="Tanggal Mulai"   value={pesanan.tanggalMulai || '—'} />
-            <InfoRow icon={Calendar}  label="Tanggal Akhir"   value={pesanan.tanggalAkhir || '—'} />
+            <InfoRow icon={Calendar}  label="Tanggal Mulai"   value={formatDate(pesanan.tanggal_mulai)} />
+            <InfoRow icon={Calendar}  label="Tanggal Akhir"   value={formatDate(pesanan.tanggal_akhir)} />
             <InfoRow icon={Timer}     label="Durasi Kontrak"  value={pesanan.durasi ? `${pesanan.durasi} Bulan` : '—'} />
-            <InfoRow icon={Clock}     label="Jam Operasional" value={pesanan.waktuMulai && pesanan.waktuSelesai ? `${pesanan.waktuMulai} – ${pesanan.waktuSelesai}` : '—'} />
-            <InfoRow icon={Building}  label="Ruangan"         value={pesanan.ruangan?.nama || '—'} />
-            <InfoRow icon={AlertCircle} label="Total Harga"   value={`Rp ${pesanan.totalHarga?.toLocaleString('id-ID') || '—'}`} highlight />
+            <InfoRow icon={Clock}     label="Jam Operasional" value={pesanan.waktu_mulai && pesanan.waktu_selesai ? `${pesanan.waktu_mulai} – ${pesanan.waktu_selesai}` : '—'} />
+            <InfoRow icon={Building}  label="Ruangan"         value={pesanan.office?.nama || '—'} />
+            <InfoRow icon={AlertCircle} label="Total Harga"   value={`Rp ${Number(pesanan.total_harga || 0).toLocaleString('id-ID')}`} highlight />
           </div>
         </div>
 
         {/* Countdown Kontrak */}
-        {pesanan.tanggalAkhir && pesanan.status === 'Dikonfirmasi' && (
+        {pesanan.tanggal_akhir && pesanan.status === 'Dikonfirmasi' && (
           <div className="card" style={{ padding: '2rem' }}>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Timer size={20} color="var(--color-primary)" /> Status Kontrak Berjalan
@@ -160,8 +171,8 @@ const DetailPemesananAdmin = () => {
                 {/* Progress bar */}
                 <div style={{ marginBottom: '1.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--color-text-muted)', marginBottom: '0.4rem' }}>
-                    <span>Mulai: {pesanan.tanggalMulai}</span>
-                    <span>Akhir: {pesanan.tanggalAkhir}</span>
+                    <span>Mulai: {formatDate(pesanan.tanggal_mulai)}</span>
+                    <span>Akhir: {formatDate(pesanan.tanggal_akhir)}</span>
                   </div>
                   <div style={{ height: '10px', backgroundColor: 'var(--color-border)', borderRadius: '9999px', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${persen}%`, background: 'linear-gradient(90deg, var(--color-primary), #60a5fa)', borderRadius: '9999px', transition: 'width 1s linear' }} />
@@ -183,7 +194,7 @@ const DetailPemesananAdmin = () => {
               <div style={{ textAlign: 'center', padding: '2rem', backgroundColor: 'var(--color-secondary)', borderRadius: 'var(--border-radius)' }}>
                 <CheckCircle size={48} color="var(--color-success)" style={{ marginBottom: '1rem' }} />
                 <h3>Masa Kontrak Telah Berakhir</h3>
-                <p style={{ color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>Berakhir pada {pesanan.tanggalAkhir}.</p>
+                <p style={{ color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>Berakhir pada {pesanan.tanggal_akhir}.</p>
                 <Link to={`/admin/pemesanan/edit/${pesanan.id}`} className="btn btn-primary" style={{ marginTop: '1rem' }}>
                   Perpanjang Kontrak
                 </Link>

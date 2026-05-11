@@ -14,6 +14,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import PesananSaya from './pages/PesananSaya';
 import DetailPesanan from './pages/DetailPesanan';
+import Profile from './pages/Profile';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -42,6 +45,8 @@ function App() {
           {/* Auth Routes (tanpa Navbar/Footer) */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Public Routes */}
           <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
@@ -52,6 +57,10 @@ function App() {
           <Route path="/pesanan-saya" element={<ProtectedRoute requiredRole="user" />}>
             <Route index element={<PublicLayout><PesananSaya /></PublicLayout>} />
             <Route path=":id" element={<PublicLayout><DetailPesanan /></PublicLayout>} />
+          </Route>
+          {/* Rute Profil - Bisa diakses semua role yang login */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/profile" element={<PublicLayout><Profile /></PublicLayout>} />
           </Route>
 
           {/* Admin Routes — hanya bisa diakses admin */}

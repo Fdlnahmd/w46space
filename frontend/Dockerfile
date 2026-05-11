@@ -1,5 +1,5 @@
 # Step 1: Build stage
-FROM node:22-alpine as build-stage
+FROM node:22-alpine AS build-stage
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ COPY . .
 RUN npm run build
 
 # Step 2: Production stage (Nginx)
-FROM nginx:stable-alpine as production-stage
+FROM nginx:stable-alpine AS production-stage
 
 # Salin hasil build dari build-stage ke direktori html Nginx
 COPY --from=build-stage /app/dist /usr/share/nginx/html

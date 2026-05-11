@@ -14,7 +14,7 @@ const Login = () => {
     e.preventDefault();
     setError('');
     try {
-      const user = await login(email, password);
+      await login(email, password);
       // Semua role (admin & user) diarahkan ke beranda setelah login
       navigate('/');
     } catch (err) {
@@ -47,6 +47,9 @@ const Login = () => {
           <div className="form-group" style={{ marginBottom: '2rem' }}>
             <label className="form-label">Password</label>
             <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="form-control" placeholder="••••••••" />
+            <div style={{ textAlign: 'right', marginTop: '0.5rem' }}>
+              <Link to="/forgot-password" style={{ fontSize: '0.85rem', color: 'var(--color-primary)', fontWeight: 500 }}>Lupa Password?</Link>
+            </div>
           </div>
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem' }}>
             Masuk

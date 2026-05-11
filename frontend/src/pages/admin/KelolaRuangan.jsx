@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getRuangan, deleteRuangan } from '../../services/mockData';
+import { getRuangan, deleteRuangan } from '../../services/apiService';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 
 const KelolaRuangan = () => {
@@ -47,7 +47,7 @@ const KelolaRuangan = () => {
               <tr key={item.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                 <td style={{ padding: '1rem', fontWeight: 500 }}>{item.nama}</td>
                 <td style={{ padding: '1rem' }}>{item.kapasitas} org</td>
-                <td style={{ padding: '1rem' }}>Rp {item.harga.toLocaleString('id-ID')}</td>
+                <td style={{ padding: '1rem' }}>Rp {(item.harga ?? 0).toLocaleString('id-ID')}</td>
                 <td style={{ padding: '1rem' }}>
                   <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`}>
                     {item.status}

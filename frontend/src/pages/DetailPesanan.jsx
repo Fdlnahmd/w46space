@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getPemesananById } from '../services/mockData';
+import { getPemesananById } from '../services/apiService';
 import {
   ArrowLeft, Building, Calendar, Clock, User, Briefcase,
   CheckCircle, XCircle, Timer, AlertCircle, BadgeCheck, Hourglass
@@ -17,8 +17,10 @@ const statusConfig = {
 
 // Hitung sisa waktu dari sekarang ke tanggalAkhir
 const hitungSisaWaktu = (tanggalAkhir) => {
+  if (!tanggalAkhir) return null;
+  const dateOnly = tanggalAkhir.split('T')[0];
   const sekarang = new Date().getTime();
-  const akhir = new Date(tanggalAkhir + 'T23:59:59').getTime();
+  const akhir = new Date(dateOnly + 'T23:59:59').getTime();
   const selisih = akhir - sekarang;
 
   if (selisih <= 0) return null; // Kontrak sudah berakhir
@@ -32,8 +34,12 @@ const hitungSisaWaktu = (tanggalAkhir) => {
 };
 
 const hitungPersen = (tanggalMulai, tanggalAkhir) => {
-  const mulai   = new Date(tanggalMulai).getTime();
-  const akhir   = new Date(tanggalAkhir + 'T23:59:59').getTime();
+  if (!tanggalMulai || !tanggalAkhir) return 0;
+  const startOnly = tanggalMulai.split('T')[0];
+  const endOnly   = tanggalAkhir.split('T')[0];
+  
+  const mulai   = new Date(startOnly).getTime();
+  const akhir   = new Date(endOnly + 'T23:59:59').getTime();
   const sekarang = new Date().getTime();
   const total   = akhir - mulai;
   const terpakai = sekarang - mulai;
@@ -55,6 +61,11 @@ const CountdownBox = ({ value, label }) => (
 );
 
 // ─── Main Component ──────────────────────────────────────────────────────────
+const formatDate = (dateString) => {
+  if (!dateString) return '—';
+  return dateString.split('T')[0];
+};
+
 const DetailPesanan = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -73,9 +84,9 @@ const DetailPesanan = () => {
 
   // Countdown real-time (update setiap detik)
   useEffect(() => {
-    if (!pesanan?.tanggalAkhir) return;
+    if (!pesanan?.tanggal_akhir) return;
 
-    const tick = () => setSisa(hitungSisaWaktu(pesanan.tanggalAkhir));
+    const tick = () => setSisa(hitungSisaWaktu(pesanan.tanggal_akhir));
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
@@ -89,11 +100,11 @@ const DetailPesanan = () => {
 
   const cfg = statusConfig[pesanan.status] || statusConfig['Pending'];
   const StatusIcon = cfg.Icon;
-  const persen = pesanan.tanggalMulai && pesanan.tanggalAkhir
-    ? hitungPersen(pesanan.tanggalMulai, pesanan.tanggalAkhir)
+  const persen = pesanan.tanggal_mulai && pesanan.tanggal_akhir
+    ? hitungPersen(pesanan.tanggal_mulai, pesanan.tanggal_akhir)
     : 0;
   const kontrakAktif = pesanan.status === 'Dikonfirmasi' && sisa !== null;
-  const kontrakHabis = pesanan.status === 'Dikonfirmasi' && sisa === null && pesanan.tanggalAkhir;
+  const kontrakHabis = pesanan.status === 'Dikonfirmasi' && sisa === null && pesanan.tanggal_akhir;
 
   return (
     <div style={{ padding: '2rem 0', backgroundColor: 'var(--color-background)', minHeight: '100vh' }}>
@@ -114,7 +125,7 @@ const DetailPesanan = () => {
                   ID Pesanan: <strong>#{pesanan.id}</strong>
                 </p>
                 <h1 style={{ fontSize: '1.6rem', fontWeight: 700 }}>
-                  {pesanan.ruangan?.nama || 'Ruangan'}
+                  {pesanan.office?.nama || 'Ruangan'}
                 </h1>
               </div>
               <div style={{
@@ -129,10 +140,10 @@ const DetailPesanan = () => {
             </div>
 
             {/* Foto ruangan */}
-            {pesanan.ruangan?.gambar && (
+            {pesanan.office?.gambar && (
               <img
-                src={pesanan.ruangan.gambar}
-                alt={pesanan.ruangan.nama}
+                src={pesanan.office.gambar}
+                alt={pesanan.office.nama}
                 style={{ width: '100%', height: '220px', objectFit: 'cover', borderRadius: 'var(--border-radius-lg)', marginBottom: '1.5rem' }}
               />
             )}
@@ -140,13 +151,13 @@ const DetailPesanan = () => {
             {/* Detail Grid */}
             <div className="grid md:grid-cols-2" style={{ gap: '1rem' }}>
               {[
-                { icon: User,      label: 'Nama Pemesan',  value: pesanan.namaPemesan },
+                { icon: User,      label: 'Nama Pemesan',  value: pesanan.nama_pemesan },
                 { icon: Briefcase, label: 'Perusahaan',    value: pesanan.perusahaan || '—' },
-                { icon: Calendar,  label: 'Tanggal Mulai', value: pesanan.tanggalMulai || pesanan.tanggal || '—' },
-                { icon: Calendar,  label: 'Tanggal Akhir', value: pesanan.tanggalAkhir || '—' },
+                { icon: Calendar,  label: 'Tanggal Mulai', value: formatDate(pesanan.tanggal_mulai) },
+                { icon: Calendar,  label: 'Tanggal Akhir', value: formatDate(pesanan.tanggal_akhir) },
                 { icon: Timer,     label: 'Durasi Kontrak',value: pesanan.durasi ? `${pesanan.durasi} Bulan` : '—' },
-                { icon: Clock,     label: 'Jam Operasional', value: pesanan.waktuMulai && pesanan.waktuSelesai ? `${pesanan.waktuMulai} – ${pesanan.waktuSelesai}` : '—' },
-                { icon: Building,  label: 'Ruangan',       value: pesanan.ruangan?.nama || '—' },
+                { icon: Clock,     label: 'Jam Operasional', value: pesanan.waktu_mulai && pesanan.waktu_selesai ? `${pesanan.waktu_mulai} – ${pesanan.waktu_selesai}` : '—' },
+                { icon: Building,  label: 'Ruangan',       value: pesanan.office?.nama || '—' },
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} style={{
                   display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
@@ -171,15 +182,15 @@ const DetailPesanan = () => {
                 <div>
                   <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Total Harga</p>
                   <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
-                    Rp {pesanan.totalHarga?.toLocaleString('id-ID') || '—'}
+                    Rp {Number(pesanan.total_harga || 0).toLocaleString('id-ID')}
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ── Countdown Timer (hanya jika kontrak aktif dan punya tanggalAkhir) ── */}
-          {pesanan.tanggalAkhir && pesanan.status === 'Dikonfirmasi' && (
+          {/* ── Countdown Timer (hanya jika kontrak aktif dan punya tanggal_akhir) ── */}
+          {pesanan.tanggal_akhir && pesanan.status === 'Dikonfirmasi' && (
             <div className="card" style={{ padding: '2rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Timer size={22} color="var(--color-primary)" />
@@ -191,8 +202,8 @@ const DetailPesanan = () => {
                   {/* Progress bar */}
                   <div style={{ marginBottom: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
-                      <span>Mulai: {pesanan.tanggalMulai}</span>
-                      <span>Akhir: {pesanan.tanggalAkhir}</span>
+                      <span>Mulai: {formatDate(pesanan.tanggal_mulai)}</span>
+                      <span>Akhir: {formatDate(pesanan.tanggal_akhir)}</span>
                     </div>
                     <div style={{ height: '10px', backgroundColor: 'var(--color-border)', borderRadius: '9999px', overflow: 'hidden' }}>
                       <div style={{
@@ -219,7 +230,7 @@ const DetailPesanan = () => {
                       <CountdownBox value={sisa.detik} label="Detik" />
                     </div>
                     <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-                      Kontrak berakhir pada <strong>{pesanan.tanggalAkhir}</strong>
+                      Kontrak berakhir pada <strong>{formatDate(pesanan.tanggal_akhir)}</strong>
                     </p>
                   </div>
                 </>
@@ -228,7 +239,7 @@ const DetailPesanan = () => {
                   <CheckCircle size={48} color="var(--color-success)" style={{ marginBottom: '1rem' }} />
                   <h3>Masa Kontrak Telah Berakhir</h3>
                   <p style={{ color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
-                    Kontrak sewa selesai pada {pesanan.tanggalAkhir}.
+                    Kontrak sewa selesai pada {pesanan.tanggal_akhir}.
                   </p>
                   <Link to="/ruangan" className="btn btn-primary" style={{ marginTop: '1rem' }}>
                     Perpanjang / Sewa Lagi
@@ -239,11 +250,11 @@ const DetailPesanan = () => {
           )}
 
           {/* Fasilitas Ruangan */}
-          {pesanan.ruangan?.fasilitas?.length > 0 && (
+          {pesanan.office?.fasilitas?.length > 0 && (
             <div className="card" style={{ padding: '2rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>Fasilitas Ruangan</h3>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {pesanan.ruangan.fasilitas.map((f, i) => (
+                {pesanan.office.fasilitas.map((f, i) => (
                   <span key={i} style={{
                     display: 'flex', alignItems: 'center', gap: '0.3rem',
                     padding: '0.4rem 0.75rem', fontSize: '0.9rem',

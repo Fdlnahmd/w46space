@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getRuanganById, createPemesanan } from '../services/mockData';
+import { getRuanganById, createPemesanan } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import { Users, CheckCircle2, ArrowLeft, LogIn, ShieldAlert } from 'lucide-react';
 
@@ -11,14 +11,18 @@ const hitungTanggalAkhir = (tanggalMulai, durasiButlan) => {
   return d.toISOString().split('T')[0];
 };
 
+import Modal from '../components/Modal';
+
 const DetailRuangan = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [ruangan, setRuangan] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
   const [formData, setFormData] = useState({
-    namaPemesan: '',
+    namaPemesan: user?.name || user?.nama || '',
     perusahaan: '',
     tanggalMulai: '',
     durasi: 1,          // durasi dalam bulan
@@ -33,31 +37,57 @@ const DetailRuangan = () => {
     });
   }, [id, navigate]);
 
-  useEffect(() => {
-    if (user) setFormData(prev => ({ ...prev, namaPemesan: user.nama }));
-  }, [user]);
-
   // Hitung total harga: harga/hari * 26 hari kerja * durasi bulan (estimasi)
   const hitungTotal = () => {
     if (!ruangan) return 0;
     return ruangan.harga * 26 * parseInt(formData.durasi);
   };
 
-  const handleBooking = (e) => {
+  const handleBooking = async (e) => {
     e.preventDefault();
-    const tanggalAkhir = hitungTanggalAkhir(formData.tanggalMulai, formData.durasi);
+    setLoading(true);
+    
+    try {
+      const tanggalAkhir = hitungTanggalAkhir(formData.tanggalMulai, formData.durasi);
 
-    createPemesanan({
-      idUser: user.id,
-      idRuangan: parseInt(id),
-      ...formData,
-      durasi: parseInt(formData.durasi),
-      tanggalAkhir,
-      totalHarga: hitungTotal()
-    }).then(() => {
-      alert('Pemesanan berhasil diajukan! Silakan cek status di halaman Pesanan Saya.');
+      const dataKeBackend = {
+        id_ruangan: parseInt(id),
+        nama_pemesan: formData.namaPemesan,
+        perusahaan: formData.perusahaan,
+        tanggal_mulai: formData.tanggalMulai,
+        tanggal_akhir: tanggalAkhir,
+        waktu_mulai: formData.waktuMulai,
+        waktu_selesai: formData.waktuSelesai,
+        durasi: parseInt(formData.durasi),
+        total_harga: hitungTotal()
+      };
+
+      await createPemesanan(dataKeBackend);
+
+      setModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Pemesanan Berhasil',
+        message: 'Permintaan pemesanan Anda telah diterima. Silakan cek status berkala di halaman Pesanan Saya.'
+      });
+    } catch (error) {
+      console.error('Booking error:', error);
+      setModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Pemesanan Gagal',
+        message: error.response?.data?.message || 'Terjadi kesalahan saat memproses pesanan Anda. Silakan coba lagi.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+    if (modal.type === 'success') {
       navigate('/pesanan-saya');
-    });
+    }
   };
 
   if (!ruangan) return (
@@ -199,10 +229,10 @@ const DetailRuangan = () => {
             </div>
             <div>
               <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
-                Estimasi Total ({formData.durasi} bln × 26 hari × Rp {ruangan.harga.toLocaleString('id-ID')})
+                Estimasi Total ({formData.durasi} bln × 26 hari × Rp {(ruangan.harga ?? 0).toLocaleString('id-ID')})
               </p>
               <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.4rem' }}>
-                Rp {totalHarga.toLocaleString('id-ID')}
+                Rp {(totalHarga ?? 0).toLocaleString('id-ID')}
               </p>
             </div>
           </div>
@@ -212,9 +242,9 @@ const DetailRuangan = () => {
           <button
             type="submit" className="btn btn-primary"
             style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
-            disabled={ruangan.status !== 'Tersedia'}
+            disabled={ruangan.status !== 'Tersedia' || loading}
           >
-            {ruangan.status === 'Tersedia' ? 'Ajukan Pemesanan' : 'Ruangan Tidak Tersedia'}
+            {loading ? 'Mengajukan...' : (ruangan.status === 'Tersedia' ? 'Ajukan Pemesanan' : 'Ruangan Tidak Tersedia')}
           </button>
         </div>
       </form>
@@ -274,7 +304,7 @@ const DetailRuangan = () => {
           </div>
 
           {/* Formulir / Info Booking */}
-          <div className="card" style={{ padding: '2rem' }}>
+        <div style={{ card: 'card', padding: '2rem' }}>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
               Formulir Pemesanan
             </h2>
@@ -282,6 +312,25 @@ const DetailRuangan = () => {
           </div>
         </div>
       </div>
+      
+      {/* Modal Notifikasi Modern */}
+      <Modal 
+        isOpen={modal.isOpen} 
+        onClose={closeModal} 
+        type={modal.type}
+        title={modal.title}
+        message={modal.message}
+      />
+
+      <style>{`
+        @media (max-width: 768px) {
+          h1 { font-size: 1.5rem !important; }
+          .card { padding: 1.25rem !important; }
+          img { height: 250px !important; }
+          .form-group { margin-bottom: 1rem !important; }
+          button { font-size: 1rem !important; }
+        }
+      `}</style>
     </div>
   );
 };

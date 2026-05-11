@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getRuangan } from '../services/mockData';
-import { Search, Users, MapPin, Filter } from 'lucide-react';
+import { getRuangan } from '../services/apiService';
+import { Search, Users, Filter } from 'lucide-react';
 
 const DaftarRuangan = () => {
   const [ruangan, setRuangan] = useState([]);
@@ -21,7 +21,7 @@ const DaftarRuangan = () => {
         <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem', textAlign: 'center', color: 'var(--color-text-main)' }}>Daftar Ruangan</h1>
         
         {/* Search Bar */}
-        <div style={{ backgroundColor: 'var(--color-surface)', padding: '1rem', borderRadius: 'var(--border-radius-lg)', boxShadow: 'var(--box-shadow)', marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
+        <div className="search-bar" style={{ backgroundColor: 'var(--color-surface)', padding: '1rem', borderRadius: 'var(--border-radius-lg)', boxShadow: 'var(--box-shadow)', marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
           <div style={{ flex: 1, position: 'relative' }}>
             <Search size={20} color="var(--color-text-muted)" style={{ position: 'absolute', top: '50%', left: '1rem', transform: 'translateY(-50%)' }} />
             <input 
@@ -37,6 +37,15 @@ const DaftarRuangan = () => {
             <Filter size={18} /> Filter
           </button>
         </div>
+
+        <style>{`
+          @media (max-width: 640px) {
+            .search-bar { 
+              flex-direction: column !important; 
+            }
+            h1 { font-size: 1.75rem !important; }
+          }
+        `}</style>
 
         {/* List Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3">
@@ -65,7 +74,7 @@ const DaftarRuangan = () => {
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
                   <div>
-                    <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.1rem' }}>Rp {item.harga.toLocaleString('id-ID')}<span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>/hari</span></p>
+                    <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.1rem' }}>Rp {(item.harga ?? 0).toLocaleString('id-ID')}<span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>/hari</span></p>
                   </div>
                   <Link to={`/ruangan/${item.id}`} className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>
                     Lihat Detail

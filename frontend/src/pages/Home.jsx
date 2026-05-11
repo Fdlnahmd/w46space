@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getRuangan } from '../services/mockData';
-import { MapPin, Users, ArrowRight } from 'lucide-react';
+import { getRuangan } from '../services/apiService';
+import { Users, ArrowRight } from 'lucide-react';
 
 const Home = () => {
   const [ruangan, setRuangan] = useState([]);
@@ -43,11 +43,19 @@ const Home = () => {
         {/* Abstract Background Shapes */}
         <div style={{ position: 'absolute', top: '-10%', left: '-5%', width: '300px', height: '300px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(40px)' }}></div>
         <div style={{ position: 'absolute', bottom: '-20%', right: '5%', width: '400px', height: '400px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(60px)' }}></div>
+
+        <style>{`
+          @media (max-width: 768px) {
+            h1 { font-size: 2.25rem !important; }
+            p { font-size: 1rem !important; }
+            section { padding: 4rem 0 !important; }
+          }
+        `}</style>
       </section>
 
       {/* Featured Section */}
       <section className="container" style={{ padding: '5rem var(--spacing-md)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
+        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
           <div>
             <h2 style={{ fontSize: '2rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Ruangan Populer</h2>
             <p style={{ color: 'var(--color-text-muted)' }}>Pilihan ruangan terbaik yang sering dipesan.</p>
@@ -56,6 +64,17 @@ const Home = () => {
             Lihat Semua <ArrowRight size={18} />
           </Link>
         </div>
+
+        <style>{`
+          @media (max-width: 640px) {
+            .section-header { 
+              flex-direction: column !important; 
+              align-items: flex-start !important; 
+              gap: 1rem;
+            }
+            h2 { font-size: 1.5rem !important; }
+          }
+        `}</style>
 
         <div className="grid md:grid-cols-3">
           {ruangan.map(item => (
@@ -80,7 +99,7 @@ const Home = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
                   <div>
                     <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Mulai dari</p>
-                    <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.1rem' }}>Rp {item.harga.toLocaleString('id-ID')}<span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>/hari</span></p>
+                    <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.1rem' }}>Rp {(item.harga ?? 0).toLocaleString('id-ID')}<span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>/hari</span></p>
                   </div>
                   <Link to={`/ruangan/${item.id}`} className="btn btn-outline" style={{ padding: '0.5rem 1rem' }}>
                     Detail

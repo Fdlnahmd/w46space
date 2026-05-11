@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { UserPlus } from 'lucide-react';
 
 const Register = () => {
-  const [formData, setFormData] = useState({ nama: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ const Register = () => {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Nama Lengkap</label>
-            <input required type="text" name="nama" value={formData.nama} onChange={handleChange} className="form-control" placeholder="Budi Santoso" />
+            <input required type="text" name="name" value={formData.nama} onChange={handleChange} className="form-control" placeholder="Budi Santoso" />
           </div>
           <div className="form-group">
             <label className="form-label">Email</label>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getRuanganById, createRuangan, updateRuangan } from '../../services/mockData';
+import { getRuanganById, createRuangan, updateRuangan } from '../../services/apiService';
 import { ArrowLeft } from 'lucide-react';
 
 const FormRuangan = () => {
