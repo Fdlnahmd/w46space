@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: office_rent_frontend
+    ports:
+      - "80:80"
+    restart: always
+    networks:
+      - office_rent_network
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: office_rent_tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    depends_on:
+      - frontend
+    networks:
+      - office_rent_network
+
+networks:
+  office_rent_network:
+    driver: bridge
