@@ -269,6 +269,15 @@ const DetailRuangan = () => {
                 />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {ruangan.kategori && (
+                  <span style={{ 
+                    alignSelf: 'flex-start', fontSize: '0.85rem', fontWeight: 600, 
+                    color: 'var(--color-primary)', backgroundColor: 'rgba(37, 99, 235, 0.1)', 
+                    padding: '0.25rem 0.75rem', borderRadius: '4px' 
+                  }}>
+                    {ruangan.kategori}
+                  </span>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>{ruangan.nama}</h1>
                   <span className={`badge ${ruangan.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>

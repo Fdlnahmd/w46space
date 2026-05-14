@@ -59,14 +59,6 @@ const Login = () => {
         <div style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
           Belum punya akun? <Link to="/register" style={{ fontWeight: 600 }}>Daftar sekarang</Link>
         </div>
-        
-        <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: 'var(--color-secondary)', borderRadius: 'var(--border-radius)', fontSize: '0.85rem' }}>
-          <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Akun Demo:</p>
-          <ul style={{ listStylePosition: 'inside', color: 'var(--color-text-muted)' }}>
-            <li>Admin: admin@sewaruang.com / password</li>
-            <li>User: budi@gmail.com / password</li>
-          </ul>
-        </div>
       </div>
     </div>
   );

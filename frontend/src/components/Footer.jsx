@@ -13,12 +13,12 @@ const Footer = () => {
         gap: '1rem',
         textAlign: 'center'
       }}>
-        <h3 style={{ fontSize: '1.5rem', color: 'var(--color-primary)' }}>SewaRuang</h3>
+        <h3 style={{ fontSize: '1.5rem', color: 'var(--color-primary)' }}>Sewa Ruang</h3>
         <p style={{ color: 'var(--color-text-muted)', maxWidth: '400px' }}>
-          Platform penyewaan ruang kantor dan ruang rapat terbaik dan terpercaya untuk kebutuhan bisnis Anda.
+          Platform penyewaan **Office** dan **Meeting Room** terbaik dan terpercaya untuk kebutuhan bisnis Anda.
         </p>
         <div style={{ marginTop: '1rem', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-          &copy; {new Date().getFullYear()} SewaRuang. Hak Cipta Dilindungi.
+          &copy; {new Date().getFullYear()} Sewa Ruang. Hak Cipta Dilindungi.
         </div>
       </div>
     </footer>

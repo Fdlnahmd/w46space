@@ -44,7 +44,7 @@ const Register = () => {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Nama Lengkap</label>
-            <input required type="text" name="name" value={formData.nama} onChange={handleChange} className="form-control" placeholder="Budi Santoso" />
+            <input required type="text" name="name" value={formData.name} onChange={handleChange} className="form-control" placeholder="Budi Santoso" />
           </div>
           <div className="form-group">
             <label className="form-label">Email</label>

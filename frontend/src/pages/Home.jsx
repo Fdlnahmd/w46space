@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getRuangan } from '../services/apiService';
-import { Users, ArrowRight } from 'lucide-react';
+import { Users, ArrowRight, Star } from 'lucide-react';
 
 const Home = () => {
   const [ruangan, setRuangan] = useState([]);
 
   useEffect(() => {
-    getRuangan().then(data => setRuangan(data.slice(0, 3))); // Ambil 3 teratas
+    getRuangan().then(data => {
+      // Tampilkan 3 ruangan terbaru di beranda
+      setRuangan(data.slice(-3).reverse());
+    });
   }, []);
 
   return (
@@ -26,7 +29,7 @@ const Home = () => {
             Temukan Ruang Kerja <br /> Impian Anda
           </h1>
           <p style={{ fontSize: '1.2rem', marginBottom: '2.5rem', opacity: 0.9, maxWidth: '600px', margin: '0 auto 2.5rem' }}>
-            Sewa ruang kantor, ruang rapat, atau co-working space dengan mudah, cepat, dan fleksibel.
+            Sewa **Office**, **Meeting Room**, atau **Coworking Space** dengan mudah, cepat, dan fleksibel.
           </p>
           <Link to="/ruangan" className="btn" style={{
             backgroundColor: 'white',
@@ -57,12 +60,17 @@ const Home = () => {
       <section className="container" style={{ padding: '5rem var(--spacing-md)' }}>
         <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
           <div>
-            <h2 style={{ fontSize: '2rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Ruangan Populer</h2>
-            <p style={{ color: 'var(--color-text-muted)' }}>Pilihan ruangan terbaik yang sering dipesan.</p>
+            <h2 style={{ fontSize: '2rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Ruangan Terbaru</h2>
+            <p style={{ color: 'var(--color-text-muted)' }}>Pilihan ruangan yang baru saja ditambahkan.</p>
           </div>
-          <Link to="/ruangan" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
-            Lihat Semua <ArrowRight size={18} />
-          </Link>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <Link to="/populer" className="btn btn-popular">
+                Ruangan Populer <Star size={18} fill="var(--color-warning)" />
+            </Link>
+            <Link to="/ruangan" className="btn btn-primary">
+              Lihat Semua <ArrowRight size={18} />
+            </Link>
+          </div>
         </div>
 
         <style>{`
@@ -83,6 +91,15 @@ const Home = () => {
                 <img src={item.gambar} alt={item.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ padding: '1.5rem' }}>
+                {item.kategori && (
+                  <span style={{ 
+                    fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-primary)', 
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)', padding: '0.15rem 0.5rem', 
+                    borderRadius: '4px', marginBottom: '0.5rem', display: 'inline-block' 
+                  }}>
+                    {item.kategori}
+                  </span>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{item.nama}</h3>
                   <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`}>
@@ -92,16 +109,19 @@ const Home = () => {
                 
                 <div style={{ display: 'flex', gap: '1rem', color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Users size={16} /> Kapasitas: {item.kapasitas}
+                    <Users size={16} /> Kapasitas: {item.kapasitas} orang
                   </span>
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
                   <div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Mulai dari</p>
-                    <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.1rem' }}>Rp {(item.harga ?? 0).toLocaleString('id-ID')}<span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>/hari</span></p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.1rem' }}>Mulai dari</p>
+                    <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.1rem' }}>
+                      Rp {(item.harga ?? 0).toLocaleString('id-ID')}
+                      <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>/hari</span>
+                    </p>
                   </div>
-                  <Link to={`/ruangan/${item.id}`} className="btn btn-outline" style={{ padding: '0.5rem 1rem' }}>
+                  <Link to={`/ruangan/${item.id}`} className="btn btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
                     Detail
                   </Link>
                 </div>

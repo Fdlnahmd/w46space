@@ -17,11 +17,19 @@ export const getRuanganById = async (id) => {
 };
 
 export const createRuangan = async (data) => {
+  // Jika data adalah FormData, biarkan axios menangani headers-nya
   const response = await api.post('/offices', data);
   return response.data;
 };
 
 export const updateRuangan = async (id, data) => {
+  // Workaround Laravel PUT multipart: Gunakan POST dengan _method=PUT jika mengirim file (FormData)
+  if (data instanceof FormData) {
+    data.append('_method', 'PUT');
+    const response = await api.post(`/offices/${id}`, data);
+    return response.data;
+  }
+  
   const response = await api.put(`/offices/${id}`, data);
   return response.data;
 };

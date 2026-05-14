@@ -15,31 +15,39 @@ const statusConfig = {
   Dibatalkan:   { label: 'Dibatalkan',           color: '#991b1b', bg: '#fee2e2', border: '#fca5a5', Icon: XCircle },
 };
 
-// Hitung sisa waktu dari sekarang ke tanggalAkhir
-const hitungSisaWaktu = (tanggalAkhir) => {
-  if (!tanggalAkhir) return null;
-  const dateOnly = tanggalAkhir.split('T')[0];
+// Hitung sisa waktu dan status kontrak
+const hitungSisaWaktuKontrak = (tanggalMulai, tanggalAkhir) => {
+  if (!tanggalMulai || !tanggalAkhir) return null;
+  
   const sekarang = new Date().getTime();
-  const akhir = new Date(dateOnly + 'T23:59:59').getTime();
-  const selisih = akhir - sekarang;
+  const mulai = new Date(tanggalMulai.split('T')[0] + 'T00:00:00').getTime();
+  const akhir = new Date(tanggalAkhir.split('T')[0] + 'T23:59:59').getTime();
+  
+  let target, type;
 
-  if (selisih <= 0) return null; // Kontrak sudah berakhir
+  if (sekarang < mulai) {
+    target = mulai;
+    type = 'upcoming';
+  } else if (sekarang <= akhir) {
+    target = akhir;
+    type = 'active';
+  } else {
+    return { type: 'expired' };
+  }
 
+  const selisih = target - sekarang;
   const hari   = Math.floor(selisih / (1000 * 60 * 60 * 24));
   const jam    = Math.floor((selisih % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const menit  = Math.floor((selisih % (1000 * 60 * 60)) / (1000 * 60));
   const detik  = Math.floor((selisih % (1000 * 60)) / 1000);
 
-  return { hari, jam, menit, detik, total: selisih };
+  return { type, hari, jam, menit, detik, total: selisih };
 };
 
 const hitungPersen = (tanggalMulai, tanggalAkhir) => {
   if (!tanggalMulai || !tanggalAkhir) return 0;
-  const startOnly = tanggalMulai.split('T')[0];
-  const endOnly   = tanggalAkhir.split('T')[0];
-  
-  const mulai   = new Date(startOnly).getTime();
-  const akhir   = new Date(endOnly + 'T23:59:59').getTime();
+  const mulai   = new Date(tanggalMulai.split('T')[0]).getTime();
+  const akhir   = new Date(tanggalAkhir.split('T')[0] + 'T23:59:59').getTime();
   const sekarang = new Date().getTime();
   const total   = akhir - mulai;
   const terpakai = sekarang - mulai;
@@ -70,7 +78,7 @@ const DetailPesanan = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [pesanan, setPesanan] = useState(null);
-  const [sisa, setSisa] = useState(null);
+  const [statusWaktu, setStatusWaktu] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Ambil data pesanan
@@ -82,11 +90,11 @@ const DetailPesanan = () => {
     });
   }, [id, navigate]);
 
-  // Countdown real-time (update setiap detik)
+  // Countdown real-time
   useEffect(() => {
-    if (!pesanan?.tanggal_akhir) return;
+    if (!pesanan?.tanggal_mulai || !pesanan?.tanggal_akhir) return;
 
-    const tick = () => setSisa(hitungSisaWaktu(pesanan.tanggal_akhir));
+    const tick = () => setStatusWaktu(hitungSisaWaktuKontrak(pesanan.tanggal_mulai, pesanan.tanggal_akhir));
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
@@ -103,8 +111,9 @@ const DetailPesanan = () => {
   const persen = pesanan.tanggal_mulai && pesanan.tanggal_akhir
     ? hitungPersen(pesanan.tanggal_mulai, pesanan.tanggal_akhir)
     : 0;
-  const kontrakAktif = pesanan.status === 'Dikonfirmasi' && sisa !== null;
-  const kontrakHabis = pesanan.status === 'Dikonfirmasi' && sisa === null && pesanan.tanggal_akhir;
+  const isUpcoming = statusWaktu?.type === 'upcoming';
+  const isActive   = statusWaktu?.type === 'active';
+  const isExpired  = statusWaktu?.type === 'expired';
 
   return (
     <div style={{ padding: '2rem 0', backgroundColor: 'var(--color-background)', minHeight: '100vh' }}>
@@ -189,63 +198,74 @@ const DetailPesanan = () => {
             </div>
           </div>
 
-          {/* ── Countdown Timer (hanya jika kontrak aktif dan punya tanggal_akhir) ── */}
-          {pesanan.tanggal_akhir && pesanan.status === 'Dikonfirmasi' && (
+          {/* ── Countdown Timer (hanya jika pesanan dikonfirmasi) ── */}
+          {pesanan.status === 'Dikonfirmasi' && statusWaktu && (
             <div className="card" style={{ padding: '2rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Timer size={22} color="var(--color-primary)" />
-                Status Kontrak Berjalan
+                {isUpcoming ? 'Waktu Kontrak Akan Datang' : 'Status Kontrak Berjalan'}
               </h2>
 
-              {kontrakAktif ? (
+              {/* Tampilan Aktif atau Upcoming */}
+              {(isActive || isUpcoming) && (
                 <>
-                  {/* Progress bar */}
-                  <div style={{ marginBottom: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
-                      <span>Mulai: {formatDate(pesanan.tanggal_mulai)}</span>
-                      <span>Akhir: {formatDate(pesanan.tanggal_akhir)}</span>
+                  {/* Progress bar (hanya jika sudah jalan) */}
+                  {isActive && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                        <span>Mulai: {formatDate(pesanan.tanggal_mulai)}</span>
+                        <span>Akhir: {formatDate(pesanan.tanggal_akhir)}</span>
+                      </div>
+                      <div style={{ height: '10px', backgroundColor: 'var(--color-border)', borderRadius: '9999px', overflow: 'hidden' }}>
+                        <div style={{
+                          height: '100%', width: `${persen}%`,
+                          background: 'linear-gradient(90deg, var(--color-primary), #60a5fa)',
+                          borderRadius: '9999px',
+                          transition: 'width 1s linear'
+                        }} />
+                      </div>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', marginTop: '0.35rem', textAlign: 'right' }}>
+                        {persen.toFixed(1)}% masa kontrak telah berjalan
+                      </p>
                     </div>
-                    <div style={{ height: '10px', backgroundColor: 'var(--color-border)', borderRadius: '9999px', overflow: 'hidden' }}>
-                      <div style={{
-                        height: '100%', width: `${persen}%`,
-                        background: 'linear-gradient(90deg, var(--color-primary), #60a5fa)',
-                        borderRadius: '9999px',
-                        transition: 'width 1s linear'
-                      }} />
-                    </div>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', marginTop: '0.35rem', textAlign: 'right' }}>
-                      {persen.toFixed(1)}% masa kontrak telah berjalan
-                    </p>
-                  </div>
+                  )}
 
                   {/* Countdown blocks */}
                   <div>
                     <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1rem', textAlign: 'center' }}>
-                      ⏳ Sisa waktu kontrak berakhir:
+                      {isUpcoming ? '⏳ Kontrak dimulai dalam:' : '⏳ Sisa waktu kontrak berakhir:'}
                     </p>
                     <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <CountdownBox value={sisa.hari}  label="Hari" />
-                      <CountdownBox value={sisa.jam}   label="Jam" />
-                      <CountdownBox value={sisa.menit} label="Menit" />
-                      <CountdownBox value={sisa.detik} label="Detik" />
+                      <CountdownBox value={statusWaktu.hari}  label="Hari" />
+                      <CountdownBox value={statusWaktu.jam}   label="Jam" />
+                      <CountdownBox value={statusWaktu.menit} label="Menit" />
+                      <CountdownBox value={statusWaktu.detik} label="Detik" />
                     </div>
                     <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-                      Kontrak berakhir pada <strong>{formatDate(pesanan.tanggal_akhir)}</strong>
+                      {isUpcoming 
+                        ? `Kontrak akan dimulai pada ${formatDate(pesanan.tanggal_mulai)}`
+                        : `Kontrak berakhir pada ${formatDate(pesanan.tanggal_akhir)}`
+                      }
                     </p>
                   </div>
                 </>
-              ) : kontrakHabis ? (
-                <div style={{ textAlign: 'center', padding: '2rem', backgroundColor: 'var(--color-secondary)', borderRadius: 'var(--border-radius)' }}>
-                  <CheckCircle size={48} color="var(--color-success)" style={{ marginBottom: '1rem' }} />
+              )}
+
+              {/* Tampilan Jika Expired */}
+              {isExpired && (
+                <div style={{ textAlign: 'center', padding: '1rem' }}>
+                  <div style={{ display: 'inline-flex', padding: '1rem', backgroundColor: '#f1f5f9', borderRadius: '50%', marginBottom: '1rem' }}>
+                    <CheckCircle size={32} color="var(--color-success)" />
+                  </div>
                   <h3>Masa Kontrak Telah Berakhir</h3>
                   <p style={{ color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
-                    Kontrak sewa selesai pada {pesanan.tanggal_akhir}.
+                    Sewa ruangan ini telah selesai pada {formatDate(pesanan.tanggal_akhir)}.
                   </p>
-                  <Link to="/ruangan" className="btn btn-primary" style={{ marginTop: '1rem' }}>
-                    Perpanjang / Sewa Lagi
+                  <Link to="/ruangan" className="btn btn-primary" style={{ marginTop: '1.5rem' }}>
+                    Sewa Ruangan Lagi
                   </Link>
                 </div>
-              ) : null}
+              )}
             </div>
           )}
 

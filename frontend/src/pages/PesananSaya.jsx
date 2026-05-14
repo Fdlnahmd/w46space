@@ -19,10 +19,17 @@ const PesananSaya = () => {
   const loadData = useCallback((showLoading = true) => {
     if (user) {
       if (showLoading) setLoading(true);
-      getPemesananByUser().then(data => {
-        setPesananList(data);
-        setLoading(false);
-      });
+      getPemesananByUser()
+        .then(data => {
+          setPesananList(data);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('Error fetching user bookings:', err);
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
     }
   }, [user]);
 

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // URL backend Laravel di Docker (biasanya localhost:8000)
-const API_URL = 'https://officerent.nexvol.xyz/api';
+const API_URL = '/api';
 
 const api = axios.create({
   baseURL: API_URL,

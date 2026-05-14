@@ -12,6 +12,7 @@ import DaftarRuangan from './pages/DaftarRuangan';
 import DetailRuangan from './pages/DetailRuangan';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import PopularRuangan from './pages/PopularRuangan';
 import PesananSaya from './pages/PesananSaya';
 import DetailPesanan from './pages/DetailPesanan';
 import Profile from './pages/Profile';
@@ -51,6 +52,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
           <Route path="/ruangan" element={<PublicLayout><DaftarRuangan /></PublicLayout>} />
+          <Route path="/populer" element={<PublicLayout><PopularRuangan /></PublicLayout>} />
           <Route path="/ruangan/:id" element={<PublicLayout><DetailRuangan /></PublicLayout>} />
 
           {/* Rute terproteksi untuk user yang sudah login (role: user) */}

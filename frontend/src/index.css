@@ -78,6 +78,12 @@ a:hover {
   transition: var(--transition);
 }
 
+@media (max-width: 767px) {
+  .card {
+    margin-bottom: 0.5rem; /* Tambahan margin bawah untuk keamanan */
+  }
+}
+
 .card:hover {
   box-shadow: var(--box-shadow-hover);
   transform: translateY(-2px);
@@ -97,24 +103,29 @@ a:hover {
   gap: 0.5rem;
 }
 
+.btn:hover * {
+  color: inherit !important;
+}
+
 .btn-primary {
   background-color: var(--color-primary);
-  color: white;
+  color: white !important;
 }
 
 .btn-primary:hover {
   background-color: var(--color-primary-hover);
+  color: white !important;
 }
 
 .btn-outline {
   background-color: transparent;
   border: 1px solid var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-primary) !important;
 }
 
 .btn-outline:hover {
-  background-color: var(--color-primary);
-  color: white;
+  background-color: var(--color-primary) !important;
+  color: white !important;
 }
 
 .btn-danger {
@@ -124,6 +135,32 @@ a:hover {
 
 .btn-danger:hover {
   opacity: 0.9;
+}
+
+.btn-popular {
+  background-color: transparent !important;
+  border: 1px solid var(--color-warning) !important;
+  color: var(--color-warning) !important;
+}
+
+.btn-popular:hover {
+  background-color: var(--color-warning) !important;
+  color: white !important;
+}
+
+.btn-popular:hover * {
+  color: white !important;
+  fill: white !important;
+}
+
+.btn-popular:hover svg path {
+  fill: white !important;
+  stroke: white !important;
+}
+
+.populer-link:hover {
+  color: var(--color-warning) !important;
+  opacity: 0.8;
 }
 
 /* Form Elements */
@@ -171,7 +208,13 @@ a:hover {
 /* Responsive Grid */
 .grid {
   display: grid;
-  gap: var(--spacing-lg);
+  gap: 1.5rem;
+}
+
+@media (max-width: 767px) {
+  .grid {
+    gap: 2.5rem; /* Jarak jauh lebih besar di mobile */
+  }
 }
 
 .grid-cols-1 { grid-template-columns: repeat(1, 1fr); }

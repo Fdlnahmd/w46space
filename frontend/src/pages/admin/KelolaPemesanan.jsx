@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getPemesanan, updateStatusPemesanan, deletePemesanan } from '../../services/apiService';
-import { Trash2, Eye } from 'lucide-react';
+import { Trash2, Eye, Search, Filter } from 'lucide-react';
+import Modal from '../../components/Modal';
 
-const statusOptions = ['Pending', 'Dikonfirmasi', 'Selesai', 'Dibatalkan'];
+const statusOptions = ['Semua', 'Pending', 'Dikonfirmasi', 'Selesai', 'Dibatalkan'];
 
 const getStatusStyle = (status) => {
   switch (status) {
@@ -21,14 +22,26 @@ const formatDate = (dateString) => {
 
 const KelolaPemesanan = () => {
   const [pemesanan, setPemesanan] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Semua');
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
 
-  const loadData = () => getPemesanan().then(data => setPemesanan(data));
+  const loadData = () => {
+    getPemesanan().then(data => {
+      setPemesanan(data);
+    }).catch(err => {
+      console.error('Error fetching bookings:', err);
+    });
+  };
 
   useEffect(() => { loadData(); }, []);
 
-  const handleDelete = (id) => {
-    if (window.confirm('Hapus pemesanan ini secara permanen?')) {
-      deletePemesanan(id).then(() => loadData());
+  const handleDelete = () => {
+    if (deleteModal.id) {
+      deletePemesanan(deleteModal.id).then(() => {
+        loadData();
+        setDeleteModal({ isOpen: false, id: null });
+      });
     }
   };
 
@@ -36,10 +49,61 @@ const KelolaPemesanan = () => {
     updateStatusPemesanan(id, newStatus).then(() => loadData());
   };
 
+  // Logika Filter
+  const filteredData = pemesanan.filter(item => {
+    const matchSearch = (item.nama_pemesan || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                       (item.office?.nama || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       (item.perusahaan || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchStatus = statusFilter === 'Semua' || item.status === statusFilter;
+
+    return matchSearch && matchStatus;
+  });
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1>Kelola Pemesanan</h1>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: '250px' }}>
+          <Search size={18} color="var(--color-text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+          <input 
+            type="text" 
+            placeholder="Cari pemesan, perusahaan, atau ruangan..." 
+            className="form-control"
+            style={{ paddingLeft: '2.75rem' }}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+            <Filter size={18} /> Filter Status:
+          </div>
+          <select 
+            className="form-control" 
+            style={{ width: 'auto', minWidth: '150px' }}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            {statusOptions.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+        
+        {(searchTerm || statusFilter !== 'Semua') && (
+          <button 
+            onClick={() => { setSearchTerm(''); setStatusFilter('Semua'); }}
+            style={{ border: 'none', background: 'none', color: 'var(--color-primary)', fontWeight: 600, cursor: 'pointer' }}
+          >
+            Reset Filter
+          </button>
+        )}
       </div>
 
       <div className="card" style={{ overflowX: 'auto' }}>
@@ -57,7 +121,7 @@ const KelolaPemesanan = () => {
             </tr>
           </thead>
           <tbody>
-            {pemesanan.map(item => (
+            {filteredData.map(item => (
               <tr key={item.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
 
                 {/* ID */}
@@ -110,7 +174,7 @@ const KelolaPemesanan = () => {
                       ...getStatusStyle(item.status)
                     }}
                   >
-                    {statusOptions.map(s => (
+                    {statusOptions.filter(s => s !== 'Semua').map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
@@ -129,7 +193,7 @@ const KelolaPemesanan = () => {
                     </Link>
                     {/* Hapus */}
                     <button
-                      onClick={() => handleDelete(item.id)}
+                      onClick={() => setDeleteModal({ isOpen: true, id: item.id })}
                       className="btn btn-danger"
                       style={{ padding: '0.4rem 0.6rem', borderRadius: '6px' }}
                     >
@@ -139,16 +203,26 @@ const KelolaPemesanan = () => {
                 </td>
               </tr>
             ))}
-            {pemesanan.length === 0 && (
+            {filteredData.length === 0 && (
               <tr>
                 <td colSpan="8" style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                  Belum ada data pemesanan.
+                  {searchTerm || statusFilter !== 'Semua' ? 'Tidak ada data yang cocok dengan filter Anda.' : 'Belum ada data pemesanan.'}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      <Modal 
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null })}
+        onConfirm={handleDelete}
+        type="danger"
+        title="Konfirmasi Hapus"
+        message="Apakah Anda yakin ingin menghapus pemesanan ini secara permanen? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Ya, Hapus"
+      />
     </div>
   );
 };

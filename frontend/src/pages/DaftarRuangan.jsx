@@ -6,23 +6,36 @@ import { Search, Users, Filter } from 'lucide-react';
 const DaftarRuangan = () => {
   const [ruangan, setRuangan] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Semua');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     getRuangan().then(data => setRuangan(data));
   }, []);
 
-  const filteredRuangan = ruangan.filter(r => 
-    r.nama.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const categories = ['Semua', 'Office', 'Private Office', 'Meeting Room', 'Coworking Space', 'Creative Space'];
+
+  const filteredRuangan = ruangan.filter(r => {
+    const matchSearch = r.nama.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchCategory = selectedCategory === 'Semua' || r.kategori === selectedCategory;
+    return matchSearch && matchCategory;
+  });
 
   return (
     <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh', padding: '2rem 0' }}>
       <div className="container">
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem', textAlign: 'center', color: 'var(--color-text-main)' }}>Daftar Ruangan</h1>
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <h1 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>
+            Daftar Ruangan
+          </h1>
+          <p style={{ color: 'var(--color-text-muted)' }}>
+            Temukan ruang kerja terbaik yang sesuai dengan kebutuhan profesional Anda.
+          </p>
+        </div>
         
-        {/* Search Bar */}
-        <div className="search-bar" style={{ backgroundColor: 'var(--color-surface)', padding: '1rem', borderRadius: 'var(--border-radius-lg)', boxShadow: 'var(--box-shadow)', marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
-          <div style={{ flex: 1, position: 'relative' }}>
+        {/* Search & Filter Bar */}
+        <div style={{ backgroundColor: 'var(--color-surface)', padding: '1.25rem', borderRadius: 'var(--border-radius-lg)', boxShadow: 'var(--box-shadow)', marginBottom: '2.5rem' }}>
+          <div style={{ position: 'relative', width: '100%' }}>
             <Search size={20} color="var(--color-text-muted)" style={{ position: 'absolute', top: '50%', left: '1rem', transform: 'translateY(-50%)' }} />
             <input 
               type="text" 
@@ -33,16 +46,37 @@ const DaftarRuangan = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="btn btn-outline" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <Filter size={18} /> Filter
-          </button>
+
+          {/* Category Filter Chips (Always Visible) */}
+          <div style={{ 
+            marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid var(--color-border)',
+            display: 'flex', gap: '0.6rem', flexWrap: 'wrap' 
+          }}>
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                style={{
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  border: '1px solid',
+                  borderColor: selectedCategory === cat ? 'var(--color-primary)' : 'var(--color-border)',
+                  backgroundColor: selectedCategory === cat ? 'var(--color-primary)' : 'white',
+                  color: selectedCategory === cat ? 'white' : 'var(--color-text-main)',
+                }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
         <style>{`
           @media (max-width: 640px) {
-            .search-bar { 
-              flex-direction: column !important; 
-            }
             h1 { font-size: 1.75rem !important; }
           }
         `}</style>
@@ -55,6 +89,15 @@ const DaftarRuangan = () => {
                 <img src={item.gambar} alt={item.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ padding: '1.5rem' }}>
+                {item.kategori && (
+                  <span style={{ 
+                    fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-primary)', 
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)', padding: '0.2rem 0.6rem', 
+                    borderRadius: '4px', marginBottom: '0.5rem', display: 'inline-block' 
+                  }}>
+                    {item.kategori}
+                  </span>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{item.nama}</h3>
                   <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`}>
