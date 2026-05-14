@@ -29,7 +29,7 @@ const Home = () => {
             Temukan Ruang Kerja <br /> Impian Anda
           </h1>
           <p style={{ fontSize: '1.2rem', marginBottom: '2.5rem', opacity: 0.9, maxWidth: '600px', margin: '0 auto 2.5rem' }}>
-            Sewa **Office**, **Meeting Room**, atau **Coworking Space** dengan mudah, cepat, dan fleksibel.
+            Sewa Office, Meeting Room, atau Coworking Space dengan mudah, cepat, dan fleksibel.
           </p>
           <Link to="/ruangan" className="btn" style={{
             backgroundColor: 'white',

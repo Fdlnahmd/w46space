@@ -74,7 +74,10 @@ const Navbar = () => {
               </button>
             </div>
           ) : (
-            <Link to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1.25rem' }}>Login</Link>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <Link to="/login" className="btn btn-outline" style={{ padding: '0.5rem 1.25rem' }}>Masuk</Link>
+              <Link to="/register" className="btn btn-primary" style={{ padding: '0.5rem 1.25rem' }}>Daftar</Link>
+            </div>
           )}
         </div>
 
