@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('harga', 15, 2);
             $table->json('fasilitas')->nullable();
             $table->text('deskripsi')->nullable();
-            $table->string('gambar')->nullable();
+            $table->text('gambar')->nullable();
             $table->string('status')->default('Tersedia'); // Tersedia, Penuh, Maintenance
             $table->timestamps();
         });

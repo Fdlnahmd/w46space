@@ -18,11 +18,13 @@ class Office extends Model
         'deskripsi',
         'gambar',
         'status',
+        'is_popular',
     ];
 
     protected $casts = [
         'fasilitas' => 'array',
         'harga' => 'float',
+        'is_popular' => 'boolean',
     ];
 
     public function bookings()
