@@ -27,7 +27,16 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-background)', padding: '1rem' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-background)', padding: '1rem', position: 'relative' }}>
+      {/* Tombol Back ke Landing Page */}
+      <Link to="/" style={{ 
+        position: 'absolute', top: '2rem', left: '2rem', 
+        display: 'flex', alignItems: 'center', gap: '0.5rem', 
+        color: 'var(--color-text-muted)', fontWeight: 500, textDecoration: 'none' 
+      }}>
+        <ArrowLeft size={18} /> Kembali ke Beranda
+      </Link>
+
       <div className="card" style={{ padding: '3rem', width: '100%', maxWidth: '450px' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ display: 'inline-flex', padding: '1rem', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderRadius: '50%', marginBottom: '1.5rem' }}>

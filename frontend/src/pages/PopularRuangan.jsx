@@ -1,18 +1,31 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getRuangan } from '../services/apiService';
-import { Users, Star, ArrowLeft } from 'lucide-react';
+import { Users, Star, ArrowLeft, AlertCircle, RefreshCw } from 'lucide-react';
+import SkeletonLoader from '../components/SkeletonLoader';
 
 const PopularRuangan = () => {
   const [ruangan, setRuangan] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    getRuangan().then(data => {
+  const fetchData = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const data = await getRuangan();
       const popular = data.filter(r => r.is_popular === true || r.is_popular === 1 || r.is_popular === "1");
       setRuangan(popular);
+    } catch (err) {
+      console.error(err);
+      setError(true);
+    } finally {
       setLoading(false);
-    });
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
   return (
@@ -34,7 +47,16 @@ const PopularRuangan = () => {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '4rem' }}>Memuat ruangan populer...</div>
+          <SkeletonLoader type="card" count={3} />
+        ) : error ? (
+          <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--color-danger)' }}>
+            <AlertCircle size={48} style={{ marginBottom: '1rem' }} />
+            <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Gagal memuat ruangan populer</h3>
+            <p>Silakan coba kembali dalam beberapa saat.</p>
+            <button onClick={fetchData} className="btn btn-primary" style={{ marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              <RefreshCw size={18} /> Coba Lagi
+            </button>
+          </div>
         ) : (
           <>
             <div className="grid md:grid-cols-2 lg:grid-cols-3">
@@ -54,19 +76,28 @@ const PopularRuangan = () => {
                   <div style={{ padding: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                       <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{item.nama}</h3>
-                      <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`}>
-                        {item.status}
-                      </span>
+                      {item.is_booked ? (
+                        <span className="badge badge-danger">Penuh</span>
+                      ) : (
+                        <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`}>
+                          {item.status}
+                        </span>
+                      )}
                     </div>
                     
                     <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1rem', height: '40px', overflow: 'hidden' }}>
                       {item.deskripsi}
                     </p>
 
-                    <div style={{ display: 'flex', gap: '1rem', color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', color: 'var(--color-text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                         <Users size={16} /> {item.kapasitas} orang
                       </span>
+                      {item.is_booked && item.booked_until && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-danger)', fontWeight: 500 }}>
+                          <AlertCircle size={14} /> Tersedia: {new Date(item.booked_until).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}
+                        </span>
+                      )}
                     </div>
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
@@ -77,7 +108,7 @@ const PopularRuangan = () => {
                         </p>
                       </div>
                       <Link to={`/ruangan/${item.id}`} className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>
-                        Detail
+                        Lihat Detail
                       </Link>
                     </div>
                   </div>
@@ -86,8 +117,11 @@ const PopularRuangan = () => {
             </div>
             
             {ruangan.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '4rem', backgroundColor: 'var(--color-surface)', borderRadius: 'var(--border-radius-lg)' }}>
-                <h3>Belum ada ruangan populer.</h3>
+              <div style={{ textAlign: 'center', padding: '4rem', backgroundColor: 'var(--color-surface)', borderRadius: 'var(--border-radius-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ backgroundColor: '#f1f5f9', padding: '2rem', borderRadius: '50%', marginBottom: '1.5rem' }}>
+                  <Star size={64} color="var(--color-text-muted)" />
+                </div>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Belum ada ruangan populer</h3>
                 <p style={{ color: 'var(--color-text-muted)' }}>Admin belum menandai ruangan manapun sebagai populer.</p>
                 <Link to="/ruangan" className="btn btn-outline" style={{ marginTop: '1.5rem' }}>Lihat Semua Ruangan</Link>
               </div>

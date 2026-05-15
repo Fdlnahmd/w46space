@@ -63,7 +63,7 @@ const Navbar = () => {
               )}
               {user.role === 'admin' && (
                 <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-primary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  <Calendar size={18} /> Admin Panel
+                  <Calendar size={18} /> Panel Admin
                 </Link>
               )}
               <Link to="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#f1f5f9', padding: '0.4rem 0.8rem', borderRadius: '20px', color: 'var(--color-text-main)', fontWeight: 500 }}>
@@ -115,7 +115,7 @@ const Navbar = () => {
               )}
               {user.role === 'admin' && (
                 <Link to="/admin" onClick={closeMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', fontWeight: 600 }}>
-                  <Calendar size={20} /> Admin Panel
+                  <Calendar size={20} /> Panel Admin
                 </Link>
               )}
               <Link to="/profile" onClick={closeMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', fontWeight: 600 }}>

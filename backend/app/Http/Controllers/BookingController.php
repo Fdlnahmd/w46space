@@ -20,10 +20,18 @@ class BookingController extends Controller
 
     public function show($id)
     {
+        $user = Auth::user();
         $booking = Booking::with('office')->find($id);
+
         if (!$booking) {
             return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
         }
+
+        // Cek kepemilikan (Kecuali Admin)
+        if (strtolower($user->role) !== 'admin' && $booking->user_id !== $user->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses ke pesanan ini'], 403);
+        }
+
         return response()->json($booking);
     }
 
@@ -41,9 +49,26 @@ class BookingController extends Controller
             'total_harga'    => 'required|numeric',
         ]);
 
+        // CEK DOUBLE BOOKING (Poin 11)
+        // Karena ini sewa bulanan, kita cek tumpang tindih rentang tanggal secara eksklusif.
+        // Rumus: (StartA <= EndB) AND (EndA >= StartB)
+        $bentrok = Booking::where('office_id', $validated['id_ruangan'])
+            ->where('status', '!=', 'Dibatalkan')
+            ->where(function ($query) use ($validated) {
+                $query->where('tanggal_mulai', '<=', $validated['tanggal_akhir'])
+                      ->where('tanggal_akhir', '>=', $validated['tanggal_mulai']);
+            })
+            ->exists();
+
+        if ($bentrok) {
+            return response()->json([
+                'message' => 'Ruangan sudah dipesan pada tanggal dan jam tersebut. Silakan pilih waktu lain.'
+            ], 422);
+        }
+
         $booking = Booking::create([
-            'office_id'     => $validated['id_ruangan'],
-            'user_id'       => Auth::id(),
+            'office_id'      => $validated['id_ruangan'],
+            'user_id'        => Auth::id(),
             'nama_pemesan'   => $validated['nama_pemesan'],
             'perusahaan'     => $validated['perusahaan'],
             'tanggal_mulai'  => $validated['tanggal_mulai'],
@@ -60,15 +85,20 @@ class BookingController extends Controller
 
     public function update(Request $request, $id)
     {
+        $user = Auth::user();
         $booking = Booking::find($id);
+
         if (!$booking) {
             return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
         }
 
-        // Map keys if needed
+        // Hanya admin yang bisa update detail pesanan lewat sini (biasanya status)
+        if (strtolower($user->role) !== 'admin' && $booking->user_id !== $user->id) {
+            return response()->json(['message' => 'Akses ditolak'], 403);
+        }
+
         $data = $request->all();
         if (isset($data['id_ruangan']))  $data['office_id'] = $data['id_ruangan'];
-        if (isset($data['id_user']))     $data['user_id'] = $data['id_user'];
         
         $booking->update($data);
         return response()->json($booking);
@@ -85,8 +115,14 @@ class BookingController extends Controller
 
     public function destroy($id)
     {
+        $user = Auth::user();
         $booking = Booking::find($id);
+
         if ($booking) {
+            // Cek kepemilikan sebelum hapus
+            if (strtolower($user->role) !== 'admin' && $booking->user_id !== $user->id) {
+                return response()->json(['message' => 'Akses ditolak'], 403);
+            }
             $booking->delete();
         }
         return response()->json(['message' => 'Pesanan berhasil dihapus']);

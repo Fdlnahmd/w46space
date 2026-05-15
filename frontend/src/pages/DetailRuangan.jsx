@@ -139,6 +139,27 @@ const DetailRuangan = () => {
       );
     }
 
+    // Ruangan sedang dipesan (Penuh)
+    if (ruangan.is_booked) {
+      return (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
+          textAlign: 'center', padding: '2rem',
+          backgroundColor: '#fef2f2', border: '1px solid #fee2e2',
+          borderRadius: 'var(--border-radius)'
+        }}>
+          <ShieldAlert size={48} color="var(--color-danger)" />
+          <h3 style={{ color: '#991b1b' }}>Ruangan Sedang Penuh</h3>
+          <p style={{ color: '#b91c1c' }}>
+            Maaf, ruangan ini sudah memiliki penyewa aktif hingga tanggal <strong>{new Date(ruangan.booked_until).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
+          </p>
+          <button onClick={() => navigate('/ruangan')} className="btn btn-outline" style={{ marginTop: '0.5rem', borderColor: '#ef4444', color: '#b91c1c' }}>
+            Cari Ruangan Lain
+          </button>
+        </div>
+      );
+    }
+
     // User biasa — form booking
     const totalHarga = hitungTotal();
     const tanggalAkhirPreview = formData.tanggalMulai
@@ -280,9 +301,15 @@ const DetailRuangan = () => {
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>{ruangan.nama}</h1>
-                  <span className={`badge ${ruangan.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
-                    {ruangan.status}
-                  </span>
+                  {ruangan.is_booked ? (
+                    <span className="badge badge-danger" style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
+                      Penuh
+                    </span>
+                  ) : (
+                    <span className={`badge ${ruangan.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
+                      {ruangan.status}
+                    </span>
+                  )}
                 </div>
                 <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-primary)' }}>
                   Rp {ruangan.harga.toLocaleString('id-ID')}

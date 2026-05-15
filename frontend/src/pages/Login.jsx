@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogIn } from 'lucide-react';
+import { LogIn, ArrowLeft } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -18,12 +18,21 @@ const Login = () => {
       // Semua role (admin & user) diarahkan ke beranda setelah login
       navigate('/');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Terjadi kesalahan saat login');
     }
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-background)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-background)', position: 'relative' }}>
+      {/* Tombol Back ke Landing Page */}
+      <Link to="/" style={{ 
+        position: 'absolute', top: '2rem', left: '2rem', 
+        display: 'flex', alignItems: 'center', gap: '0.5rem', 
+        color: 'var(--color-text-muted)', fontWeight: 500, textDecoration: 'none' 
+      }}>
+        <ArrowLeft size={18} /> Kembali ke Beranda
+      </Link>
+
       <div className="card" style={{ padding: '3rem', width: '100%', maxWidth: '400px' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ display: 'inline-flex', padding: '1rem', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderRadius: '50%', marginBottom: '1rem' }}>

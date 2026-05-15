@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, ArrowLeft } from 'lucide-react';
 
 const Register = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -20,12 +20,21 @@ const Register = () => {
       await register(formData);
       navigate('/'); // Redirect to home after successful registration/login
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Terjadi kesalahan saat registrasi');
     }
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-background)', padding: '2rem 0' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-background)', padding: '2rem 0', position: 'relative' }}>
+      {/* Tombol Back ke Landing Page */}
+      <Link to="/" style={{ 
+        position: 'absolute', top: '2rem', left: '2rem', 
+        display: 'flex', alignItems: 'center', gap: '0.5rem', 
+        color: 'var(--color-text-muted)', fontWeight: 500, textDecoration: 'none' 
+      }}>
+        <ArrowLeft size={18} /> Kembali ke Beranda
+      </Link>
+
       <div className="card" style={{ padding: '3rem', width: '100%', maxWidth: '450px' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ display: 'inline-flex', padding: '1rem', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderRadius: '50%', marginBottom: '1rem' }}>

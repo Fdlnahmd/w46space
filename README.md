@@ -78,11 +78,11 @@ Pastikan Anda sudah menginstal **Docker Desktop**, **Docker Compose**, dan **WSL
 
 ### Use Case Diagram
 
-![Use Case Diagram](docs/usecase%20diagram.png)
+![Use Case Diagram](docs/Usecase%20Diagram.png)
 
 ### Flowchart: Alur Pemesanan
 
-![Flowchart Alur Pemesanan](docs/flowchart%20office-rent.png)
+![Flowchart Alur Pemesanan](docs/Flowchart%20Diagram.png)
 
 Detail lebih lanjut mengenai arsitektur dapat dilihat pada dokumentasi internal:
 👉 `docs/diagram_arsitektur.md`

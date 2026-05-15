@@ -18,6 +18,7 @@ import DetailPesanan from './pages/DetailPesanan';
 import Profile from './pages/Profile';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import NotFound from './pages/NotFound';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -82,6 +83,9 @@ function App() {
               <Route path="pemesanan/edit/:id" element={<FormPemesanan />} />
             </Route>
           </Route>
+
+          {/* Catch-all route for 404 */}
+          <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
         </Routes>
       </Router>
     </AuthProvider>

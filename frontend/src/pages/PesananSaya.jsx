@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPemesananByUser, batalkanPemesanan } from '../services/apiService';
-import { ClipboardList, XCircle, CheckCircle, Building, Eye, Hourglass, BadgeCheck, AlertCircle } from 'lucide-react';
+import { ClipboardList, XCircle, CheckCircle, Building, Eye, Hourglass, BadgeCheck, AlertCircle, RefreshCw } from 'lucide-react';
+import SkeletonLoader from '../components/SkeletonLoader';
 
 const statusConfig = {
   Pending:      { class: 'badge-warning', Icon: Hourglass,   label: 'Menunggu Konfirmasi' },
@@ -15,19 +16,21 @@ const PesananSaya = () => {
   const { user } = useAuth();
   const [pesananList, setPesananList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const loadData = useCallback((showLoading = true) => {
+  const loadData = useCallback(async (showLoading = true) => {
     if (user) {
       if (showLoading) setLoading(true);
-      getPemesananByUser()
-        .then(data => {
-          setPesananList(data);
-          setLoading(false);
-        })
-        .catch(err => {
-          console.error('Error fetching user bookings:', err);
-          setLoading(false);
-        });
+      setError(false);
+      try {
+        const data = await getPemesananByUser();
+        setPesananList(data);
+      } catch (err) {
+        console.error('Error fetching user bookings:', err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
     } else {
       setLoading(false);
     }
@@ -78,12 +81,21 @@ const PesananSaya = () => {
 
         {/* Konten */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--color-text-muted)' }}>
-            Memuat data...
+          <SkeletonLoader type="row" count={4} />
+        ) : error ? (
+          <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--color-danger)' }}>
+            <AlertCircle size={48} style={{ marginBottom: '1rem' }} />
+            <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Gagal memuat pesanan Anda</h3>
+            <p>Pastikan koneksi internet Anda stabil dan coba lagi.</p>
+            <button onClick={() => loadData()} className="btn btn-primary" style={{ marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              <RefreshCw size={18} /> Coba Lagi
+            </button>
           </div>
         ) : pesananList.length === 0 ? (
-          <div className="card" style={{ padding: '4rem', textAlign: 'center' }}>
-            <Building size={56} color="var(--color-border)" style={{ marginBottom: '1rem' }} />
+          <div className="card" style={{ padding: '4rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ backgroundColor: '#f1f5f9', padding: '2rem', borderRadius: '50%', marginBottom: '1.5rem' }}>
+              <ClipboardList size={64} color="var(--color-text-muted)" />
+            </div>
             <h3 style={{ marginBottom: '0.5rem' }}>Belum ada pesanan</h3>
             <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
               Anda belum pernah melakukan pemesanan ruangan.
