@@ -13,7 +13,8 @@
 - **Pencarian & Filter**: Cari ruangan berdasarkan nama atau filter berdasarkan kategori (Office, Coworking, dll).
 - **Booking System**: Pesan ruangan secara langsung dengan pengisian data yang mudah.
 - **Riwayat Pesanan**: Pantau status dan detail pesanan yang telah dilakukan.
-- **Profil Kustom**: Kelola data diri dan Password pengguna.
+- **Profil Kustom**: Kelola data diri dan password pengguna.
+- **Lupa Password**: Fitur atur ulang kata sandi yang aman melalui integrasi verifikasi email (SMTP).
 
 ### 🔐 Untuk Admin
 
@@ -58,6 +59,9 @@ Pastikan Anda sudah menginstal **Docker Desktop**, **Docker Compose**, dan **WSL
     ```bash
     docker-compose exec backend php artisan migrate:fresh --seed
     ```
+
+    > [!TIP]
+    > Untuk mengaktifkan fitur **Lupa Password**, pastikan Anda telah mengonfigurasi `MAIL_USERNAME` dan `MAIL_PASSWORD` di file `.env` menggunakan akun SMTP (seperti Gmail App Password).
 
 4.  **Akses Aplikasi**
     - **Frontend**: [http://localhost:5173](http://localhost:5173)

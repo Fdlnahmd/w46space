@@ -26,18 +26,19 @@ class AppServiceProvider extends ServiceProvider
             return config('app.url') . '/reset-password?token=' . $token . '&email=' . $notifiable->getEmailForPasswordReset();
         });
 
-        // Kustomisasi Isi Email Reset Password
+        // Kustomisasi Isi Email Reset Password (Tema Sewa Ruang)
         ResetPassword::toMailUsing(function (object $notifiable, string $token) {
             $url = config('app.url') . '/reset-password?token=' . $token . '&email=' . $notifiable->getEmailForPasswordReset();
 
             return (new \Illuminate\Notifications\Messages\MailMessage)
-                ->subject('Atur Ulang Kata Sandi - ' . config('app.name'))
+                ->subject('[' . config('app.name') . '] Permintaan Atur Ulang Kata Sandi')
                 ->greeting('Halo, ' . $notifiable->name . '!')
-                ->line('Anda menerima email ini karena kami menerima permintaan atur ulang kata sandi untuk akun Anda.')
+                ->line('Kami menerima permintaan untuk mengatur ulang kata sandi akun Anda di platform **Sewa Ruang**.')
+                ->line('Silakan klik tombol di bawah ini untuk melanjutkan proses pembaruan kata sandi:')
                 ->action('Atur Ulang Kata Sandi', $url)
-                ->line('Tautan atur ulang kata sandi ini akan kedaluwarsa dalam 60 menit.')
-                ->line('Jika Anda tidak merasa melakukan permintaan ini, abaikan saja email ini.')
-                ->salutation('Salam hangat, ' . config('app.name'));
+                ->line('Tautan ini hanya berlaku selama **60 menit** demi keamanan akun Anda.')
+                ->line('Jika Anda tidak merasa melakukan permintaan ini, abaikan saja email ini. Keamanan akun Anda tetap terjaga selama tautan tidak diklik.')
+                ->salutation("Terima kasih,\nTim " . config('app.name'));
         });
     }
 }
