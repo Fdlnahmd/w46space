@@ -166,7 +166,7 @@ const PesananSaya = () => {
                     </div>
 
                     {/* Footer: harga + aksi */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
+                    <div className="order-card-footer">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <AlertCircle size={18} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
                         <div>
@@ -177,7 +177,7 @@ const PesananSaya = () => {
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                      <div className="order-actions-group">
                         {/* Tombol utama: Lihat Detail Pesanan */}
                         <Link
                           to={`/pesanan-saya/${item.id}`}
@@ -204,16 +204,16 @@ const PesananSaya = () => {
                           </button>
                         )}
 
-                        {/* Perpanjang — Jika Dikonfirmasi atau Selesai */}
+                        {/* Tombol Beri Ulasan & Perpanjang — Jika Dikonfirmasi atau Selesai */}
                         {(item.status === 'Dikonfirmasi' || item.status === 'Selesai') && (
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <>
                             <Link
                               to={`/ruangan/${item.office_id}#reviews`}
                               className="btn btn-outline"
                               style={{ 
                                 padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
                                 display: 'flex', alignItems: 'center', gap: '0.35rem',
-                                borderColor: 'var(--color-warning)', color: 'var(--color-warning)'
+                                borderColor: '#f59e0b', color: '#f59e0b'
                               }}
                             >
                               <Star size={15} /> Beri Ulasan
@@ -224,12 +224,12 @@ const PesananSaya = () => {
                               style={{ 
                                 padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
                                 display: 'flex', alignItems: 'center', gap: '0.35rem',
-                                borderColor: 'var(--color-primary)', color: 'var(--color-primary)'
+                                borderColor: '#2563eb', color: '#2563eb'
                               }}
                             >
                               <RefreshCw size={15} /> Perpanjang
                             </Link>
-                          </div>
+                          </>
                         )}
 
                         {/* Batalkan — hanya jika Pending */}
@@ -250,6 +250,57 @@ const PesananSaya = () => {
             ))}
           </div>
         )}
+      <style>{`
+        .order-card-footer {
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          gap: 1rem !important;
+          border-top: 1px solid var(--color-border) !important;
+          padding-top: 1rem !important;
+          margin-top: 1rem !important;
+        }
+        .order-actions-group {
+          display: flex !important;
+          gap: 0.5rem !important;
+          align-items: center !important;
+          flex-wrap: wrap !important;
+          justify-content: flex-end !important;
+        }
+        .order-actions-group .btn, 
+        .order-actions-group a.btn {
+          white-space: nowrap !important;
+        }
+        @media (max-width: 768px) {
+          .order-card-footer {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 1.25rem !important;
+          }
+          .order-actions-group {
+            justify-content: stretch !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.5rem !important;
+          }
+          .order-actions-group > * {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+          /* Tombol 'Lihat Detail' biar full width sendiri di atas kalau perlu */
+          .order-actions-group a:first-child {
+            grid-column: span 2 !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .order-actions-group {
+            grid-template-columns: 1fr !important;
+          }
+          .order-actions-group a:first-child {
+            grid-column: span 1 !important;
+          }
+        }
+      `}</style>
       </div>
     </div>
   );
