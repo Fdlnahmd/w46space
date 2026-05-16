@@ -23,8 +23,9 @@ const PesananSaya = () => {
       if (showLoading) setLoading(true);
       setError(false);
       try {
-        const data = await getPemesananByUser();
-        setPesananList(data);
+        const res = await getPemesananByUser();
+        // Handle paginated response: { data: [...] }
+        setPesananList(res.data || []);
       } catch (err) {
         console.error('Error fetching user bookings:', err);
         setError(true);
@@ -193,10 +194,13 @@ const PesananSaya = () => {
                               window.open(getInvoiceUrl(item.id), '_blank');
                             }}
                             className="btn btn-outline"
-                            title="Download Invoice"
-                            style={{ padding: '0.45rem', minWidth: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            style={{ 
+                              padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
+                              display: 'flex', alignItems: 'center', gap: '0.35rem',
+                              borderColor: '#2563eb', color: '#2563eb'
+                            }}
                           >
-                            <Printer size={15} />
+                            <Printer size={15} /> Invoice
                           </button>
                         )}
 

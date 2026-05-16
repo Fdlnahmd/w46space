@@ -10,18 +10,20 @@
 
 - **Daftar Ruangan**: Telusuri berbagai jenis ruangan dengan kategori yang lengkap.
 - **Ruangan Populer**: Akses cepat ke ruangan-ruangan terbaik yang paling banyak diminati.
-- **Pencarian & Filter**: Cari ruangan berdasarkan nama atau filter berdasarkan kategori (Office, Coworking, dll).
-- **Booking System**: Pesan ruangan secara langsung dengan pengisian data yang mudah.
-- **Riwayat Pesanan**: Pantau status dan detail pesanan yang telah dilakukan.
-- **Profil Kustom**: Kelola data diri dan password pengguna.
-- **Lupa Password**: Fitur atur ulang kata sandi yang aman melalui integrasi verifikasi email (SMTP).
+- **Booking System & Addons**: Pesan ruangan dengan opsi fasilitas tambahan (WiFi, Kopi, dll).
+- **Promo & Kupon**: Gunakan kode diskon (persentase/nominal) untuk harga lebih hemat.
+- **Riwayat & Invoice**: Pantau status pesanan dan unduh invoice resmi dalam format PDF.
+- **Perpanjang Kontrak**: Fitur sekali klik untuk memperpanjang masa sewa ruangan.
+- **Ulasan & Rating**: Berikan testimoni dan bintang setelah pesanan dikonfirmasi.
+- **Profil & Keamanan**: Kelola data diri dan fitur lupa password via SMTP.
 
 ### 🔐 Untuk Admin
 
-- **Dashboard Statistik**: Pantau ringkasan data ruangan dan pemesanan.
-- **Manajemen Ruangan**: Tambah, edit, dan hapus data ruangan (CRUD).
-- **Manajemen Pemesanan**: Kelola dan lihat detail semua pesanan yang masuk dari pengguna.
-- **Kontrol Status**: Atur ketersediaan ruangan secara _real-time_.
+- **Robust Dashboard**: Statistik pendapatan, jumlah pesanan, dan ruangan secara real-time.
+- **Manajemen Ruangan**: Tambah, edit, dan hapus data ruangan (CRUD) beserta gambar.
+- **Manajemen Pemesanan**: Kelola alur konfirmasi dan pembatalan pesanan secara efisien.
+- **Sistem Kupon**: Buat dan kelola kode promo dengan limit penggunaan dan tanggal kadaluarsa.
+- **Moderasi Ulasan**: Kontrol testimoni pengguna untuk menjaga kualitas platform.
 
 ---
 

@@ -123,8 +123,9 @@ const DetailRuangan = () => {
     if (!couponCode) return;
     setCouponError('');
     try {
-      const data = await checkCoupon(couponCode);
-      setCouponData(data);
+      const res = await checkCoupon(couponCode);
+      // Backend returns { message: '...', coupon: { ... } }
+      setCouponData(res.coupon || res); 
     } catch (err) {
       setCouponData(null);
       setCouponError(err.response?.data?.message || 'Kupon tidak valid');
@@ -140,24 +141,28 @@ const DetailRuangan = () => {
   // Hitung total harga: (harga/hari * 26 * durasi) + addons - discount
   const hitungTotal = () => {
     if (!ruangan) return 0;
-    const basePrice = ruangan.harga * 26 * parseInt(formData.durasi);
+    
+    const hrg = Number(ruangan.harga || 0);
+    const dur = parseInt(formData.durasi || 1);
+    const basePrice = hrg * 26 * dur;
     
     // Addons
-    const addonsTotal = availableAddons
-      .filter(a => selectedAddons.includes(a.id))
-      .reduce((sum, a) => sum + a.harga, 0);
+    const addonsTotal = (availableAddons || [])
+      .filter(a => (selectedAddons || []).includes(a.id))
+      .reduce((sum, a) => sum + Number(a.harga || 0), 0);
       
     // Discount
     let discount = 0;
     if (couponData) {
       if (couponData.type === 'percentage') {
-        discount = (basePrice * couponData.value) / 100;
+        discount = (basePrice * Number(couponData.value || 0)) / 100;
       } else {
-        discount = couponData.value;
+        discount = Number(couponData.value || 0);
       }
     }
     
-    return basePrice + addonsTotal - discount;
+    const total = basePrice + addonsTotal - discount;
+    return isNaN(total) ? 0 : total;
   };
 
   const handleBooking = async (e) => {
@@ -381,7 +386,7 @@ const DetailRuangan = () => {
               <Ticket size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
               <input
                 type="text" className="form-control"
-                placeholder="Masukkan kode (misal: OFFICE10)"
+                placeholder="Masukkan kode (misal: KUPONSAYA)"
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                 style={{ paddingLeft: '2.5rem' }}
@@ -451,27 +456,27 @@ const DetailRuangan = () => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
               <span>Harga Ruangan ({formData.durasi} bln):</span>
-              <span>Rp {(ruangan.harga * 26 * formData.durasi).toLocaleString('id-ID')}</span>
+              <span>Rp {(Number(ruangan?.harga ?? 0) * 26 * formData.durasi).toLocaleString('id-ID')}</span>
             </div>
             
             {selectedAddons.length > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
                 <span>Fasilitas Tambahan:</span>
-                <span>+ Rp {availableAddons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.harga, 0).toLocaleString('id-ID')}</span>
+                <span>+ Rp {Number(availableAddons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.harga, 0) ?? 0).toLocaleString('id-ID')}</span>
               </div>
             )}
 
             {couponData && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--color-success)' }}>
                 <span>Diskon Kupon ({couponData.code}):</span>
-                <span>- Rp {(couponData.type === 'percentage' ? (ruangan.harga * 26 * formData.durasi * couponData.value / 100) : couponData.value).toLocaleString('id-ID')}</span>
+                <span>- Rp {Number(couponData.type === 'percentage' ? (Number(ruangan?.harga ?? 0) * 26 * formData.durasi * couponData.value / 100) : couponData.value).toLocaleString('id-ID')}</span>
               </div>
             )}
 
             <div style={{ borderTop: '1px solid var(--color-border)', marginTop: '0.75rem', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontWeight: 600 }}>Total Pembayaran:</span>
               <span style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.4rem' }}>
-                Rp {totalHarga.toLocaleString('id-ID')}
+                Rp {Number(totalHarga ?? 0).toLocaleString('id-ID')}
               </span>
             </div>
           </div>
@@ -530,7 +535,7 @@ const DetailRuangan = () => {
                   )}
                 </div>
                 <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-primary)' }}>
-                  Rp {ruangan.harga.toLocaleString('id-ID')}
+                  Rp {Number(ruangan?.harga ?? 0).toLocaleString('id-ID')}
                   <span style={{ fontSize: '1rem', color: 'var(--color-text-muted)', fontWeight: 400 }}> /hari</span>
                 </p>
                 <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.6 }}>{ruangan.deskripsi}</p>

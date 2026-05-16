@@ -32,9 +32,13 @@ api.interceptors.response.use((response) => {
 }, (error) => {
   if (error.response && error.response.status === 401) {
     // Jika token tidak valid atau expired, hapus user dari localStorage
-    // dan paksa reload untuk menendang user ke halaman login
     localStorage.removeItem('user');
-    window.location.href = '/login';
+    
+    // Gunakan window.location.replace agar tidak bisa 'back' ke halaman error
+    // tapi hanya jika kita tidak sedang berada di halaman login/register
+    if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+      window.location.replace('/login');
+    }
   }
   return Promise.reject(error);
 });

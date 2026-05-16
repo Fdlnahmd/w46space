@@ -65,15 +65,15 @@ const AdminDashboard = () => {
       <div className="grid md:grid-cols-3" style={{ marginBottom: '2.5rem', gap: '1.5rem' }}>
         <StatCard 
           title="Pendapatan" 
-          value={`Rp ${Number(stats.summary.revenue).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} 
+          value={`Rp ${Number(stats?.summary?.revenue ?? 0).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} 
           icon={DollarSign} 
           color="#10b981" 
         />
-        <StatCard title="Pending" value={stats.summary.pendingBookings} icon={Hourglass} color="#f59e0b" />
-        <StatCard title="Aktif" value={stats.summary.activeBookings} icon={Activity} color="#3b82f6" />
-        <StatCard title="Selesai" value={stats.summary.completedBookings} icon={CheckCircle} color="#059669" />
-        <StatCard title="Batal" value={stats.summary.cancelledBookings} icon={XCircle} color="#ef4444" />
-        <StatCard title="Ruangan" value={stats.summary.totalRooms} icon={Building} color="#8b5cf6" />
+        <StatCard title="Pending" value={stats?.summary?.pendingBookings ?? 0} icon={Hourglass} color="#f59e0b" />
+        <StatCard title="Aktif" value={stats?.summary?.activeBookings ?? 0} icon={Activity} color="#3b82f6" />
+        <StatCard title="Selesai" value={stats?.summary?.completedBookings ?? 0} icon={CheckCircle} color="#059669" />
+        <StatCard title="Batal" value={stats?.summary?.cancelledBookings ?? 0} icon={XCircle} color="#ef4444" />
+        <StatCard title="Ruangan" value={stats?.summary?.totalRooms ?? 0} icon={Building} color="#8b5cf6" />
       </div>
 
       <div className="grid md:grid-cols-2" style={{ gap: '1.5rem', marginBottom: '2.5rem' }}>

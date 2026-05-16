@@ -14,6 +14,7 @@ Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/offices', [OfficeController::class, 'index']);
 Route::get('/offices/{id}', [OfficeController::class, 'show']);
+Route::get('/addons', [\App\Http\Controllers\ExtraController::class, 'getAddons']);
 
 // Protected Routes (Perlu Login)
 Route::middleware('auth:sanctum')->group(function () {
@@ -45,9 +46,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/reviews', [\App\Http\Controllers\ReviewController::class, 'all']);
     Route::delete('/admin/reviews/{id}', [\App\Http\Controllers\ReviewController::class, 'destroy']);
 
-    // Addons, Coupons, Notifications
-    Route::get('/addons', [\App\Http\Controllers\ExtraController::class, 'getAddons']);
-    Route::post('/coupons/check', [BookingController::class, 'checkCoupon']);
+    // Coupons, Notifications
+    Route::get('/admin/coupons', [\App\Http\Controllers\CouponController::class, 'index']);
+    Route::post('/admin/coupons', [\App\Http\Controllers\CouponController::class, 'store']);
+    Route::put('/admin/coupons/{id}', [\App\Http\Controllers\CouponController::class, 'update']);
+    Route::delete('/admin/coupons/{id}', [\App\Http\Controllers\CouponController::class, 'destroy']);
+    Route::post('/coupons/check', [\App\Http\Controllers\CouponController::class, 'check']);
+    
     Route::get('/notifications', [\App\Http\Controllers\ExtraController::class, 'getNotifications']);
     Route::patch('/notifications/read-all', [\App\Http\Controllers\ExtraController::class, 'markAllAsRead']);
     Route::patch('/notifications/{id}/read', [\App\Http\Controllers\ExtraController::class, 'markAsRead']);

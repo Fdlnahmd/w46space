@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Building, BookOpen, LogOut, LayoutDashboard, X, MessageSquare } from 'lucide-react';
+import { Building, BookOpen, LogOut, LayoutDashboard, X, MessageSquare, Ticket } from 'lucide-react';
 
 const AdminSidebar = ({ isOpen, onToggle }) => {
   const location = useLocation();
@@ -68,9 +68,12 @@ const AdminSidebar = ({ isOpen, onToggle }) => {
         <Link to="/admin/ulasan" onClick={handleLinkClick} style={navItemStyle('/admin/ulasan')}>
           <MessageSquare size={20} /> Moderasi Ulasan
         </Link>
+        <Link to="/admin/kupon" onClick={handleLinkClick} style={navItemStyle('/admin/kupon')}>
+          <Ticket size={20} /> Kelola Kupon
+        </Link>
       </nav>
 
-      <div style={{ marginTop: 'auto', paddingTop: '3rem', paddingBottom: '2rem' }}>
+      <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
         <Link to="/" style={{ ...navItemStyle('/logout'), color: '#f87171', marginBottom: 0 }}>
           <LogOut size={20} /> Kembali ke Web
         </Link>

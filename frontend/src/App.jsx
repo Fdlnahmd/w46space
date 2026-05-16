@@ -29,6 +29,7 @@ import KelolaPemesanan from './pages/admin/KelolaPemesanan';
 import FormPemesanan from './pages/admin/FormPemesanan';
 import DetailPemesananAdmin from './pages/admin/DetailPemesananAdmin';
 import AdminReviews from './pages/admin/Reviews';
+import KelolaKupon from './pages/admin/KelolaKupon';
 
 // Wrapper untuk halaman publik (dengan Navbar & Footer)
 const PublicLayout = ({ children }) => (
@@ -87,6 +88,9 @@ function App() {
 
               {/* Moderasi Ulasan */}
               <Route path="ulasan" element={<AdminReviews />} />
+
+              {/* Kelola Kupon */}
+              <Route path="kupon" element={<KelolaKupon />} />
             </Route>
           </Route>
 

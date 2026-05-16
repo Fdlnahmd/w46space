@@ -8,15 +8,16 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Cek local storage saat aplikasi dimuat
-    const timer = setTimeout(() => {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
+    // Cek local storage saat aplikasi dimuat secara sinkron (langsung)
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
         setUser(JSON.parse(storedUser));
+      } catch (e) {
+        localStorage.removeItem('user');
       }
-      setLoading(false);
-    }, 0);
-    return () => clearTimeout(timer);
+    }
+    setLoading(false);
   }, []);
 
   const login = async (email, password) => {

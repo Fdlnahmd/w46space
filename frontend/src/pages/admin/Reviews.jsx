@@ -21,6 +21,7 @@ const AdminReviews = () => {
   }, []);
 
   const filteredReviews = useMemo(() => {
+    if (!Array.isArray(reviews)) return [];
     let result = reviews;
     if (searchQuery) {
       result = result.filter(r => 

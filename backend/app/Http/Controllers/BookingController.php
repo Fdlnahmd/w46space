@@ -58,7 +58,7 @@ class BookingController extends Controller
         ]);
 
         return \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $request) {
-            \App\Models\Office::where('id', $validated['id_ruangan'])->lockForUpdate()->first();
+            $office = \App\Models\Office::where('id', $validated['id_ruangan'])->lockForUpdate()->first();
 
             // Check Double Booking
             $bentrok = Booking::where('office_id', $validated['id_ruangan'])
@@ -73,6 +73,20 @@ class BookingController extends Controller
                 return response()->json(['message' => 'Ruangan sudah dipesan pada tanggal tersebut.'], 422);
             }
 
+            // Handle Addons
+            $totalAddonPrice = 0;
+            $addonsData = [];
+            if ($request->has('addon_ids') && is_array($request->addon_ids)) {
+                $addons = \App\Models\Addon::whereIn('id', $request->addon_ids)->get();
+                foreach ($addons as $addon) {
+                    $totalAddonPrice += (float)$addon->harga;
+                    $addonsData[$addon->id] = ['price_at_booking' => $addon->harga];
+                }
+            }
+
+            // Calculate Base Price (harga per hari * 26 hari kerja * durasi bulan)
+            $basePrice = (float)$office->harga * 26 * (int)$validated['durasi'];
+
             // Handle Coupon
             $couponId = null;
             $discountAmount = 0;
@@ -81,24 +95,15 @@ class BookingController extends Controller
                 if ($coupon && !$coupon->isExpired() && !$coupon->isLimitReached()) {
                     $couponId = $coupon->id;
                     if ($coupon->type === 'percentage') {
-                        $discountAmount = ($validated['total_harga'] * $coupon->value) / 100;
+                        $discountAmount = ($basePrice * (float)$coupon->value) / 100;
                     } else {
-                        $discountAmount = $coupon->value;
+                        $discountAmount = (float)$coupon->value;
                     }
                     $coupon->increment('used_count');
                 }
             }
 
-            // Handle Addons
-            $totalAddonPrice = 0;
-            $addonsData = [];
-            if ($request->has('addon_ids')) {
-                $addons = \App\Models\Addon::whereIn('id', $validated['addon_ids'])->get();
-                foreach ($addons as $addon) {
-                    $totalAddonPrice += $addon->harga;
-                    $addonsData[$addon->id] = ['price_at_booking' => $addon->harga];
-                }
-            }
+            $finalTotal = $basePrice + $totalAddonPrice - $discountAmount;
 
             $booking = Booking::create([
                 'office_id'         => $validated['id_ruangan'],
@@ -111,7 +116,7 @@ class BookingController extends Controller
                 'waktu_mulai'       => $validated['waktu_mulai'],
                 'waktu_selesai'     => $validated['waktu_selesai'],
                 'durasi'            => $validated['durasi'],
-                'total_harga'       => $validated['total_harga'] + $totalAddonPrice - $discountAmount,
+                'total_harga'       => $finalTotal,
                 'coupon_id'         => $couponId,
                 'discount_amount'   => $discountAmount,
                 'total_addon_price' => $totalAddonPrice,
@@ -128,27 +133,17 @@ class BookingController extends Controller
             \App\Models\Notification::create([
                 'user_id' => null, // null for admin
                 'title'   => 'Pesanan Baru Masuk!',
-                'message' => "Pesanan baru dari {$validated['nama_pemesan']} untuk ruangan #{$validated['id_ruangan']}.",
+                'message' => "Pesanan baru dari {$validated['nama_pemesan']} untuk ruangan {$office->nama}.",
                 'type'    => 'info',
                 'link'    => "/admin/pemesanan/{$booking->id}"
             ]);
 
             \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
-            \Illuminate\Support\Facades\Cache::flush();
 
             return response()->json($booking, 201);
         });
     }
 
-    public function checkCoupon(Request $request)
-    {
-        $coupon = \App\Models\Coupon::where('code', $request->code)->first();
-        if (!$coupon) return response()->json(['message' => 'Kupon tidak ditemukan'], 404);
-        if ($coupon->isExpired()) return response()->json(['message' => 'Kupon sudah kadaluarsa'], 422);
-        if ($coupon->isLimitReached()) return response()->json(['message' => 'Batas pemakaian kupon sudah habis'], 422);
-        
-        return response()->json($coupon);
-    }
 
     public function update(Request $request, int $id)
     {

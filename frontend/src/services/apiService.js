@@ -96,8 +96,8 @@ export const deletePemesanan = async (id) => {
   return response.data;
 };
 
-export const getPemesananByUser = async () => {
-  const response = await api.get('/bookings');
+export const getPemesananByUser = async (page = 1) => {
+  const response = await api.get(`/bookings?page=${page}`);
   return response.data;
 };
 
@@ -172,7 +172,27 @@ export const deleteReviewAdmin = async (id) => {
   return response.data;
 };
 
-// Aliases agar tidak merusak AuthContext yang memanggil mockLogin/mockRegister
+export const getCoupons = async () => {
+  const response = await api.get('/admin/coupons');
+  return response.data;
+};
+
+export const createCoupon = async (data) => {
+  const response = await api.post('/admin/coupons', data);
+  return response.data;
+};
+
+export const updateCoupon = async (id, data) => {
+  const response = await api.put(`/admin/coupons/${id}`, data);
+  return response.data;
+};
+
+export const deleteCoupon = async (id) => {
+  const response = await api.delete(`/admin/coupons/${id}`);
+  return response.data;
+};
+
+// --- Aliases ---
 export const mockLogin = loginUser;
 export const mockRegister = registerUser;
 
