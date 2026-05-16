@@ -223,37 +223,63 @@ const DetailPemesananAdmin = () => {
             <StatusIcon size={18} /> {cfg.label}
           </div>
 
-          {/* Debug info - hapus nanti */}
-          {console.log('Status Pesanan:', pesanan.status)}
+          {/* ACTIONS BASED ON STATUS */}
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {/* Jika Status Pending (Baru Masuk) */}
+            {pesanan.status?.toLowerCase() === 'pending' && (
+              <>
+                <button 
+                  onClick={() => handleStatusUpdate('Dikonfirmasi')}
+                  disabled={processing}
+                  className="btn btn-primary" 
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem' }}
+                >
+                  <BadgeCheck size={18} /> {processing ? '...' : 'Terima Pesanan'}
+                </button>
+                <button 
+                  onClick={() => handleStatusUpdate('Dibatalkan')}
+                  disabled={processing}
+                  className="btn btn-outline" 
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem', borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
+                >
+                  <XCircle size={18} /> {processing ? '...' : 'Tolak Pesanan'}
+                </button>
+              </>
+            )}
 
-          {pesanan.status?.toLowerCase() === 'pending' ? (
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            {/* Jika Status Dikonfirmasi (Aktif) */}
+            {pesanan.status === 'Dikonfirmasi' && (
+              <>
+                <button 
+                  onClick={() => handleStatusUpdate('Selesai')}
+                  disabled={processing}
+                  className="btn btn-primary" 
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem', backgroundColor: 'var(--color-success)', border: 'none' }}
+                >
+                  <CheckCircle size={18} /> {processing ? '...' : 'Selesaikan Pesanan'}
+                </button>
+                <button 
+                  onClick={() => handleStatusUpdate('Dibatalkan')}
+                  disabled={processing}
+                  className="btn btn-outline" 
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem', borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
+                >
+                  <XCircle size={18} /> {processing ? '...' : 'Batalkan Kontrak'}
+                </button>
+              </>
+            )}
+
+            {/* Tombol Invoice (Jika Lunas/Dikonfirmasi/Selesai) */}
+            {(pesanan.status === 'Dikonfirmasi' || pesanan.status === 'Selesai') && (
               <button 
-                onClick={() => handleStatusUpdate('Dikonfirmasi')}
-                disabled={processing}
-                className="btn btn-primary" 
+                onClick={handleDownloadInvoice} 
+                className="btn btn-outline" 
                 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem' }}
               >
-                <BadgeCheck size={18} /> {processing ? '...' : 'Terima Pesanan'}
+                <Printer size={18} /> Download Invoice
               </button>
-              <button 
-                onClick={() => handleStatusUpdate('Dibatalkan')}
-                disabled={processing}
-                className="btn btn-outline" 
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem', borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
-              >
-                <XCircle size={18} /> {processing ? '...' : 'Tolak'}
-              </button>
-            </div>
-          ) : (pesanan.status === 'Dikonfirmasi' || pesanan.status === 'Selesai') && (
-            <button 
-              onClick={handleDownloadInvoice} 
-              className="btn btn-outline" 
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem' }}
-            >
-              <Printer size={18} /> Download Invoice
-            </button>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Fasilitas & Addons */}

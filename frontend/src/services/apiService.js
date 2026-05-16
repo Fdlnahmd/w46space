@@ -44,8 +44,8 @@ export const deleteRuangan = async (id) => {
 
 // --- Services untuk Pemesanan ---
 
-export const getPemesanan = async () => {
-  const response = await api.get('/bookings');
+export const getPemesanan = async (page = 1) => {
+  const response = await api.get(`/bookings?page=${page}`);
   return response.data;
 };
 

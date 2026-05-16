@@ -13,7 +13,9 @@ const iconMap = {
 
 // Hitung tanggalAkhir dari tanggalMulai + durasi bulan
 const hitungTanggalAkhir = (tanggalMulai, durasiButlan) => {
+  if (!tanggalMulai) return null;
   const d = new Date(tanggalMulai);
+  if (isNaN(d.getTime())) return null;
   d.setMonth(d.getMonth() + parseInt(durasiButlan));
   return d.toISOString().split('T')[0];
 };
@@ -82,15 +84,17 @@ const DetailRuangan = () => {
       if (extendFromId) {
         try {
           const oldBooking = await getPemesananById(extendFromId);
-          if (oldBooking) {
+          if (oldBooking && oldBooking.tanggal_akhir) {
             const nextDate = new Date(oldBooking.tanggal_akhir);
-            nextDate.setDate(nextDate.getDate() + 1);
-            setFormData(prev => ({
-              ...prev,
-              perusahaan: oldBooking.perusahaan || '',
-              tanggalMulai: nextDate.toISOString().split('T')[0],
-              durasi: oldBooking.durasi
-            }));
+            if (!isNaN(nextDate.getTime())) {
+              nextDate.setDate(nextDate.getDate() + 1);
+              setFormData(prev => ({
+                ...prev,
+                perusahaan: oldBooking.perusahaan || '',
+                tanggalMulai: nextDate.toISOString().split('T')[0],
+                durasi: oldBooking.durasi
+              }));
+            }
           }
         } catch (err) {
           console.error('Gagal mengambil data perpanjangan:', err);
@@ -160,8 +164,20 @@ const DetailRuangan = () => {
     e.preventDefault();
     setLoading(true);
     
+    if (!formData.tanggalMulai) {
+      setLoading(false);
+      setModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Tanggal Belum Dipilih',
+        message: 'Silakan pilih tanggal mulai kontrak terlebih dahulu melalui kalender yang tersedia.'
+      });
+      return;
+    }
+
     try {
       const tanggalAkhir = hitungTanggalAkhir(formData.tanggalMulai, formData.durasi);
+      if (!tanggalAkhir) throw new Error('Format tanggal tidak valid');
 
       const dataKeBackend = {
         id_ruangan: parseInt(id),

@@ -8,14 +8,18 @@ use Illuminate\Support\Facades\Auth;
 
 class BookingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Admin melihat semua, User melihat miliknya sendiri
         $user = Auth::user();
-        if (strtolower($user->role) === 'admin') {
-            return response()->json(Booking::with('office', 'user')->get());
+        $perPage = $request->query('per_page', 15);
+        
+        $query = Booking::with('office', 'user')->orderBy('created_at', 'desc');
+
+        if (strtolower($user->role) !== 'admin') {
+            $query->where('user_id', $user->id);
         }
-        return response()->json(Booking::where('user_id', $user->id)->with('office')->get());
+
+        return response()->json($query->paginate($perPage));
     }
 
     public function show(int $id)
@@ -129,6 +133,7 @@ class BookingController extends Controller
                 'link'    => "/admin/pemesanan/{$booking->id}"
             ]);
 
+            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
             \Illuminate\Support\Facades\Cache::flush();
 
             return response()->json($booking, 201);
@@ -183,7 +188,9 @@ class BookingController extends Controller
                 'link'    => "/pesanan-saya/{$booking->id}"
             ]);
 
-            // Invalidate office listing cache
+            // Invalidate office listing and analytics cache
+            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
+            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
             \Illuminate\Support\Facades\Cache::flush();
         }
         return response()->json($booking);
@@ -267,7 +274,9 @@ class BookingController extends Controller
                 return response()->json(['message' => 'Akses ditolak'], 403);
             }
             $booking->delete();
-            // Invalidate office listing cache
+            // Invalidate office listing and analytics cache
+            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
+            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
             \Illuminate\Support\Facades\Cache::flush();
         }
         return response()->json(['message' => 'Pesanan berhasil dihapus']);

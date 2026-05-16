@@ -22,15 +22,26 @@ const formatDate = (dateString) => {
 
 const KelolaPemesanan = () => {
   const [pemesanan, setPemesanan] = useState([]);
+  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Semua');
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
+  const [loading, setLoading] = useState(false);
 
-  const loadData = () => {
-    getPemesanan().then(data => {
-      setPemesanan(data);
+  const loadData = (page = 1) => {
+    setLoading(true);
+    getPemesanan(page).then(res => {
+      // Backend return paginated object: { data: [], current_page: 1, ... }
+      setPemesanan(res.data || []);
+      setPagination({
+        current_page: res.current_page,
+        last_page: res.last_page,
+        total: res.total
+      });
     }).catch(err => {
       console.error('Error fetching bookings:', err);
+    }).finally(() => {
+      setLoading(false);
     });
   };
 
@@ -39,17 +50,18 @@ const KelolaPemesanan = () => {
   const handleDelete = () => {
     if (deleteModal.id) {
       deletePemesanan(deleteModal.id).then(() => {
-        loadData();
+        loadData(pagination.current_page);
         setDeleteModal({ isOpen: false, id: null });
       });
     }
   };
 
   const handleStatusChange = (id, newStatus) => {
-    updateStatusPemesanan(id, newStatus).then(() => loadData());
+    updateStatusPemesanan(id, newStatus).then(() => loadData(pagination.current_page));
   };
 
-  // Logika Filter
+  // Logika Filter (Hanya bisa filter data yang ada di halaman ini, 
+  // idealnya filter dilakukan di server-side untuk data banyak)
   const filteredData = pemesanan.filter(item => {
     const matchSearch = (item.nama_pemesan || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                        (item.office?.nama || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -106,7 +118,7 @@ const KelolaPemesanan = () => {
         )}
       </div>
 
-      <div className="card" style={{ overflowX: 'auto' }}>
+      <div className="card" style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--color-secondary)', borderBottom: '1px solid var(--color-border)', textAlign: 'left' }}>
@@ -121,10 +133,13 @@ const KelolaPemesanan = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredData.map(item => (
+            {loading ? (
+              <tr>
+                <td colSpan="8" style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Memuat data...</td>
+              </tr>
+            ) : filteredData.map(item => (
               <tr key={item.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-
-                {/* ID */}
+                {/* ... existing table row cells ... */}
                 <td style={{ padding: '1rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
                   #{item.id}
                   {item.parent_id && (
@@ -138,19 +153,13 @@ const KelolaPemesanan = () => {
                     </div>
                   )}
                 </td>
-
-                {/* Pemesan */}
                 <td style={{ padding: '1rem' }}>
                   <div style={{ fontWeight: 600 }}>{item.nama_pemesan || '—'}</div>
                   {item.perusahaan && (
                     <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{item.perusahaan}</div>
                   )}
                 </td>
-
-                {/* Ruangan */}
                 <td style={{ padding: '1rem' }}>{item.office?.nama || '—'}</td>
-
-                {/* Tanggal Kontrak */}
                 <td style={{ padding: '1rem' }}>
                   <div style={{ fontWeight: 500 }}>{formatDate(item.tanggal_mulai)}</div>
                   {item.tanggal_akhir && (
@@ -159,61 +168,32 @@ const KelolaPemesanan = () => {
                     </div>
                   )}
                 </td>
-
-                {/* Durasi */}
-                <td style={{ padding: '1rem' }}>
-                  {item.durasi ? `${item.durasi} Bulan` : '—'}
-                </td>
-
-                {/* Total Harga */}
-                <td style={{ padding: '1rem', fontWeight: 600 }}>
-                  Rp {Number(item.total_harga || 0).toLocaleString('id-ID')}
-                </td>
-
-                {/* Status — dropdown */}
+                <td style={{ padding: '1rem' }}>{item.durasi ? `${item.durasi} Bulan` : '—'}</td>
+                <td style={{ padding: '1rem', fontWeight: 600 }}>Rp {Number(item.total_harga || 0).toLocaleString('id-ID')}</td>
                 <td style={{ padding: '1rem' }}>
                   <select
                     value={item.status}
                     onChange={(e) => handleStatusChange(item.id, e.target.value)}
-                    style={{
-                      padding: '0.3rem 0.5rem',
-                      borderRadius: 'var(--border-radius)',
-                      fontWeight: 500,
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                      ...getStatusStyle(item.status)
-                    }}
+                    style={{ padding: '0.3rem 0.5rem', borderRadius: 'var(--border-radius)', fontWeight: 500, fontSize: '0.85rem', cursor: 'pointer', ...getStatusStyle(item.status) }}
                   >
                     {statusOptions.filter(s => s !== 'Semua').map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
                 </td>
-
-                {/* Aksi */}
                 <td style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                    {/* Lihat Detail */}
-                    <Link
-                      to={`/admin/pemesanan/${item.id}`}
-                      className="btn btn-outline"
-                      style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem' }}
-                    >
+                    <Link to={`/admin/pemesanan/${item.id}`} className="btn btn-outline" style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem' }}>
                       <Eye size={15} /> Detail
                     </Link>
-                    {/* Hapus */}
-                    <button
-                      onClick={() => setDeleteModal({ isOpen: true, id: item.id })}
-                      className="btn btn-danger"
-                      style={{ padding: '0.4rem 0.6rem', borderRadius: '6px' }}
-                    >
+                    <button onClick={() => setDeleteModal({ isOpen: true, id: item.id })} className="btn btn-danger" style={{ padding: '0.4rem 0.6rem', borderRadius: '6px' }}>
                       <Trash2 size={15} />
                     </button>
                   </div>
                 </td>
               </tr>
             ))}
-            {filteredData.length === 0 && (
+            {!loading && filteredData.length === 0 && (
               <tr>
                 <td colSpan="8" style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
                   {searchTerm || statusFilter !== 'Semua' ? 'Tidak ada data yang cocok dengan filter Anda.' : 'Belum ada data pemesanan.'}
@@ -222,6 +202,31 @@ const KelolaPemesanan = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* PAGINATION CONTROLS */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.5rem' }}>
+        <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+          Menampilkan data halaman <strong>{pagination.current_page}</strong> dari <strong>{pagination.last_page}</strong> (Total <strong>{pagination.total}</strong> data)
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button 
+            disabled={pagination.current_page <= 1 || loading}
+            onClick={() => loadData(pagination.current_page - 1)}
+            className="btn btn-outline"
+            style={{ padding: '0.5rem 1rem' }}
+          >
+            Sebelumnya
+          </button>
+          <button 
+            disabled={pagination.current_page >= pagination.last_page || loading}
+            onClick={() => loadData(pagination.current_page + 1)}
+            className="btn btn-outline"
+            style={{ padding: '0.5rem 1rem' }}
+          >
+            Selanjutnya
+          </button>
+        </div>
       </div>
 
       <Modal 
