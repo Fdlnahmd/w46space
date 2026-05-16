@@ -35,36 +35,40 @@ class OfficeController extends Controller
     {
         $today = date('Y-m-d');
         
-        return \Illuminate\Support\Facades\Cache::remember("office_detail_{$id}_{$today}_full", 3600, function () use ($id, $today) {
-            $office = Office::with(['bookings' => function($query) {
+        // Ambil data dasar ruangan dari cache
+        $office = \Illuminate\Support\Facades\Cache::remember("office_detail_{$id}_{$today}_basic", 3600, function () use ($id, $today) {
+            $data = Office::with(['bookings' => function($query) {
                 $query->where('status', '!=', 'Dibatalkan');
             }])->find($id);
 
-            if (!$office) {
-                return null;
+            if ($data) {
+                // Cari apakah hari ini sedang dipesan
+                $current = $data->bookings->filter(function($b) use ($today) {
+                    return $b->tanggal_mulai <= $today && $b->tanggal_akhir >= $today;
+                })->first();
+
+                $data->is_booked = $current ? true : false;
+                $data->booked_until = $current ? $current->tanggal_akhir : null;
             }
+            return $data;
+        });
 
-            // Cari apakah hari ini sedang dipesan
-            $current = $office->bookings->filter(function($b) use ($today) {
-                return $b->tanggal_mulai <= $today && $b->tanggal_akhir >= $today;
-            })->first();
+        if (!$office) {
+            return response()->json(['message' => 'Ruangan tidak ditemukan'], 404);
+        }
 
-            $office->is_booked = $current ? true : false;
-            $office->booked_until = $current ? $current->tanggal_akhir : null;
+        // Cek status review di luar cache karena tergantung user yang sedang login
+        $user = auth('sanctum')->user();
+        $office->can_review = false;
+        
+        if ($user && strtolower($user->role) !== 'admin') {
+            $office->can_review = \App\Models\Booking::where('user_id', $user->id)
+                ->where('office_id', $id)
+                ->whereIn('status', ['Selesai', 'Dikonfirmasi'])
+                ->exists();
+        }
 
-            // Cek apakah user yang login boleh kasih review
-            $user = auth('sanctum')->user();
-            $office->can_review = false;
-            
-            if ($user && strtolower($user->role) !== 'admin') {
-                $office->can_review = \App\Models\Booking::where('user_id', $user->id)
-                    ->where('office_id', $id)
-                    ->whereIn('status', ['Selesai', 'Dikonfirmasi'])
-                    ->exists();
-            }
-
-            return $office;
-        }) ?: response()->json(['message' => 'Ruangan tidak ditemukan'], 404);
+        return response()->json($office);
     }
 
     public function store(Request $request)

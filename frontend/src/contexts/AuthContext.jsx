@@ -1,24 +1,22 @@
-import { createContext, useState, useContext, useEffect } from 'react';
+import { createContext, useState, useContext } from 'react';
 import { loginUser, registerUser } from '../services/apiService';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Cek local storage saat aplikasi dimuat secara sinkron (langsung)
+  const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
+        return JSON.parse(storedUser);
+      } catch {
         localStorage.removeItem('user');
+        return null;
       }
     }
-    setLoading(false);
-  }, []);
+    return null;
+  });
+  const [loading] = useState(false);
 
   const login = async (email, password) => {
     const userData = await loginUser(email, password);

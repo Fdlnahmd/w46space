@@ -473,69 +473,92 @@ const DetailPesanan = () => {
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                  {availableAddons
-                    .filter(addon => !pesanan.addons?.find(a => a.id === addon.id))
-                    .map(addon => (
-                      <div 
-                        key={addon.id}
-                        onClick={() => toggleAddon(addon.id)}
-                        style={{
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                          padding: '1rem', borderRadius: 'var(--border-radius)',
-                          border: `2px solid ${selectedAddons.includes(addon.id) ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                          backgroundColor: selectedAddons.includes(addon.id) ? 'rgba(37,99,235,0.05)' : 'var(--color-secondary)',
-                          cursor: 'pointer', transition: 'all 0.2s'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <div style={{ 
-                            width: '40px', height: '40px', borderRadius: '10px', 
-                            backgroundColor: selectedAddons.includes(addon.id) ? 'var(--color-primary)' : 'var(--color-border)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-                          }}>
-                            {addon.nama.toLowerCase().includes('kopi') ? <Coffee size={20} /> :
-                             addon.nama.toLowerCase().includes('wifi') ? <Wifi size={20} /> :
-                             addon.nama.toLowerCase().includes('monitor') ? <Monitor size={20} /> :
-                             addon.nama.toLowerCase().includes('print') ? <Printer size={20} /> : <Plus size={20} />}
+                  {availableAddons.filter(addon => !pesanan.addons?.find(a => a.id === addon.id)).length === 0 ? (
+                    <div style={{ 
+                      textAlign: 'center', padding: '2rem', backgroundColor: 'var(--color-secondary)', 
+                      borderRadius: 'var(--border-radius)', border: '1px dashed var(--color-border)' 
+                    }}>
+                      <BadgeCheck size={40} color="var(--color-success)" style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                      <p style={{ margin: 0, fontWeight: 600 }}>Semua fasilitas telah ditambahkan</p>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                        Pesanan ini sudah memiliki semua fasilitas yang tersedia.
+                      </p>
+                    </div>
+                  ) : (
+                    availableAddons
+                      .filter(addon => !pesanan.addons?.find(a => a.id === addon.id))
+                      .map(addon => (
+                        <div 
+                          key={addon.id}
+                          onClick={() => toggleAddon(addon.id)}
+                          style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            padding: '1rem', borderRadius: 'var(--border-radius)',
+                            border: `2px solid ${selectedAddons.includes(addon.id) ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                            backgroundColor: selectedAddons.includes(addon.id) ? 'rgba(37,99,235,0.05)' : 'var(--color-secondary)',
+                            cursor: 'pointer', transition: 'all 0.2s'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ 
+                              width: '40px', height: '40px', borderRadius: '10px', 
+                              backgroundColor: selectedAddons.includes(addon.id) ? 'var(--color-primary)' : 'var(--color-border)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
+                            }}>
+                              {addon.nama.toLowerCase().includes('kopi') ? <Coffee size={20} /> :
+                               addon.nama.toLowerCase().includes('wifi') ? <Wifi size={20} /> :
+                               addon.nama.toLowerCase().includes('monitor') ? <Monitor size={20} /> :
+                               addon.nama.toLowerCase().includes('print') ? <Printer size={20} /> : <Plus size={20} />}
+                            </div>
+                            <div>
+                              <p style={{ fontWeight: 600, margin: 0, fontSize: '0.95rem' }}>{addon.nama}</p>
+                              <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: 0 }}>
+                                Rp {Number(addon.harga).toLocaleString('id-ID')}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p style={{ fontWeight: 600, margin: 0, fontSize: '0.95rem' }}>{addon.nama}</p>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: 0 }}>
-                              Rp {Number(addon.harga).toLocaleString('id-ID')}
-                            </p>
-                          </div>
+                          {selectedAddons.includes(addon.id) && <CheckCircle size={20} color="var(--color-primary)" />}
                         </div>
-                        {selectedAddons.includes(addon.id) && <CheckCircle size={20} color="var(--color-primary)" />}
-                      </div>
-                    ))}
+                      ))
+                  )}
                 </div>
 
-                <div style={{ 
-                  backgroundColor: 'var(--color-secondary)', padding: '1rem', 
-                  borderRadius: 'var(--border-radius)', marginBottom: '1.5rem',
-                  border: '1px dashed var(--color-border)'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 600 }}>
-                    <span>Total Tagihan Tambahan:</span>
-                    <span style={{ color: 'var(--color-primary)' }}>
-                      Rp {availableAddons
-                        .filter(a => selectedAddons.includes(a.id))
-                        .reduce((sum, a) => sum + Number(a.harga), 0)
-                        .toLocaleString('id-ID')}
-                    </span>
-                  </div>
-                </div>
+                  {availableAddons.filter(addon => !pesanan.addons?.find(a => a.id === addon.id)).length > 0 && (
+                    <div style={{ 
+                      backgroundColor: 'var(--color-secondary)', padding: '1rem', 
+                      borderRadius: 'var(--border-radius)', marginBottom: '1.5rem',
+                      border: '1px dashed var(--color-border)'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 600 }}>
+                        <span>Total Tagihan Tambahan:</span>
+                        <span style={{ color: 'var(--color-primary)' }}>
+                          Rp {availableAddons
+                            .filter(a => selectedAddons.includes(a.id))
+                            .reduce((sum, a) => sum + Number(a.harga), 0)
+                            .toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                 <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button onClick={() => setShowAddonModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Batal</button>
-                  <button 
-                    onClick={() => setAddonStep(2)}
-                    disabled={selectedAddons.length === 0}
-                    className="btn btn-primary" 
-                    style={{ flex: 2 }}
-                  >
-                    Lanjut ke Pembayaran
-                  </button>
+                  {availableAddons.filter(addon => !pesanan.addons?.find(a => a.id === addon.id)).length === 0 ? (
+                    <button onClick={() => setShowAddonModal(false)} className="btn btn-primary" style={{ flex: 1 }}>
+                      Tutup
+                    </button>
+                  ) : (
+                    <>
+                      <button onClick={() => setShowAddonModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Batal</button>
+                      <button 
+                        onClick={() => setAddonStep(2)}
+                        disabled={selectedAddons.length === 0}
+                        className="btn btn-primary" 
+                        style={{ flex: 2 }}
+                      >
+                        Lanjut ke Pembayaran
+                      </button>
+                    </>
+                  )}
                 </div>
               </>
             ) : (

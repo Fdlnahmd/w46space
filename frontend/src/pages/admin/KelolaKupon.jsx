@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getCoupons, createCoupon, updateCoupon, deleteCoupon } from '../../services/apiService';
-import { Plus, Trash2, Edit2, Ticket, Calendar, Users } from 'lucide-react';
+import { Plus, Trash2, Edit2, Calendar, Users } from 'lucide-react';
 import Modal from '../../components/Modal';
 
 const KelolaKupon = () => {
@@ -16,7 +16,7 @@ const KelolaKupon = () => {
     usage_limit: 100
   });
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     setLoading(true);
     getCoupons().then(res => {
       setCoupons(res);
@@ -25,9 +25,14 @@ const KelolaKupon = () => {
     }).finally(() => {
       setLoading(false);
     });
-  };
+  }, []);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

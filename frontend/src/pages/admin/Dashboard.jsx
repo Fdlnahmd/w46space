@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getAdminAnalytics } from '../../services/apiService';
 import { RevenueChart, PopularRoomsChart, StatusChart } from './DashboardCharts';
 import { 
-  Building, Users, Activity, DollarSign, Hourglass, CheckCircle, XCircle
+  Building, Activity, DollarSign, Hourglass, CheckCircle, XCircle
 } from 'lucide-react';
 
 const StatCard = ({ title, value, icon: Icon, color }) => (

@@ -112,9 +112,20 @@ const DetailRuangan = () => {
   // Fungsi untuk mengecek apakah tanggal tertentu sudah dipesan
   const isDateOccupied = ({ date, view }) => {
     if (view === 'month') {
-      return occupiedDates.some(range => 
-        date >= range.start && date <= range.end
-      );
+      // Normalisasi tanggal yang sedang dicek ke 00:00:00
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+
+      return occupiedDates.some(range => {
+        // Normalisasi range start & end ke 00:00:00
+        const start = new Date(range.start);
+        start.setHours(0, 0, 0, 0);
+        
+        const end = new Date(range.end);
+        end.setHours(0, 0, 0, 0);
+        
+        return d >= start && d <= end;
+      });
     }
     return false;
   };
@@ -346,7 +357,7 @@ const DetailRuangan = () => {
         {/* Fasilitas Tambahan (Addons) */}
         <div style={{ gridColumn: '1 / -1' }}>
           <label className="form-label">Fasilitas Tambahan (Opsional)</label>
-          <div style={{ 
+          <div className="addons-mobile-grid" style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
             gap: '0.75rem' 
@@ -437,45 +448,45 @@ const DetailRuangan = () => {
         </div>
 
         {/* Waktu */}
-        <div style={{ display: 'flex', gap: '1rem', gridColumn: '1 / -1' }}>
+        <div className="time-input-group" style={{ display: 'flex', gap: '1rem', gridColumn: '1 / -1' }}>
           <div className="form-group" style={{ flex: 1 }}>
             <label className="form-label">Jam Masuk</label>
-            <input type="time" className="form-control" value={formData.waktuMulai} onChange={(e) => setFormData({ ...formData, waktuMulai: e.target.value })} />
+            <input type="time" className="form-control" style={{ minHeight: '45px' }} value={formData.waktuMulai} onChange={(e) => setFormData({ ...formData, waktuMulai: e.target.value })} />
           </div>
           <div className="form-group" style={{ flex: 1 }}>
             <label className="form-label">Jam Keluar</label>
-            <input type="time" className="form-control" value={formData.waktuSelesai} onChange={(e) => setFormData({ ...formData, waktuSelesai: e.target.value })} />
+            <input type="time" className="form-control" style={{ minHeight: '45px' }} value={formData.waktuSelesai} onChange={(e) => setFormData({ ...formData, waktuSelesai: e.target.value })} />
           </div>
         </div>
 
         {/* Ringkasan Kontrak */}
         <div style={{ gridColumn: '1 / -1' }}>
-          <div style={{
+          <div className="summary-box" style={{
             backgroundColor: 'var(--color-secondary)', padding: '1.25rem',
             borderRadius: 'var(--border-radius)', border: '1px solid var(--color-border)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+            <div className="summary-row">
               <span>Harga Ruangan ({formData.durasi} bln):</span>
-              <span>Rp {(Number(ruangan?.harga ?? 0) * 26 * formData.durasi).toLocaleString('id-ID')}</span>
+              <span className="price-text">Rp {(Number(ruangan?.harga ?? 0) * 26 * formData.durasi).toLocaleString('id-ID')}</span>
             </div>
             
             {selectedAddons.length > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+              <div className="summary-row">
                 <span>Fasilitas Tambahan:</span>
-                <span>+ Rp {Number(availableAddons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.harga, 0) ?? 0).toLocaleString('id-ID')}</span>
+                <span className="price-text">+ Rp {Number(availableAddons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.harga, 0) ?? 0).toLocaleString('id-ID')}</span>
               </div>
             )}
 
             {couponData && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--color-success)' }}>
+              <div className="summary-row" style={{ color: 'var(--color-success)' }}>
                 <span>Diskon Kupon ({couponData.code}):</span>
-                <span>- Rp {Number(couponData.type === 'percentage' ? (Number(ruangan?.harga ?? 0) * 26 * formData.durasi * couponData.value / 100) : couponData.value).toLocaleString('id-ID')}</span>
+                <span className="price-text">- Rp {Number(couponData.type === 'percentage' ? (Number(ruangan?.harga ?? 0) * 26 * formData.durasi * couponData.value / 100) : couponData.value).toLocaleString('id-ID')}</span>
               </div>
             )}
 
-            <div style={{ borderTop: '1px solid var(--color-border)', marginTop: '0.75rem', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="summary-row total-row" style={{ borderTop: '1px solid var(--color-border)', marginTop: '0.75rem', paddingTop: '0.75rem' }}>
               <span style={{ fontWeight: 600 }}>Total Pembayaran:</span>
-              <span style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.4rem' }}>
+              <span className="total-price-text">
                 Rp {Number(totalHarga ?? 0).toLocaleString('id-ID')}
               </span>
             </div>
@@ -496,7 +507,7 @@ const DetailRuangan = () => {
   };
 
   return (
-    <div style={{ padding: '2rem 0', backgroundColor: 'var(--color-background)' }}>
+    <div className="detail-page-container" style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh', padding: '2rem 0' }}>
       <div className="container">
         <button onClick={() => navigate(-1)} className="btn btn-outline" style={{ marginBottom: '1.5rem', display: 'inline-flex' }}>
           <ArrowLeft size={18} /> Kembali
@@ -587,12 +598,100 @@ const DetailRuangan = () => {
       />
 
       <style>{`
+        /* Prevent any horizontal scroll on the entire page */
+        html, body {
+          max-width: 100% !important;
+          overflow-x: hidden !important;
+          position: relative !important;
+        }
+
+        .detail-page-container {
+          width: 100% !important;
+          max-width: 100vw !important;
+          overflow-x: hidden !important;
+          padding: 1rem 0 !important;
+        }
+
         @media (max-width: 768px) {
-          h1 { font-size: 1.5rem !important; }
-          .card { padding: 1.25rem !important; }
-          img { height: 250px !important; }
-          .form-group { margin-bottom: 1rem !important; }
-          button { font-size: 1rem !important; }
+          .container { 
+            padding: 0 0.75rem !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          
+          .card { 
+            padding: 1rem !important; 
+            margin: 0 0 1.5rem 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
+          }
+
+          form {
+            width: 100% !important;
+            max-width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 1rem !important;
+          }
+
+          .react-calendar {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: unset !important;
+            font-size: 0.8rem !important;
+          }
+
+          .addons-mobile-grid {
+            grid-template-columns: 1fr !important;
+            width: 100% !important;
+          }
+
+          input, select, textarea, .form-control {
+            font-size: 16px !important; /* Fix for iOS zoom */
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+
+          img { height: 200px !important; }
+          h1 { font-size: 1.4rem !important; }
+
+          .summary-row {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 0.25rem !important;
+            margin-bottom: 0.75rem !important;
+          }
+          
+          .price-text {
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+          }
+
+          .total-price-text {
+            font-size: 1.5rem !important;
+            margin-top: 0.25rem !important;
+            display: block !important;
+          }
+
+          .time-input-group {
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+          }
+        }
+
+        .summary-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+          font-size: 0.95rem;
+        }
+
+        .total-price-text {
+          font-weight: 700;
+          color: var(--color-primary);
+          font-size: 1.4rem;
         }
       `}</style>
     </div>

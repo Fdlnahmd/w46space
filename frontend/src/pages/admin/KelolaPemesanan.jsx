@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getPemesanan, updateStatusPemesanan, deletePemesanan } from '../../services/apiService';
 import { Trash2, Eye, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -28,7 +28,7 @@ const KelolaPemesanan = () => {
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
   const [loading, setLoading] = useState(false);
 
-  const loadData = (page = 1) => {
+  const loadData = useCallback((page = 1) => {
     setLoading(true);
     getPemesanan(page).then(res => {
       // Backend return paginated object: { data: [], current_page: 1, ... }
@@ -43,9 +43,14 @@ const KelolaPemesanan = () => {
     }).finally(() => {
       setLoading(false);
     });
-  };
+  }, []);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadData]);
 
   const handleDelete = () => {
     if (deleteModal.id) {
@@ -189,7 +194,7 @@ const KelolaPemesanan = () => {
                         <Eye size={16} />
                       </Link>
                       <button 
-                        onClick={() => setDeleteModal({ isOpen: false, id: item.id })} // Fix delete modal
+                        onClick={() => setDeleteModal({ isOpen: true, id: item.id })}
                         className="btn btn-outline" 
                         style={{ padding: '0.4rem', minWidth: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-danger)' }}
                         title="Hapus"
