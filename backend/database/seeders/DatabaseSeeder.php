@@ -165,5 +165,8 @@ class DatabaseSeeder extends Seeder
             'total_harga' => 1500000,
             'status' => 'Dikonfirmasi',
         ]);
+
+        // 6. Mega Update Features (Addons, Coupons)
+        $this->call(MegaUpdateSeeder::class);
     }
 }

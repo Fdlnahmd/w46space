@@ -1,5 +1,7 @@
 import api from './api';
 
+const API_URL = '/api';
+
 /**
  * Service API untuk berinteraksi dengan Backend Laravel.
  */
@@ -67,6 +69,28 @@ export const updateStatusPemesanan = async (id, status) => {
   return response.data;
 };
 
+export const addAddonsToBooking = async (id, addonIds) => {
+  const response = await api.post(`/bookings/${id}/addons`, { addon_ids: addonIds });
+  return response.data;
+};
+
+export const confirmAddon = async (bookingId, addonId) => {
+  const response = await api.patch(`/bookings/${bookingId}/addons/confirm`, { addon_id: addonId });
+  return response.data;
+};
+
+
+// --- INVOICE ---
+export const getInvoiceUrl = (id) => {
+  return `${API_URL}/bookings/${id}/invoice`;
+};
+
+// --- ANALYTICS ---
+export const getAdminAnalytics = async () => {
+  const response = await api.get('/admin/analytics');
+  return response.data;
+};
+
 export const deletePemesanan = async (id) => {
   const response = await api.delete(`/bookings/${id}`);
   return response.data;
@@ -121,6 +145,59 @@ export const resetPassword = async (data) => {
   return response.data;
 };
 
+// --- Services untuk Review ---
+
+export const getReviewsByOffice = async (officeId) => {
+  const response = await api.get(`/offices/${officeId}/reviews`);
+  return response.data;
+};
+
+export const getLatestReviews = async () => {
+  const response = await api.get('/reviews/latest');
+  return response.data;
+};
+
+export const createReview = async (data) => {
+  const response = await api.post('/reviews', data);
+  return response.data;
+};
+
+export const getAllReviewsAdmin = async () => {
+  const response = await api.get('/admin/reviews');
+  return response.data;
+};
+
+export const deleteReviewAdmin = async (id) => {
+  const response = await api.delete(`/admin/reviews/${id}`);
+  return response.data;
+};
+
 // Aliases agar tidak merusak AuthContext yang memanggil mockLogin/mockRegister
 export const mockLogin = loginUser;
 export const mockRegister = registerUser;
+
+// --- Services untuk Addons & Coupons & Notifications ---
+export const getAddons = async () => {
+  const response = await api.get('/addons');
+  return response.data;
+};
+
+export const checkCoupon = async (code) => {
+  const response = await api.post('/coupons/check', { code });
+  return response.data;
+};
+
+export const getNotifications = async () => {
+  const response = await api.get('/notifications');
+  return response.data;
+};
+
+export const markNotificationRead = async (id) => {
+  const response = await api.patch(`/notifications/${id}/read`);
+  return response.data;
+};
+
+export const markAllNotificationsRead = async () => {
+  const response = await api.patch('/notifications/read-all');
+  return response.data;
+};

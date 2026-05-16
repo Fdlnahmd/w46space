@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getPemesananById, getRuangan, updatePemesanan } from '../../services/apiService';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Calendar as CalendarIcon } from 'lucide-react';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 
 const hitungTanggalAkhir = (tanggalMulai, durasi) => {
   const d = new Date(tanggalMulai);
@@ -129,9 +131,26 @@ const FormPemesanan = () => {
           </div>
 
           {/* Tanggal Mulai */}
-          <div className="form-group">
-            <label className="form-label">Tanggal Mulai Kontrak</label>
-            <input required type="date" name="tanggal_mulai" value={formData.tanggal_mulai} onChange={handleChange} className="form-control" />
+          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <CalendarIcon size={18} color="var(--color-primary)" /> Tanggal Mulai Kontrak
+            </label>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.5rem' }}>
+              <Calendar 
+                onChange={(date) => {
+                  const yyyy = date.getFullYear();
+                  const mm = String(date.getMonth() + 1).padStart(2, '0');
+                  const dd = String(date.getDate()).padStart(2, '0');
+                  setFormData(prev => ({ ...prev, tanggal_mulai: `${yyyy}-${mm}-${dd}` }));
+                }}
+                value={formData.tanggal_mulai ? new Date(formData.tanggal_mulai) : new Date()}
+                tileClassName="custom-tile"
+                style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text-main)' }}
+              />
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textAlign: 'center', marginTop: '0.5rem' }}>
+              Dipilih: <strong>{formData.tanggal_mulai || 'Belum dipilih'}</strong>
+            </p>
           </div>
 
           {/* Durasi */}

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getPemesananByUser, batalkanPemesanan } from '../services/apiService';
-import { ClipboardList, XCircle, CheckCircle, Building, Eye, Hourglass, BadgeCheck, AlertCircle, RefreshCw } from 'lucide-react';
+import { getPemesananByUser, batalkanPemesanan, getInvoiceUrl } from '../services/apiService';
+import { ClipboardList, XCircle, CheckCircle, Eye, Hourglass, BadgeCheck, AlertCircle, RefreshCw, Star, Printer } from 'lucide-react';
 import SkeletonLoader from '../components/SkeletonLoader';
 
 const statusConfig = {
@@ -36,8 +36,15 @@ const PesananSaya = () => {
     }
   }, [user]);
 
-  useEffect(() => { 
-    loadData(false); // Jangan panggil setLoading(true) lagi di sini karena state awal sudah true
+  useEffect(() => {
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) loadData(false);
+    }, 0);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [loadData]);
 
   const handleBatalkan = (id) => {
@@ -93,7 +100,7 @@ const PesananSaya = () => {
           </div>
         ) : pesananList.length === 0 ? (
           <div className="card" style={{ padding: '4rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ backgroundColor: '#f1f5f9', padding: '2rem', borderRadius: '50%', marginBottom: '1.5rem' }}>
+            <div style={{ backgroundColor: 'var(--color-background)', padding: '2rem', borderRadius: '50%', marginBottom: '1.5rem', border: '1px solid var(--color-border)' }}>
               <ClipboardList size={64} color="var(--color-text-muted)" />
             </div>
             <h3 style={{ marginBottom: '0.5rem' }}>Belum ada pesanan</h3>
@@ -122,8 +129,17 @@ const PesananSaya = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
                       <div>
                         <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>#{item.id}</p>
-                        <h3 style={{ fontSize: '1.15rem', fontWeight: 600 }}>
+                        <h3 style={{ fontSize: '1.15rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           {item.office?.nama || 'Ruangan tidak ditemukan'}
+                          {item.parent_id && (
+                            <span style={{ 
+                              fontSize: '0.65rem', backgroundColor: 'var(--color-secondary)', 
+                              color: 'var(--color-primary)', padding: '2px 8px', borderRadius: '12px',
+                              border: '1px solid var(--color-primary)'
+                            }}>
+                              Perpanjangan
+                            </span>
+                          )}
                         </h3>
                       </div>
                       {renderStatus(item.status)}
@@ -169,6 +185,48 @@ const PesananSaya = () => {
                         >
                           <Eye size={15} /> Lihat Detail
                         </Link>
+
+                        {(item.status === 'Dikonfirmasi' || item.status === 'Selesai') && (
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              window.open(getInvoiceUrl(item.id), '_blank');
+                            }}
+                            className="btn btn-outline"
+                            title="Download Invoice"
+                            style={{ padding: '0.45rem', minWidth: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <Printer size={15} />
+                          </button>
+                        )}
+
+                        {/* Perpanjang — Jika Dikonfirmasi atau Selesai */}
+                        {(item.status === 'Dikonfirmasi' || item.status === 'Selesai') && (
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <Link
+                              to={`/ruangan/${item.office_id}#reviews`}
+                              className="btn btn-outline"
+                              style={{ 
+                                padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
+                                display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                borderColor: 'var(--color-warning)', color: 'var(--color-warning)'
+                              }}
+                            >
+                              <Star size={15} /> Beri Ulasan
+                            </Link>
+                            <Link
+                              to={`/ruangan/${item.office_id}?extend_from=${item.id}`}
+                              className="btn btn-outline"
+                              style={{ 
+                                padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
+                                display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                borderColor: 'var(--color-primary)', color: 'var(--color-primary)'
+                              }}
+                            >
+                              <RefreshCw size={15} /> Perpanjang
+                            </Link>
+                          </div>
+                        )}
 
                         {/* Batalkan — hanya jika Pending */}
                         {item.status === 'Pending' && (

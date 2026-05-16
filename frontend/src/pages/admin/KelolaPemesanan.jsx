@@ -8,10 +8,10 @@ const statusOptions = ['Semua', 'Pending', 'Dikonfirmasi', 'Selesai', 'Dibatalka
 
 const getStatusStyle = (status) => {
   switch (status) {
-    case 'Dikonfirmasi': return { backgroundColor: '#ecfdf5', color: '#059669', border: '1px solid #10b981' };
-    case 'Selesai':      return { backgroundColor: '#f8fafc', color: '#64748b', border: '1px solid #cbd5e1' };
-    case 'Dibatalkan':   return { backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #ef4444' };
-    default:             return { backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fbbf24' };
+    case 'Dikonfirmasi': return { backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' };
+    case 'Selesai':      return { backgroundColor: 'var(--color-background)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' };
+    case 'Dibatalkan':   return { backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' };
+    default:             return { backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)' };
   }
 };
 
@@ -127,6 +127,16 @@ const KelolaPemesanan = () => {
                 {/* ID */}
                 <td style={{ padding: '1rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
                   #{item.id}
+                  {item.parent_id && (
+                    <div style={{ 
+                      fontSize: '0.6rem', color: 'var(--color-primary)', 
+                      backgroundColor: 'rgba(37, 99, 235, 0.1)', padding: '2px 4px', 
+                      borderRadius: '4px', marginTop: '4px', display: 'inline-block',
+                      border: '1px solid rgba(37, 99, 235, 0.2)'
+                    }}>
+                      PERPANJANGAN
+                    </div>
+                  )}
                 </td>
 
                 {/* Pemesan */}

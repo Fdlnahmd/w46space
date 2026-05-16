@@ -13,6 +13,7 @@ class Booking extends Model
     protected $fillable = [
         'user_id',
         'office_id',
+        'parent_id',
         'nama_pemesan',
         'perusahaan',
         'tanggal_mulai',
@@ -22,12 +23,19 @@ class Booking extends Model
         'waktu_selesai',
         'total_harga',
         'status',
+        'payment_status',
+        'payment_token',
+        'coupon_id',
+        'discount_amount',
+        'total_addon_price',
     ];
 
     protected $casts = [
         'tanggal_mulai' => 'date',
         'tanggal_akhir' => 'date',
         'total_harga' => 'float',
+        'discount_amount' => 'float',
+        'total_addon_price' => 'float',
     ];
 
     public function user()
@@ -38,5 +46,17 @@ class Booking extends Model
     public function office()
     {
         return $this->belongsTo(Office::class);
+    }
+
+    public function coupon()
+    {
+        return $this->belongsTo(Coupon::class);
+    }
+
+    public function addons()
+    {
+        return $this->belongsToMany(Addon::class, 'booking_addons')
+                    ->withPivot('price_at_booking', 'status')
+                    ->withTimestamps();
     }
 }

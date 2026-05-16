@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Navbar from './components/Navbar';
@@ -27,6 +28,7 @@ import FormRuangan from './pages/admin/FormRuangan';
 import KelolaPemesanan from './pages/admin/KelolaPemesanan';
 import FormPemesanan from './pages/admin/FormPemesanan';
 import DetailPemesananAdmin from './pages/admin/DetailPemesananAdmin';
+import AdminReviews from './pages/admin/Reviews';
 
 // Wrapper untuk halaman publik (dengan Navbar & Footer)
 const PublicLayout = ({ children }) => (
@@ -42,7 +44,8 @@ const PublicLayout = ({ children }) => (
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <ThemeProvider>
+        <Router>
         <Routes>
           {/* Auth Routes (tanpa Navbar/Footer) */}
           <Route path="/login" element={<Login />} />
@@ -81,13 +84,17 @@ function App() {
               <Route path="pemesanan" element={<KelolaPemesanan />} />
               <Route path="pemesanan/:id" element={<DetailPemesananAdmin />} />
               <Route path="pemesanan/edit/:id" element={<FormPemesanan />} />
+
+              {/* Moderasi Ulasan */}
+              <Route path="ulasan" element={<AdminReviews />} />
             </Route>
           </Route>
 
           {/* Catch-all route for 404 */}
           <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
         </Routes>
-      </Router>
+        </Router>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

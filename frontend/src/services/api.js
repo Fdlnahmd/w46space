@@ -26,4 +26,17 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
+// Interceptor untuk menangani Token Expired (401 Unauthorized)
+api.interceptors.response.use((response) => {
+  return response;
+}, (error) => {
+  if (error.response && error.response.status === 401) {
+    // Jika token tidak valid atau expired, hapus user dari localStorage
+    // dan paksa reload untuk menendang user ke halaman login
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  }
+  return Promise.reject(error);
+});
+
 export default api;

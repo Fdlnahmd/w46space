@@ -11,9 +11,10 @@ const Modal = ({ isOpen, onClose, onConfirm, type = 'success', title, message, c
       backdropFilter: 'blur(4px)', animation: 'fadeIn 0.3s ease'
     }}>
       <div style={{
-        backgroundColor: '#fff', padding: '2rem', borderRadius: 'var(--border-radius-lg)',
+        backgroundColor: 'var(--color-surface)', padding: '2rem', borderRadius: 'var(--border-radius-lg)',
         width: '90%', maxWidth: '400px', textAlign: 'center',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
+        border: '1px solid var(--color-border)',
         position: 'relative', animation: 'slideUp 0.3s ease'
       }}>
         {!onConfirm && (

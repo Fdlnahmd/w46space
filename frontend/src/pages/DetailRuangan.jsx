@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getRuanganById, createPemesanan } from '../services/apiService';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { getRuanganById, createPemesanan, getPemesananById, getAddons, checkCoupon } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
-import { Users, CheckCircle2, ArrowLeft, LogIn, ShieldAlert } from 'lucide-react';
+import { Users, CheckCircle2, ArrowLeft, LogIn, ShieldAlert, Coffee, Wifi, Monitor, Printer, Ticket, Check, X } from 'lucide-react';
+
+const iconMap = {
+  Coffee: <Coffee size={18} />,
+  Wifi: <Wifi size={18} />,
+  Monitor: <Monitor size={18} />,
+  Printer: <Printer size={18} />,
+};
 
 // Hitung tanggalAkhir dari tanggalMulai + durasi bulan
 const hitungTanggalAkhir = (tanggalMulai, durasiButlan) => {
@@ -12,14 +19,31 @@ const hitungTanggalAkhir = (tanggalMulai, durasiButlan) => {
 };
 
 import Modal from '../components/Modal';
+import ReviewSection from '../components/ReviewSection';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
+import './CalendarCustom.css';
 
 const DetailRuangan = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [ruangan, setRuangan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
+  const [occupiedDates, setOccupiedDates] = useState([]);
+  
+  // Feature Additions
+  const [availableAddons, setAvailableAddons] = useState([]);
+  const [selectedAddons, setSelectedAddons] = useState([]);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponData, setCouponData] = useState(null);
+  const [couponError, setCouponError] = useState('');
+
+  // Ambil extend_from dari query param
+  const queryParams = new URLSearchParams(location.search);
+  const extendFromId = queryParams.get('extend_from');
 
   const [formData, setFormData] = useState({
     namaPemesan: user?.name || user?.nama || '',
@@ -31,16 +55,105 @@ const DetailRuangan = () => {
   });
 
   useEffect(() => {
-    getRuanganById(id).then(data => {
-      if (data) setRuangan(data);
-      else navigate('/ruangan');
-    });
-  }, [id, navigate]);
+    const fetchData = async () => {
+      const data = await getRuanganById(id);
+      if (data) {
+        setRuangan(data);
+        if (data.bookings) {
+          const dates = data.bookings
+            .filter(b => b.status !== 'Dibatalkan')
+            .map(b => ({
+              start: new Date(b.tanggal_mulai),
+              end: new Date(b.tanggal_akhir)
+            }));
+          setOccupiedDates(dates);
+        }
+      } else {
+        navigate('/ruangan');
+      }
 
-  // Hitung total harga: harga/hari * 26 hari kerja * durasi bulan (estimasi)
+      // Load Addons
+      try {
+        const addonsData = await getAddons();
+        setAvailableAddons(addonsData);
+      } catch (err) { console.error('Addons fail:', err); }
+
+      // Logika Perpanjang Kontrak
+      if (extendFromId) {
+        try {
+          const oldBooking = await getPemesananById(extendFromId);
+          if (oldBooking) {
+            const nextDate = new Date(oldBooking.tanggal_akhir);
+            nextDate.setDate(nextDate.getDate() + 1);
+            setFormData(prev => ({
+              ...prev,
+              perusahaan: oldBooking.perusahaan || '',
+              tanggalMulai: nextDate.toISOString().split('T')[0],
+              durasi: oldBooking.durasi
+            }));
+          }
+        } catch (err) {
+          console.error('Gagal mengambil data perpanjangan:', err);
+        }
+      }
+    };
+
+    fetchData();
+
+    // 2. Availability Realtime (Polling setiap 10 detik)
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
+  }, [id, navigate, extendFromId]);
+
+  // Fungsi untuk mengecek apakah tanggal tertentu sudah dipesan
+  const isDateOccupied = ({ date, view }) => {
+    if (view === 'month') {
+      return occupiedDates.some(range => 
+        date >= range.start && date <= range.end
+      );
+    }
+    return false;
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode) return;
+    setCouponError('');
+    try {
+      const data = await checkCoupon(couponCode);
+      setCouponData(data);
+    } catch (err) {
+      setCouponData(null);
+      setCouponError(err.response?.data?.message || 'Kupon tidak valid');
+    }
+  };
+
+  const toggleAddon = (id) => {
+    setSelectedAddons(prev => 
+      prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
+    );
+  };
+
+  // Hitung total harga: (harga/hari * 26 * durasi) + addons - discount
   const hitungTotal = () => {
     if (!ruangan) return 0;
-    return ruangan.harga * 26 * parseInt(formData.durasi);
+    const basePrice = ruangan.harga * 26 * parseInt(formData.durasi);
+    
+    // Addons
+    const addonsTotal = availableAddons
+      .filter(a => selectedAddons.includes(a.id))
+      .reduce((sum, a) => sum + a.harga, 0);
+      
+    // Discount
+    let discount = 0;
+    if (couponData) {
+      if (couponData.type === 'percentage') {
+        discount = (basePrice * couponData.value) / 100;
+      } else {
+        discount = couponData.value;
+      }
+    }
+    
+    return basePrice + addonsTotal - discount;
   };
 
   const handleBooking = async (e) => {
@@ -52,6 +165,7 @@ const DetailRuangan = () => {
 
       const dataKeBackend = {
         id_ruangan: parseInt(id),
+        parent_id: extendFromId || null,
         nama_pemesan: formData.namaPemesan,
         perusahaan: formData.perusahaan,
         tanggal_mulai: formData.tanggalMulai,
@@ -59,7 +173,9 @@ const DetailRuangan = () => {
         waktu_mulai: formData.waktuMulai,
         waktu_selesai: formData.waktuSelesai,
         durasi: parseInt(formData.durasi),
-        total_harga: hitungTotal()
+        total_harga: hitungTotal(),
+        coupon_code: couponData ? couponData.code : null,
+        addon_ids: selectedAddons
       };
 
       await createPemesanan(dataKeBackend);
@@ -162,9 +278,6 @@ const DetailRuangan = () => {
 
     // User biasa — form booking
     const totalHarga = hitungTotal();
-    const tanggalAkhirPreview = formData.tanggalMulai
-      ? hitungTanggalAkhir(formData.tanggalMulai, formData.durasi)
-      : '—';
 
     return (
       <form onSubmit={handleBooking} className="grid md:grid-cols-2" style={{ gap: '1.5rem' }}>
@@ -191,17 +304,102 @@ const DetailRuangan = () => {
           />
         </div>
 
-        {/* Tanggal Mulai */}
-        <div className="form-group">
-          <label className="form-label">Tanggal Mulai Kontrak</label>
-          <input
-            required type="date" className="form-control"
-            value={formData.tanggalMulai}
-            onChange={(e) => setFormData({ ...formData, tanggalMulai: e.target.value })}
+        {/* Visual Calendar */}
+        <div style={{ gridColumn: '1 / -1', marginBottom: '1rem' }}>
+          <label className="form-label">Cek Ketersediaan (Kalender)</label>
+          <Calendar
+            onChange={(date) => {
+              const yyyy = date.getFullYear();
+              const mm = String(date.getMonth() + 1).padStart(2, '0');
+              const dd = String(date.getDate()).padStart(2, '0');
+              const formattedDate = `${yyyy}-${mm}-${dd}`;
+              setFormData({ ...formData, tanggalMulai: formattedDate });
+            }}
+            value={formData.tanggalMulai ? new Date(formData.tanggalMulai) : new Date()}
+            tileDisabled={isDateOccupied}
+            minDate={new Date()}
+            className="custom-calendar"
           />
         </div>
 
-        {/* Durasi */}
+        {/* Fasilitas Tambahan (Addons) */}
+        <div style={{ gridColumn: '1 / -1' }}>
+          <label className="form-label">Fasilitas Tambahan (Opsional)</label>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
+            gap: '0.75rem' 
+          }}>
+            {availableAddons.map(addon => (
+              <div 
+                key={addon.id} 
+                onClick={() => toggleAddon(addon.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.75rem',
+                  borderRadius: 'var(--border-radius)', cursor: 'pointer', border: '1px solid',
+                  borderColor: selectedAddons.includes(addon.id) ? 'var(--color-primary)' : 'var(--color-border)',
+                  backgroundColor: selectedAddons.includes(addon.id) ? 'rgba(37, 99, 235, 0.05)' : 'var(--color-surface)',
+                  transition: 'all 0.2s',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <div style={{ color: selectedAddons.includes(addon.id) ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                  {iconMap[addon.icon] || <Check size={16} />}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 600, margin: 0 }}>{addon.nama}</p>
+                  <p style={{ color: 'var(--color-text-muted)', margin: 0, fontSize: '0.75rem' }}>
+                    + Rp {addon.harga.toLocaleString('id-ID')}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Coupon Code */}
+        <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+          <label className="form-label">Punya Kode Promo?</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <Ticket size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+              <input
+                type="text" className="form-control"
+                placeholder="Masukkan kode (misal: OFFICE10)"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                style={{ paddingLeft: '2.5rem' }}
+                disabled={!!couponData}
+              />
+            </div>
+            {couponData ? (
+              <button type="button" onClick={() => { setCouponData(null); setCouponCode(''); }} className="btn btn-outline" style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}>
+                <X size={18} />
+              </button>
+            ) : (
+              <button type="button" onClick={handleApplyCoupon} className="btn btn-outline">Gunakan</button>
+            )}
+          </div>
+          {couponError && <p style={{ color: 'var(--color-danger)', fontSize: '0.8rem', marginTop: '0.25rem' }}>{couponError}</p>}
+          {couponData && (
+            <p style={{ color: 'var(--color-success)', fontSize: '0.8rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <Check size={14} /> Kupon <strong>{couponData.code}</strong> berhasil dipasang!
+            </p>
+          )}
+        </div>
+
+        {/* Tanggal Mulai & Durasi */}
+        <div className="form-group">
+          <label className="form-label">Tanggal Mulai Kontrak</label>
+          <div style={{ 
+            padding: '0.75rem', backgroundColor: 'var(--color-secondary)', 
+            borderRadius: 'var(--border-radius)', border: '1px solid var(--color-border)',
+            fontWeight: 600, color: formData.tanggalMulai ? 'var(--color-text-main)' : 'var(--color-text-muted)'
+          }}>
+            {formData.tanggalMulai ? new Date(formData.tanggalMulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Pilih di kalender'}
+          </div>
+        </div>
+
         <div className="form-group">
           <label className="form-label">Durasi Kontrak</label>
           <select
@@ -218,22 +416,14 @@ const DetailRuangan = () => {
         </div>
 
         {/* Waktu */}
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', gridColumn: '1 / -1' }}>
           <div className="form-group" style={{ flex: 1 }}>
             <label className="form-label">Jam Masuk</label>
-            <input
-              type="time" className="form-control"
-              value={formData.waktuMulai}
-              onChange={(e) => setFormData({ ...formData, waktuMulai: e.target.value })}
-            />
+            <input type="time" className="form-control" value={formData.waktuMulai} onChange={(e) => setFormData({ ...formData, waktuMulai: e.target.value })} />
           </div>
           <div className="form-group" style={{ flex: 1 }}>
             <label className="form-label">Jam Keluar</label>
-            <input
-              type="time" className="form-control"
-              value={formData.waktuSelesai}
-              onChange={(e) => setFormData({ ...formData, waktuSelesai: e.target.value })}
-            />
+            <input type="time" className="form-control" value={formData.waktuSelesai} onChange={(e) => setFormData({ ...formData, waktuSelesai: e.target.value })} />
           </div>
         </div>
 
@@ -241,20 +431,32 @@ const DetailRuangan = () => {
         <div style={{ gridColumn: '1 / -1' }}>
           <div style={{
             backgroundColor: 'var(--color-secondary)', padding: '1.25rem',
-            borderRadius: 'var(--border-radius)', border: '1px solid var(--color-border)',
-            display: 'flex', flexWrap: 'wrap', gap: '1.5rem', justifyContent: 'space-between', alignItems: 'center'
+            borderRadius: 'var(--border-radius)', border: '1px solid var(--color-border)'
           }}>
-            <div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Tanggal Akhir Kontrak</p>
-              <p style={{ fontWeight: 600, fontSize: '1.05rem' }}>{tanggalAkhirPreview}</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+              <span>Harga Ruangan ({formData.durasi} bln):</span>
+              <span>Rp {(ruangan.harga * 26 * formData.durasi).toLocaleString('id-ID')}</span>
             </div>
-            <div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
-                Estimasi Total ({formData.durasi} bln × 26 hari × Rp {(ruangan.harga ?? 0).toLocaleString('id-ID')})
-              </p>
-              <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.4rem' }}>
-                Rp {(totalHarga ?? 0).toLocaleString('id-ID')}
-              </p>
+            
+            {selectedAddons.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                <span>Fasilitas Tambahan:</span>
+                <span>+ Rp {availableAddons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.harga, 0).toLocaleString('id-ID')}</span>
+              </div>
+            )}
+
+            {couponData && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--color-success)' }}>
+                <span>Diskon Kupon ({couponData.code}):</span>
+                <span>- Rp {(couponData.type === 'percentage' ? (ruangan.harga * 26 * formData.durasi * couponData.value / 100) : couponData.value).toLocaleString('id-ID')}</span>
+              </div>
+            )}
+
+            <div style={{ borderTop: '1px solid var(--color-border)', marginTop: '0.75rem', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 600 }}>Total Pembayaran:</span>
+              <span style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.4rem' }}>
+                Rp {totalHarga.toLocaleString('id-ID')}
+              </span>
             </div>
           </div>
         </div>
@@ -345,6 +547,11 @@ const DetailRuangan = () => {
               Formulir Pemesanan
             </h2>
             {renderBookingSection()}
+          </div>
+
+          {/* Sistem Review & Testimoni */}
+          <div className="card" style={{ padding: '2rem' }}>
+            <ReviewSection officeId={id} canReview={ruangan?.can_review} />
           </div>
         </div>
       </div>

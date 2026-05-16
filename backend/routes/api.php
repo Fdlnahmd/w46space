@@ -3,6 +3,8 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OfficeController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
@@ -20,6 +22,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::put('/profile/password', [AuthController::class, 'changePassword']);
 
+    // Admin Analytics
+    Route::get('/admin/analytics', [AnalyticsController::class, 'getStats']);
+
     // Ruangan (Admin only bisa dihandle di controller atau middleware)
     Route::post('/offices', [OfficeController::class, 'store']);
     Route::put('/offices/{id}', [OfficeController::class, 'update']);
@@ -31,5 +36,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::put('/bookings/{id}', [BookingController::class, 'update']);
     Route::patch('/bookings/{id}/status', [BookingController::class, 'updateStatus']);
+    Route::post('/bookings/{id}/addons', [BookingController::class, 'addAddons']);
+    Route::patch('/bookings/{id}/addons/confirm', [BookingController::class, 'confirmAddon']);
     Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
+
+    // Review
+    Route::post('/reviews', [\App\Http\Controllers\ReviewController::class, 'store']);
+    Route::get('/admin/reviews', [\App\Http\Controllers\ReviewController::class, 'all']);
+    Route::delete('/admin/reviews/{id}', [\App\Http\Controllers\ReviewController::class, 'destroy']);
+
+    // Addons, Coupons, Notifications
+    Route::get('/addons', [\App\Http\Controllers\ExtraController::class, 'getAddons']);
+    Route::post('/coupons/check', [BookingController::class, 'checkCoupon']);
+    Route::get('/notifications', [\App\Http\Controllers\ExtraController::class, 'getNotifications']);
+    Route::patch('/notifications/read-all', [\App\Http\Controllers\ExtraController::class, 'markAllAsRead']);
+    Route::patch('/notifications/{id}/read', [\App\Http\Controllers\ExtraController::class, 'markAsRead']);
 });
+
+// Review Public
+Route::get('/offices/{id}/reviews', [\App\Http\Controllers\ReviewController::class, 'index']);
+Route::get('/reviews/latest', [\App\Http\Controllers\ReviewController::class, 'latest']);
+
+// Invoice Public (With internal security check)
+Route::get('/bookings/{id}/invoice', [InvoiceController::class, 'download']);
+

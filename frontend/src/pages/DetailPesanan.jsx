@@ -1,9 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getPemesananById } from '../services/apiService';
+import { 
+  getPemesananById, 
+  updateStatusPemesanan, 
+  getAddons, 
+  addAddonsToBooking,
+  getInvoiceUrl
+} from '../services/apiService';
+import { useAuth } from '../contexts/AuthContext';
 import {
   ArrowLeft, Building, Calendar, Clock, User, Briefcase,
-  CheckCircle, XCircle, Timer, AlertCircle, BadgeCheck, Hourglass
+  CheckCircle, XCircle, Timer, AlertCircle, BadgeCheck, Hourglass, Check, X,
+  Plus, Coffee, Wifi, Monitor, Printer, Ticket
 } from 'lucide-react';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -77,18 +85,94 @@ const formatDate = (dateString) => {
 const DetailPesanan = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [pesanan, setPesanan] = useState(null);
   const [statusWaktu, setStatusWaktu] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [availableAddons, setAvailableAddons] = useState([]);
+  const [selectedAddons, setSelectedAddons] = useState([]);
+  const [showAddonModal, setShowAddonModal] = useState(false);
+  const [addonStep, setAddonStep] = useState(1); // 1: Selection, 2: Payment
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
 
   // Ambil data pesanan
-  useEffect(() => {
-    getPemesananById(id).then(data => {
+  const fetchDetail = useCallback(async () => {
+    try {
+      const data = await getPemesananById(id);
       if (!data) { navigate('/pesanan-saya'); return; }
       setPesanan(data);
       setLoading(false);
-    });
+    } catch (err) { console.error(err); }
   }, [id, navigate]);
+
+  const fetchAddons = useCallback(async () => {
+    try {
+      const data = await getAddons();
+      setAvailableAddons(data);
+    } catch (err) { console.error(err); }
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadData = async () => {
+      await Promise.all([fetchDetail(), fetchAddons()]);
+    };
+
+    if (isMounted) {
+      loadData();
+    }
+
+    return () => { isMounted = false; };
+  }, [fetchDetail, fetchAddons]);
+
+  const handleAddAddons = async () => {
+    if (selectedAddons.length === 0) return;
+    setProcessing(true);
+    try {
+      await addAddonsToBooking(pesanan.id, selectedAddons);
+      showToast('Permintaan fasilitas terkirim! Menunggu konfirmasi admin.');
+      setShowAddonModal(false);
+      setSelectedAddons([]);
+      setAddonStep(1);
+      fetchDetail();
+    } catch (error) {
+      console.error(error);
+      showToast('Gagal menambahkan fasilitas', 'error');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+
+  const handleDownloadInvoice = () => {
+    window.open(getInvoiceUrl(pesanan.id), '_blank');
+  };
+
+  const toggleAddon = (id) => {
+    setSelectedAddons(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleStatusUpdate = async (newStatus) => {
+    setProcessing(true);
+    try {
+      await updateStatusPemesanan(pesanan.id, newStatus);
+      await fetchDetail();
+    } catch (error) {
+      console.error(error);
+      alert('Gagal memperbarui status');
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   // Countdown real-time
   useEffect(() => {
@@ -137,14 +221,50 @@ const DetailPesanan = () => {
                   {pesanan.office?.nama || 'Ruangan'}
                 </h1>
               </div>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.5rem 1rem', borderRadius: '9999px',
-                backgroundColor: cfg.bg, border: `1px solid ${cfg.border}`,
-                color: cfg.color, fontWeight: 600
-              }}>
-                <StatusIcon size={16} />
-                {cfg.label}
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.5rem 1rem', borderRadius: '9999px',
+                  backgroundColor: cfg.bg, border: `1px solid ${cfg.border}`,
+                  color: cfg.color, fontWeight: 600
+                }}>
+                  <StatusIcon size={16} />
+                  {cfg.label}
+                </div>
+
+                {user?.role === 'admin' && pesanan.status === 'Pending' && (
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button 
+                      onClick={() => handleStatusUpdate('Dikonfirmasi')}
+                      disabled={processing}
+                      className="btn btn-primary" 
+                      style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+                    >
+                      <Check size={16} /> {processing ? '...' : 'Terima'}
+                    </button>
+                    <button 
+                      onClick={() => handleStatusUpdate('Dibatalkan')}
+                      disabled={processing}
+                      className="btn btn-outline" 
+                      style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
+                    >
+                      <X size={16} /> {processing ? '...' : 'Tolak'}
+                    </button>
+                  </div>
+                )}
+
+                {(pesanan.status === 'Dikonfirmasi' || pesanan.status === 'Selesai') && (
+                  <button 
+                    onClick={handleDownloadInvoice} 
+                    className="btn btn-outline" 
+                    style={{ 
+                      display: 'flex', alignItems: 'center', gap: '0.4rem', 
+                      fontSize: '0.85rem', padding: '0.5rem 1rem'
+                    }}
+                  >
+                    <Printer size={16} /> Download Invoice
+                  </button>
+                )}
               </div>
             </div>
 
@@ -269,27 +389,227 @@ const DetailPesanan = () => {
             </div>
           )}
 
-          {/* Fasilitas Ruangan */}
-          {pesanan.office?.fasilitas?.length > 0 && (
-            <div className="card" style={{ padding: '2rem' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>Fasilitas Ruangan</h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {pesanan.office.fasilitas.map((f, i) => (
-                  <span key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: '0.3rem',
-                    padding: '0.4rem 0.75rem', fontSize: '0.9rem',
-                    backgroundColor: 'var(--color-secondary)', borderRadius: 'var(--border-radius)',
-                    border: '1px solid var(--color-border)'
-                  }}>
-                    <CheckCircle size={14} color="var(--color-success)" /> {f}
-                  </span>
-                ))}
-              </div>
+          {/* Fasilitas Ruangan & Addons */}
+          <div className="card" style={{ padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Fasilitas & Layanan</h3>
+              {pesanan.status === 'Dikonfirmasi' && !isExpired && (
+                <button 
+                  onClick={() => setShowAddonModal(true)}
+                  className="btn btn-outline" 
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                >
+                  <Plus size={16} /> Tambah Fasilitas
+                </button>
+              )}
             </div>
-          )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Fasilitas Standar */}
+              <div>
+                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Fasilitas Standar:</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {pesanan.office?.fasilitas?.map((f, i) => (
+                    <span key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: '0.3rem',
+                      padding: '0.4rem 0.75rem', fontSize: '0.85rem',
+                      backgroundColor: 'var(--color-secondary)', borderRadius: 'var(--border-radius)',
+                      border: '1px solid var(--color-border)'
+                    }}>
+                      <CheckCircle size={14} color="var(--color-success)" /> {f}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Addons yang sudah ada */}
+              {pesanan.addons?.length > 0 && (
+                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Layanan Tambahan Aktif:</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {pesanan.addons.map((addon) => (
+                      <span key={addon.id} style={{
+                        display: 'flex', alignItems: 'center', gap: '0.3rem',
+                        padding: '0.4rem 0.75rem', fontSize: '0.85rem',
+                        backgroundColor: addon.pivot?.status === 'pending' ? 'rgba(245, 158, 11, 0.06)' : 'rgba(37,99,235,0.06)', 
+                        borderRadius: 'var(--border-radius)',
+                        border: `1px solid ${addon.pivot?.status === 'pending' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(37,99,235,0.2)'}`, 
+                        color: addon.pivot?.status === 'pending' ? 'var(--color-warning)' : 'var(--color-primary)'
+                      }}>
+                        {addon.pivot?.status === 'pending' ? <Hourglass size={14} /> : <CheckCircle size={14} />}
+                        {addon.nama} {addon.pivot?.status === 'pending' && '(Pending)'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
         </div>
       </div>
+
+      {/* Modal Tambah Addon */}
+      {showAddonModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '2rem', position: 'relative' }}>
+            <button 
+              onClick={() => { setShowAddonModal(false); setAddonStep(1); }}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}
+            >
+              <X size={24} />
+            </button>
+
+            {addonStep === 1 ? (
+              <>
+                <h3 style={{ marginBottom: '0.5rem' }}>Tambah Fasilitas</h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
+                  Pilih fasilitas tambahan untuk pesanan ini.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                  {availableAddons
+                    .filter(addon => !pesanan.addons?.find(a => a.id === addon.id))
+                    .map(addon => (
+                      <div 
+                        key={addon.id}
+                        onClick={() => toggleAddon(addon.id)}
+                        style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          padding: '1rem', borderRadius: 'var(--border-radius)',
+                          border: `2px solid ${selectedAddons.includes(addon.id) ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                          backgroundColor: selectedAddons.includes(addon.id) ? 'rgba(37,99,235,0.05)' : 'var(--color-secondary)',
+                          cursor: 'pointer', transition: 'all 0.2s'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ 
+                            width: '40px', height: '40px', borderRadius: '10px', 
+                            backgroundColor: selectedAddons.includes(addon.id) ? 'var(--color-primary)' : 'var(--color-border)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
+                          }}>
+                            {addon.nama.toLowerCase().includes('kopi') ? <Coffee size={20} /> :
+                             addon.nama.toLowerCase().includes('wifi') ? <Wifi size={20} /> :
+                             addon.nama.toLowerCase().includes('monitor') ? <Monitor size={20} /> :
+                             addon.nama.toLowerCase().includes('print') ? <Printer size={20} /> : <Plus size={20} />}
+                          </div>
+                          <div>
+                            <p style={{ fontWeight: 600, margin: 0, fontSize: '0.95rem' }}>{addon.nama}</p>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: 0 }}>
+                              Rp {Number(addon.harga).toLocaleString('id-ID')}
+                            </p>
+                          </div>
+                        </div>
+                        {selectedAddons.includes(addon.id) && <CheckCircle size={20} color="var(--color-primary)" />}
+                      </div>
+                    ))}
+                </div>
+
+                <div style={{ 
+                  backgroundColor: 'var(--color-secondary)', padding: '1rem', 
+                  borderRadius: 'var(--border-radius)', marginBottom: '1.5rem',
+                  border: '1px dashed var(--color-border)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 600 }}>
+                    <span>Total Tagihan Tambahan:</span>
+                    <span style={{ color: 'var(--color-primary)' }}>
+                      Rp {availableAddons
+                        .filter(a => selectedAddons.includes(a.id))
+                        .reduce((sum, a) => sum + Number(a.harga), 0)
+                        .toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button onClick={() => setShowAddonModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Batal</button>
+                  <button 
+                    onClick={() => setAddonStep(2)}
+                    disabled={selectedAddons.length === 0}
+                    className="btn btn-primary" 
+                    style={{ flex: 2 }}
+                  >
+                    Lanjut ke Pembayaran
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'inline-flex', padding: '1rem', backgroundColor: 'rgba(37,99,235,0.1)', borderRadius: '50%', marginBottom: '1rem' }}>
+                    <Ticket size={32} color="var(--color-primary)" />
+                  </div>
+                  <h3 style={{ margin: 0 }}>Konfirmasi Tambahan</h3>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
+                    Pastikan detail fasilitas sudah benar.
+                  </p>
+                </div>
+
+                <div style={{ 
+                  backgroundColor: 'var(--color-background)', padding: '1.5rem', 
+                  borderRadius: 'var(--border-radius)', marginBottom: '1.5rem',
+                  border: '1px solid var(--color-border)', textAlign: 'center'
+                }}>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>Total Tambahan:</p>
+                  <p style={{ fontWeight: 700, fontSize: '1.75rem', color: 'var(--color-primary)', margin: 0 }}>
+                    Rp {availableAddons
+                        .filter(a => selectedAddons.includes(a.id))
+                        .reduce((sum, a) => sum + Number(a.harga), 0)
+                        .toLocaleString('id-ID')}
+                  </p>
+                  <div style={{ 
+                    marginTop: '1.5rem', padding: '1rem', backgroundColor: '#fff7ed', 
+                    borderRadius: '8px', border: '1px solid #ffedd5'
+                  }}>
+                    <p style={{ fontSize: '0.85rem', color: '#9a3412', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                      <AlertCircle size={16} /> Permintaan akan diperiksa oleh Admin.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button onClick={() => setAddonStep(1)} className="btn btn-outline" style={{ flex: 1 }}>Kembali</button>
+                  <button 
+                    onClick={handleAddAddons}
+                    disabled={processing}
+                    className="btn btn-primary" 
+                    style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                  >
+                    {processing ? 'Memproses...' : <><BadgeCheck size={18} /> Kirim Permintaan</>}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div style={{
+          position: 'fixed', top: '2rem', right: '1.5rem', zIndex: 99999,
+          padding: '1rem 1.5rem', borderRadius: '12px', color: 'white',
+          maxWidth: '90vw', width: 'max-content',
+          backgroundColor: toast.type === 'success' ? '#10b981' : '#ef4444',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
+          display: 'flex', alignItems: 'center', gap: '0.75rem',
+          animation: 'slideIn 0.3s ease-out forwards'
+        }}>
+          {toast.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+          <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{toast.message}</span>
+          <style>{`
+            @keyframes slideIn {
+              from { transform: translateX(110%); opacity: 0; }
+              to { transform: translateX(0); opacity: 1; }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 };

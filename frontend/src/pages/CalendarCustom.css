@@ -1,0 +1,38 @@
+/* Kustomisasi Tampilan Kalender agar sesuai tema Sewa Ruang */
+.react-calendar {
+  width: 100% !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--border-radius) !important;
+  font-family: inherit !important;
+  padding: 0.5rem !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.react-calendar__tile--now {
+  background: rgba(37, 99, 235, 0.1) !important;
+  color: var(--color-primary) !important;
+  font-weight: bold !important;
+}
+
+.react-calendar__tile--active {
+  background: var(--color-primary) !important;
+  color: white !important;
+  border-radius: 4px !important;
+}
+
+.react-calendar__tile:disabled {
+  background-color: #fee2e2 !important;
+  color: #ef4444 !important;
+  cursor: not-allowed !important;
+  text-decoration: line-through !important;
+}
+
+.react-calendar__navigation button {
+  color: var(--color-primary) !important;
+  font-weight: bold !important;
+}
+
+.occupied-date {
+  background-color: #fee2e2 !important;
+  color: #ef4444 !important;
+}

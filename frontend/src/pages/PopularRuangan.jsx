@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getRuangan } from '../services/apiService';
 import { Users, Star, ArrowLeft, AlertCircle, RefreshCw } from 'lucide-react';
@@ -9,7 +9,7 @@ const PopularRuangan = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
@@ -22,11 +22,18 @@ const PopularRuangan = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) fetchData();
+    }, 0);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [fetchData]);
 
   return (
     <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh', padding: '2rem 0' }}>

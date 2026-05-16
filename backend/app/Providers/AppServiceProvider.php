@@ -6,6 +6,9 @@ use Illuminate\Support\ServiceProvider;
 
 use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -39,6 +42,11 @@ class AppServiceProvider extends ServiceProvider
                 ->line('Tautan ini hanya berlaku selama **60 menit** demi keamanan akun Anda.')
                 ->line('Jika Anda tidak merasa melakukan permintaan ini, abaikan saja email ini. Keamanan akun Anda tetap terjaga selama tautan tidak diklik.')
                 ->salutation("Terima kasih,\nTim " . config('app.name'));
+        });
+
+        // 3. Rate Limiting Login (5 kali per menit per IP)
+        RateLimiter::for('login', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
         });
     }
 }

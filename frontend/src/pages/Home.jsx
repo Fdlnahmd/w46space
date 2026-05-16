@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getRuangan } from '../services/apiService';
+import { getRuangan, getLatestReviews } from '../services/apiService';
 import { Users, ArrowRight, Star } from 'lucide-react';
 
 const Home = () => {
   const [ruangan, setRuangan] = useState([]);
+  const [latestReviews, setLatestReviews] = useState([]);
 
   useEffect(() => {
     getRuangan().then(data => {
       // Tampilkan 3 ruangan terbaru di beranda
       setRuangan(data.slice(-3).reverse());
+    });
+
+    getLatestReviews().then(data => {
+      setLatestReviews(data);
     });
   }, []);
 
@@ -128,6 +133,41 @@ const Home = () => {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section style={{ backgroundColor: 'var(--color-background)', padding: '5rem 0' }}>
+        <div className="container">
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontSize: '2.25rem', marginBottom: '1rem' }}>Apa Kata Pelanggan Kami?</h2>
+            <p style={{ color: 'var(--color-text-muted)', maxWidth: '600px', margin: '0 auto' }}>
+              Dengarkan pengalaman langsung dari mereka yang telah menggunakan layanan sewa ruangan kami.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3" style={{ gap: '1.5rem' }}>
+            {latestReviews.length > 0 ? latestReviews.map(r => (
+              <div key={r.id} className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '2px', marginBottom: '0.5rem' }}>
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={18} fill={i < r.rating ? 'var(--color-warning)' : 'transparent'} color={i < r.rating ? 'var(--color-warning)' : '#cbd5e1'} />
+                  ))}
+                </div>
+                <p style={{ fontStyle: 'italic', color: 'var(--color-text-muted)', flex: 1, lineHeight: 1.6 }}>
+                  "{r.comment}"
+                </p>
+                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                  <p style={{ fontWeight: 600, marginBottom: '0.1rem' }}>{r.user?.name}</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--color-primary)' }}>Penyewa {r.office?.nama}</p>
+                </div>
+              </div>
+            )) : (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem' }}>
+                <p style={{ color: 'var(--color-text-muted)' }}>Belum ada ulasan yang ditampilkan.</p>
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </div>

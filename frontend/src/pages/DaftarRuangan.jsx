@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getRuangan } from '../services/apiService';
 import { Search, Users, AlertCircle, RefreshCw } from 'lucide-react';
@@ -11,7 +11,7 @@ const DaftarRuangan = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
@@ -23,11 +23,18 @@ const DaftarRuangan = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) fetchData();
+    }, 0);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [fetchData]);
 
   const categories = ['Semua', 'Office', 'Private Office', 'Meeting Room', 'Coworking Space', 'Creative Space'];
 
@@ -81,7 +88,7 @@ const DaftarRuangan = () => {
                   transition: 'all 0.2s ease',
                   border: '1px solid',
                   borderColor: selectedCategory === cat ? 'var(--color-primary)' : 'var(--color-border)',
-                  backgroundColor: selectedCategory === cat ? 'var(--color-primary)' : 'white',
+                  backgroundColor: selectedCategory === cat ? 'var(--color-primary)' : 'var(--color-surface)',
                   color: selectedCategory === cat ? 'white' : 'var(--color-text-main)',
                 }}
               >

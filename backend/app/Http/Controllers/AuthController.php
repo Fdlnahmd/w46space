@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Cache\RateLimiting\Limit;
 
 class AuthController extends Controller
 {
@@ -34,9 +36,21 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+        if (RateLimiter::tooManyAttempts('login:' . $request->ip(), 5)) {
+            return response()->json(['message' => 'Terlalu banyak percobaan login, coba lagi nanti.'], 429);
+        }
+
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
+
         if (!Auth::attempt($request->only('email', 'password'))) {
+            RateLimiter::hit('login:' . $request->ip(), 60);
             return response()->json(['message' => 'Email atau password salah'], 401);
         }
+
+        RateLimiter::clear('login:' . $request->ip());
 
         $user = User::where('email', $request->email)->firstOrFail();
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -87,28 +101,17 @@ class AuthController extends Controller
         return response()->json(['message' => 'Password berhasil diubah']);
     }
 
-    // Untuk fitur Forgot Password, Laravel 11 merekomendasikan penggunaan Facade Password
     public function forgotPassword(Request $request)
     {
         $request->validate(['email' => 'required|email']);
 
-        // Dalam sistem API, kita biasanya menangani ini secara manual atau menggunakan Broker
-        $user = User::where('email', $request->email)->first();
-        if (!$user) {
-            return response()->json(['message' => 'Email tidak terdaftar'], 404);
-        }
-
-        // Untuk kesederhanaan di tahap ini, kita akan buat token manual atau gunakan Broker
         $status = \Illuminate\Support\Facades\Password::sendResetLink($request->only('email'));
 
         if ($status === \Illuminate\Support\Facades\Password::RESET_LINK_SENT) {
-            return response()->json(['message' => 'Link reset password telah dikirim ke email Anda']);
+            return response()->json(['message' => 'Jika email terdaftar, link reset password telah dikirim ke email Anda']);
         }
 
-        return response()->json([
-            'message' => 'Gagal mengirim link',
-            'debug_status' => __($status) // Ini akan memunculkan alasan aslinya
-        ], 500);
+        return response()->json(['message' => 'Jika email terdaftar, link reset password telah dikirim ke email Anda']);
     }
 
     public function resetPassword(Request $request)
@@ -119,11 +122,9 @@ class AuthController extends Controller
             'password' => 'required|string|min:6|confirmed',
         ]);
 
-        // Gunakan Broker Password untuk meriset
         $status = \Illuminate\Support\Facades\Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
-                // Pastikan user ditemukan
                 if ($user) {
                     $user->password = Hash::make($password);
                     $user->setRememberToken(\Illuminate\Support\Str::random(60));
