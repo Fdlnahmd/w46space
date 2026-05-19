@@ -10,12 +10,12 @@
 
 - **Daftar Ruangan**: Telusuri berbagai jenis ruangan dengan kategori yang lengkap.
 - **Ruangan Populer**: Akses cepat ke ruangan-ruangan terbaik yang paling banyak diminati.
-- **Booking System & Addons**: Pesan ruangan dengan opsi fasilitas tambahan (WiFi, Kopi, dll).
+- **Booking System & Addons**: Pesan ruangan dengan opsi fasilitas tambahan (WiFi, Kopi, dll) dengan penanganan state kosong yang informatif.
 - **Promo & Kupon**: Gunakan kode diskon (persentase/nominal) untuk harga lebih hemat.
 - **Riwayat & Invoice**: Pantau status pesanan dan unduh invoice resmi dalam format PDF.
 - **Perpanjang Kontrak**: Fitur sekali klik untuk memperpanjang masa sewa ruangan.
 - **Ulasan & Rating**: Berikan testimoni dan bintang setelah pesanan dikonfirmasi.
-- **Profil & Keamanan**: Kelola data diri dan fitur lupa password via SMTP.
+- **Profil & Keamanan**: Kelola data diri dan fitur lupa password via SMTP dengan tombol kembali ke Landing Page yang ramah mobile.
 
 ### 🔐 Untuk Admin
 
@@ -24,6 +24,14 @@
 - **Manajemen Pemesanan**: Kelola alur konfirmasi dan pembatalan pesanan secara efisien.
 - **Sistem Kupon**: Buat dan kelola kode promo dengan limit penggunaan dan tanggal kadaluarsa.
 - **Moderasi Ulasan**: Kontrol testimoni pengguna untuk menjaga kualitas platform.
+
+### 📱 Keunggulan & Stabilisasi UX Modern
+
+- **Mobile Card-List Layout**: Menggantikan tabel horizontal tradisional pada resolusi ponsel dengan **Daftar Kartu Informasi** vertikal otomatis. Tidak perlu menggeser (swipe-X) layar lagi di perangkat ponsel!
+- **Bulletproof Redirection (Anti-Crash)**: Penanganan data `404 Not Found` yang tangguh pada detail pesanan. Menghindari crash atau loading tak terbatas (*"Memuat..."*) jika mengakses pesanan yang telah dihapus melalui tautan notifikasi lama.
+- **Sistem Notifikasi Cerdas & Modal Popup**: Admin dan pengguna akan menerima modal pemberitahuan informatif jika diarahkan kembali karena tautan pesanan usang.
+- **Aksi Tombol Konsisten**: Penggunaan standar tombol aksi outline lingkaran berukuran tetap (`36px` × `36px`) baik untuk opsi edit/detail (`.btn-outline`) maupun hapus (`.btn-outline-danger`) untuk menghindari asimetris layout.
+- **Navbar Terpadu**: Tombol Bell Notifikasi dan Theme Switcher berdimensi presisi (`42px` × `42px`) dengan perataan tengah ikon yang sempurna.
 
 ---
 
@@ -82,16 +90,22 @@ Pastikan Anda sudah menginstal **Docker Desktop**, **Docker Compose**, dan **WSL
 
 ## 📐 Arsitektur & Alur Kerja
 
-### Use Case Diagram
+Platform ini dilengkapi dengan pemetaan arsitektur lengkap yang dapat Anda lihat pada direktori `docs/`.
 
-![Use Case Diagram](docs/Usecase%20Diagram.png)
+### 🎭 Use Case Diagram
+![Use Case Diagram](docs/Use%20Case%20Diagram.png)
 
-### Flowchart: Alur Pemesanan
+### 🌊 Flowchart: Alur Pemesanan Ruangan
+![Alur Pemesanan Ruangan](docs/Flowchart%20Pemesanan%20Ruangan.png)
 
-![Flowchart Alur Pemesanan](docs/Flowchart%20Diagram.png)
+### 📊 Flowchart: Alur Kelola Admin
+![Alur Kelola Admin](docs/Flowchart%20Kelola%20Admin.png)
 
-Detail lebih lanjut mengenai arsitektur dapat dilihat pada dokumentasi internal:
-👉 `docs/diagram_arsitektur.md`
+### 🗺️ Peta Navigasi Halaman (Web Sitemap)
+![Peta Navigasi Halaman](docs/Flowchart%20Web%20Sewa%20Ruang.png)
+
+Detail lebih lanjut dan kode Mermaid interaktif dapat dilihat pada dokumentasi internal:
+👉 [diagram_arsitektur.md](docs/diagram_arsitektur.md)
 
 ---
 
