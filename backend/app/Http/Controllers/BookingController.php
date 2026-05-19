@@ -13,7 +13,7 @@ class BookingController extends Controller
         $user = Auth::user();
         $perPage = $request->query('per_page', 15);
         
-        $query = Booking::with('office', 'user')->orderBy('created_at', 'desc');
+        $query = Booking::with('office', 'user', 'addons')->orderBy('created_at', 'desc');
 
         if (strtolower($user->role) !== 'admin') {
             $query->where('user_id', $user->id);
@@ -163,7 +163,27 @@ class BookingController extends Controller
         if (isset($data['id_ruangan']))  $data['office_id'] = $data['id_ruangan'];
         
         $booking->update($data);
-        return response()->json($booking);
+
+        if ($request->has('addon_ids')) {
+            $addonsData = [];
+            $totalAddonPrice = 0;
+            if (is_array($request->addon_ids)) {
+                $addons = \App\Models\Addon::whereIn('id', $request->addon_ids)->get();
+                foreach ($addons as $addon) {
+                    $totalAddonPrice += (float)$addon->harga;
+                    $addonsData[$addon->id] = [
+                        'price_at_booking' => $addon->harga,
+                        'status'           => 'confirmed'
+                    ];
+                }
+            }
+            $booking->addons()->sync($addonsData);
+            $booking->update([
+                'total_addon_price' => $totalAddonPrice
+            ]);
+        }
+
+        return response()->json($booking->load('addons'));
     }
 
     public function updateStatus(Request $request, int $id)

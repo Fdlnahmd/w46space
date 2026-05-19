@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getPemesananById, getRuangan, updatePemesanan } from '../../services/apiService';
+import { getPemesananById, getRuangan, updatePemesanan, getAddons } from '../../services/apiService';
 import { ArrowLeft, Save, Calendar as CalendarIcon } from 'lucide-react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -16,6 +16,8 @@ const FormPemesanan = () => {
   const navigate = useNavigate();
 
   const [ruanganList, setRuanganList] = useState([]);
+  const [allAddons, setAllAddons] = useState([]);
+  const [selectedAddonIds, setSelectedAddonIds] = useState([]);
   const [formData, setFormData] = useState({
     nama_pemesan: '',
     perusahaan: '',
@@ -31,10 +33,11 @@ const FormPemesanan = () => {
 
   useEffect(() => {
     getRuangan().then(data => setRuanganList(data));
+    getAddons().then(data => setAllAddons(data || []));
   }, []);
 
   useEffect(() => {
-    if (id) {
+    if (id && allAddons.length > 0) {
       getPemesananById(id).then(data => {
         if (!data) { navigate('/admin/pemesanan'); return; }
         setFormData({
@@ -48,13 +51,27 @@ const FormPemesanan = () => {
           status:        data.status        || 'Pending',
           total_harga:   data.total_harga   || 0,
         });
+        setSelectedAddonIds(data.addons ? data.addons.map(a => a.id) : []);
         setLoading(false);
       }).catch(err => {
         console.error(err);
         navigate('/admin/pemesanan');
       });
     }
-  }, [id, navigate]);
+  }, [id, navigate, allAddons]);
+
+  const recalculatePrice = (roomId, dur, addonIds) => {
+    const ruangan = ruanganList.find(r => r.id === parseInt(roomId));
+    if (!ruangan) return 0;
+    
+    const basePrice = ruangan.harga * 26 * parseInt(dur);
+    const addonsPrice = addonIds.reduce((sum, aId) => {
+      const addon = allAddons.find(a => a.id === aId);
+      return sum + (addon ? parseFloat(addon.harga) : 0);
+    }, 0);
+    
+    return basePrice + addonsPrice;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,14 +80,26 @@ const FormPemesanan = () => {
       
       // Hitung harga jika id_ruangan atau durasi berubah
       if (name === 'id_ruangan' || name === 'durasi') {
-        const rId = name === 'id_ruangan' ? parseInt(value) : parseInt(prev.id_ruangan);
-        const dur = name === 'durasi' ? parseInt(value) : parseInt(prev.durasi);
-        const ruangan = ruanganList.find(r => r.id === rId);
-        if (ruangan) {
-          newData.total_harga = ruangan.harga * 26 * dur;
-        }
+        const rId = name === 'id_ruangan' ? value : prev.id_ruangan;
+        const dur = name === 'durasi' ? value : prev.durasi;
+        newData.total_harga = recalculatePrice(rId, dur, selectedAddonIds);
       }
       return newData;
+    });
+  };
+
+  const handleAddonChange = (addonId) => {
+    setSelectedAddonIds(prev => {
+      const newIds = prev.includes(addonId)
+        ? prev.filter(id => id !== addonId)
+        : [...prev, addonId];
+      
+      setFormData(f => ({
+        ...f,
+        total_harga: recalculatePrice(f.id_ruangan, f.durasi, newIds)
+      }));
+      
+      return newIds;
     });
   };
 
@@ -86,12 +115,13 @@ const FormPemesanan = () => {
       durasi:      parseInt(formData.durasi),
       total_harga: parseInt(formData.total_harga),
       tanggal_akhir,
+      addon_ids:   selectedAddonIds,
     }).then(() => {
       navigate(`/admin/pemesanan/${id}`);
     }).catch(err => alert(err.message));
   };
 
-  if (loading) return <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Memuat...</div>;
+  if (loading || (id && allAddons.length === 0)) return <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Memuat...</div>;
 
   const tanggal_akhirPreview = formData.tanggal_mulai
     ? hitungTanggalAkhir(formData.tanggal_mulai, formData.durasi)
@@ -187,6 +217,45 @@ const FormPemesanan = () => {
               <option value="Selesai">Selesai</option>
               <option value="Dibatalkan">Dibatalkan</option>
             </select>
+          </div>
+
+          {/* Add-ons / Fasilitas Tambahan */}
+          <div className="form-group" style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--color-border)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
+            <label className="form-label" style={{ fontWeight: 600, fontSize: '0.95rem' }}>Add-ons / Fasilitas Tambahan</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginTop: '0.75rem' }}>
+              {allAddons.map(addon => {
+                const isChecked = selectedAddonIds.includes(addon.id);
+                return (
+                  <label 
+                    key={addon.id} 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.75rem', 
+                      cursor: 'pointer', 
+                      backgroundColor: isChecked ? 'rgba(37, 99, 235, 0.08)' : 'var(--color-secondary)', 
+                      padding: '0.75rem 1rem', 
+                      borderRadius: '8px', 
+                      border: isChecked ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <input 
+                      type="checkbox" 
+                      checked={isChecked} 
+                      onChange={() => handleAddonChange(addon.id)} 
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', color: isChecked ? 'var(--color-primary)' : 'var(--color-text-main)' }}>{addon.nama}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                        Rp {parseInt(addon.harga).toLocaleString('id-ID')}
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
           </div>
 
           {/* Total Harga (editable) */}

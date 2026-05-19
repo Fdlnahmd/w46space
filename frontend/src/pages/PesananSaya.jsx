@@ -19,11 +19,13 @@ const PesananSaya = () => {
   const [pesananList, setPesananList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' });
+  const [errorModal, setErrorModal] = useState(() => ({
+    isOpen: !!location.state?.error,
+    message: location.state?.error || ''
+  }));
 
   useEffect(() => {
     if (location.state?.error) {
-      setErrorModal({ isOpen: true, message: location.state.error });
       // clear location state to prevent showing on refresh
       window.history.replaceState({}, document.title);
     }
