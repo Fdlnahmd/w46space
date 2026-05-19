@@ -49,6 +49,9 @@ const FormPemesanan = () => {
           total_harga:   data.total_harga   || 0,
         });
         setLoading(false);
+      }).catch(err => {
+        console.error(err);
+        navigate('/admin/pemesanan');
       });
     }
   }, [id, navigate]);

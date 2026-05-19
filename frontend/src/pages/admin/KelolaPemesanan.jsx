@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { getPemesanan, updateStatusPemesanan, deletePemesanan } from '../../services/apiService';
 import { Trash2, Eye, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import Modal from '../../components/Modal';
@@ -21,12 +21,22 @@ const formatDate = (dateString) => {
 };
 
 const KelolaPemesanan = () => {
+  const location = useLocation();
   const [pemesanan, setPemesanan] = useState([]);
   const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Semua');
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
+  const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.error) {
+      setErrorModal({ isOpen: true, message: location.state.error });
+      // clear location state to prevent showing on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const loadData = useCallback((page = 1) => {
     setLoading(true);
@@ -111,7 +121,8 @@ const KelolaPemesanan = () => {
         </div>
       </div>
 
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      {/* Desktop Table View */}
+      <div className="card hide-on-mobile" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead style={{ backgroundColor: 'var(--color-background)', textAlign: 'left' }}>
@@ -184,19 +195,19 @@ const KelolaPemesanan = () => {
                     </select>
                   </td>
                   <td style={{ padding: '1rem' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
                       <Link 
                         to={`/admin/pemesanan/${item.id}`} 
                         className="btn btn-outline" 
-                        style={{ padding: '0.4rem', minWidth: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ padding: '0.4rem', minWidth: '36px', height: '36px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                         title="Lihat Detail"
                       >
                         <Eye size={16} />
                       </Link>
                       <button 
                         onClick={() => setDeleteModal({ isOpen: true, id: item.id })}
-                        className="btn btn-outline" 
-                        style={{ padding: '0.4rem', minWidth: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-danger)' }}
+                        className="btn btn-outline-danger" 
+                        style={{ padding: '0.4rem', minWidth: '36px', height: '36px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                         title="Hapus"
                       >
                         <Trash2 size={16} />
@@ -208,6 +219,92 @@ const KelolaPemesanan = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile Card List View */}
+      <div className="show-only-on-mobile">
+        {loading ? (
+          <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Memuat data...</div>
+        ) : filteredData.length === 0 ? (
+          <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Tidak ada data pemesanan.</div>
+        ) : filteredData.map(item => (
+          <div key={item.id} className="card" style={{ padding: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+              <div>
+                <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>#{item.id}</span>
+                {item.parent_id && (
+                  <span style={{ 
+                    fontSize: '0.6rem', color: 'var(--color-primary)', 
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)', padding: '2px 6px', 
+                    borderRadius: '4px', marginLeft: '0.5rem', fontWeight: 'bold',
+                    border: '1px solid rgba(37, 99, 235, 0.2)', display: 'inline-block'
+                  }}>
+                    PERPANJANGAN
+                  </span>
+                )}
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-main)', marginTop: '0.25rem' }}>{item.nama_pemesan || '—'}</h3>
+                {item.perusahaan && (
+                  <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: 0 }}>{item.perusahaan}</p>
+                )}
+              </div>
+              <div style={{ flexShrink: 0 }}>
+                <select 
+                  value={item.status} 
+                  onChange={(e) => handleStatusChange(item.id, e.target.value)}
+                  style={{ 
+                    ...getStatusStyle(item.status),
+                    padding: '0.35rem 0.75rem', borderRadius: '20px', 
+                    fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+                    outline: 'none'
+                  }}
+                >
+                  {statusOptions.filter(o => o !== 'Semua').map(opt => (
+                    <option key={opt} value={opt} style={{ color: '#000', backgroundColor: '#fff' }}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.75rem', fontSize: '0.85rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                <span style={{ color: 'var(--color-text-muted)' }}>Ruangan:</span>
+                <span style={{ fontWeight: 500, textAlign: 'right' }}>{item.office?.nama || '—'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                <span style={{ color: 'var(--color-text-muted)' }}>Tanggal:</span>
+                <span style={{ fontWeight: 500, textAlign: 'right' }}>
+                  {formatDate(item.tanggal_mulai)}
+                  {item.tanggal_akhir && ` s/d ${formatDate(item.tanggal_akhir)}`}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed var(--color-border)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                <span style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>Total Harga:</span>
+                <span style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '0.95rem' }}>
+                  Rp {Number(item.total_harga).toLocaleString('id-ID')}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
+              <Link 
+                to={`/admin/pemesanan/${item.id}`} 
+                className="btn btn-outline" 
+                style={{ flex: 1, padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+                title="Lihat Detail"
+              >
+                <Eye size={16} /> Detail
+              </Link>
+              <button 
+                onClick={() => setDeleteModal({ isOpen: true, id: item.id })}
+                className="btn btn-outline-danger" 
+                style={{ flex: 1, padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+                title="Hapus"
+              >
+                <Trash2 size={16} /> Hapus
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Pagination Controls */}
@@ -240,6 +337,14 @@ const KelolaPemesanan = () => {
         title="Hapus Pemesanan"
         message="Apakah Anda yakin ingin menghapus data pemesanan ini? Tindakan ini tidak dapat dibatalkan."
         type="danger"
+      />
+
+      <Modal 
+        isOpen={errorModal.isOpen} 
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="Pesanan Tidak Ditemukan"
+        message={errorModal.message}
+        type="warning"
       />
     </div>
   );

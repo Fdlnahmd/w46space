@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { updateProfile, changePassword } from '../services/apiService';
-import { User, Lock, Shield, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, Lock, Shield, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -56,6 +57,24 @@ const Profile = () => {
 
   return (
     <div className="container" style={{ padding: '3rem 0', maxWidth: '1000px' }}>
+      {/* Tombol Kembali ke Landing Page */}
+      <Link 
+        to="/" 
+        className="btn btn-outline" 
+        style={{ 
+          marginBottom: '1.5rem', 
+          display: 'inline-flex', 
+          alignItems: 'center', 
+          gap: '0.5rem',
+          fontSize: '0.9rem',
+          padding: '0.5rem 1rem',
+          borderColor: 'var(--color-border)',
+          color: 'var(--color-text-muted)'
+        }}
+      >
+        <ArrowLeft size={16} /> Kembali ke Beranda
+      </Link>
+
       <div style={{ marginBottom: '2.5rem' }}>
         <h1 style={{ fontSize: '2rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Pengaturan Profil</h1>
         <p style={{ color: 'var(--color-text-muted)' }}>Kelola informasi akun dan keamanan Anda</p>
@@ -78,10 +97,10 @@ const Profile = () => {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+      <div className="profile-layout">
         {/* Sidebar Info */}
         <div>
-          <div className="card" style={{ padding: '2rem', textAlign: 'center', position: 'sticky', top: '100px' }}>
+          <div className="card profile-sidebar">
             <div style={{ 
               width: '80px', 
               height: '80px', 
@@ -165,7 +184,7 @@ const Profile = () => {
                   onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div className="password-grid">
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Password Baru</label>
                   <input

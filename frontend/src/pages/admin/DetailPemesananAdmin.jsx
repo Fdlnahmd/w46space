@@ -102,7 +102,10 @@ const DetailPemesananAdmin = () => {
       if (!data) { navigate('/admin/pemesanan'); return; }
       setPesanan(data);
       setLoading(false);
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      navigate('/admin/pemesanan');
+    }
   }, [id, navigate]);
 
   useEffect(() => {

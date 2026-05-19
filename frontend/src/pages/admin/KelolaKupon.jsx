@@ -67,7 +67,7 @@ const KelolaKupon = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div className="page-header-admin">
         <h1>Kelola Kupon Diskon</h1>
         <button 
           className="btn btn-primary" 

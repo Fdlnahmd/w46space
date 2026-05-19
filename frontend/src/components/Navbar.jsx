@@ -125,9 +125,9 @@ const Navbar = () => {
               className="theme-toggle"
               style={{ 
                 background: 'none', border: 'none', cursor: 'pointer', 
-                color: 'var(--color-text-main)', display: 'flex', alignItems: 'center',
-                padding: '0.6rem', borderRadius: '50%', backgroundColor: 'var(--color-background)',
-                transition: 'all 0.2s ease'
+                color: 'var(--color-text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: '42px', height: '42px', borderRadius: '50%', backgroundColor: 'var(--color-background)',
+                transition: 'all 0.2s ease', flexShrink: 0
               }}
             >
               {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
@@ -137,12 +137,18 @@ const Navbar = () => {
               <div style={{ position: 'relative' }} ref={notifRef}>
                 <button 
                   onClick={() => setIsNotifOpen(!isNotifOpen)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-main)', position: 'relative', padding: '0.6rem', borderRadius: '50%', backgroundColor: 'var(--color-background)' }}
+                  style={{ 
+                    background: 'none', border: 'none', cursor: 'pointer', 
+                    color: 'var(--color-text-main)', position: 'relative', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: '42px', height: '42px', borderRadius: '50%', backgroundColor: 'var(--color-background)',
+                    flexShrink: 0
+                  }}
                 >
-                  <Bell size={22} />
+                  <Bell size={20} />
                   {unreadCount > 0 && (
                     <span style={{
-                      position: 'absolute', top: '5px', right: '5px',
+                      position: 'absolute', top: '2px', right: '2px',
                       backgroundColor: 'var(--color-danger)', color: 'white',
                       fontSize: '0.65rem', padding: '2px 5px', borderRadius: '10px',
                       fontWeight: 'bold', border: '2px solid var(--color-surface)'

@@ -108,7 +108,10 @@ const DetailPesanan = () => {
       if (!data) { navigate('/pesanan-saya'); return; }
       setPesanan(data);
       setLoading(false);
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      navigate('/pesanan-saya');
+    }
   }, [id, navigate]);
 
   const fetchAddons = useCallback(async () => {

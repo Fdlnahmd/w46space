@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPemesananByUser, batalkanPemesanan, getInvoiceUrl } from '../services/apiService';
 import { ClipboardList, XCircle, CheckCircle, Eye, Hourglass, BadgeCheck, AlertCircle, RefreshCw, Star, Printer } from 'lucide-react';
 import SkeletonLoader from '../components/SkeletonLoader';
+import Modal from '../components/Modal';
 
 const statusConfig = {
   Pending:      { class: 'badge-warning', Icon: Hourglass,   label: 'Menunggu Konfirmasi' },
@@ -14,9 +15,19 @@ const statusConfig = {
 
 const PesananSaya = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [pesananList, setPesananList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' });
+
+  useEffect(() => {
+    if (location.state?.error) {
+      setErrorModal({ isOpen: true, message: location.state.error });
+      // clear location state to prevent showing on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const loadData = useCallback(async (showLoading = true) => {
     if (user) {
@@ -301,6 +312,14 @@ const PesananSaya = () => {
           }
         }
       `}</style>
+      
+      <Modal 
+        isOpen={errorModal.isOpen} 
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="Pesanan Tidak Ditemukan"
+        message={errorModal.message}
+        type="warning"
+      />
       </div>
     </div>
   );
