@@ -24,3 +24,9 @@ build/
 # Docker logs
 *.log
 docker-compose.override.yml
+
+# Google verification and sitemap
+google*.html
+sitemap.xml
+*:Zone.Identifier
+
