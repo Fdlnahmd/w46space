@@ -85,8 +85,10 @@ const PopularRuangan = () => {
                       <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{item.nama}</h3>
                       {item.is_booked ? (
                         <span className="badge badge-danger">Penuh</span>
+                      ) : item.status === 'Maintenance' || item.status === 'Pemeliharaan' ? (
+                        <span className="badge badge-warning">Pemeliharaan</span>
                       ) : (
-                        <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`}>
+                        <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-neutral'}`}>
                           {item.status}
                         </span>
                       )}

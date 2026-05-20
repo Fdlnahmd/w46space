@@ -107,9 +107,15 @@ const Home = () => {
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{item.nama}</h3>
-                  <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`}>
-                    {item.status}
-                  </span>
+                  {item.is_booked ? (
+                    <span className="badge badge-danger">Penuh</span>
+                  ) : item.status === 'Maintenance' || item.status === 'Pemeliharaan' ? (
+                    <span className="badge badge-warning">Pemeliharaan</span>
+                  ) : (
+                    <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-neutral'}`}>
+                      {item.status}
+                    </span>
+                  )}
                 </div>
                 
                 <div style={{ display: 'flex', gap: '1rem', color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>

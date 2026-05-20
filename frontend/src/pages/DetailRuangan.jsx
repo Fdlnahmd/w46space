@@ -539,8 +539,12 @@ const DetailRuangan = () => {
                     <span className="badge badge-danger" style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
                       Penuh
                     </span>
+                  ) : ruangan.status === 'Maintenance' || ruangan.status === 'Pemeliharaan' ? (
+                    <span className="badge badge-warning" style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
+                      Pemeliharaan
+                    </span>
                   ) : (
-                    <span className={`badge ${ruangan.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
+                    <span className={`badge ${ruangan.status === 'Tersedia' ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
                       {ruangan.status}
                     </span>
                   )}

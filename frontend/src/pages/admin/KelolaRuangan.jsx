@@ -83,9 +83,15 @@ const KelolaRuangan = () => {
                 <td style={{ padding: '1rem' }}>{item.kapasitas} org</td>
                 <td style={{ padding: '1rem' }}>Rp {(item.harga ?? 0).toLocaleString('id-ID')}</td>
                 <td style={{ padding: '1rem' }}>
-                  <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`}>
-                    {item.status}
-                  </span>
+                  {item.is_booked ? (
+                    <span className="badge badge-danger">Penuh</span>
+                  ) : item.status === 'Maintenance' || item.status === 'Pemeliharaan' ? (
+                    <span className="badge badge-warning">Pemeliharaan</span>
+                  ) : (
+                    <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-neutral'}`}>
+                      {item.status}
+                    </span>
+                  )}
                 </td>
                 <td style={{ padding: '1rem', textAlign: 'center' }}>
                   {item.is_popular ? (
@@ -122,9 +128,15 @@ const KelolaRuangan = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
               <div>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-main)', marginBottom: '0.35rem', lineHeight: '1.3' }}>{item.nama}</h3>
-                <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '0.75rem' }}>
-                  {item.status}
-                </span>
+                {item.is_booked ? (
+                  <span className="badge badge-danger" style={{ fontSize: '0.75rem' }}>Penuh</span>
+                ) : item.status === 'Maintenance' || item.status === 'Pemeliharaan' ? (
+                  <span className="badge badge-warning" style={{ fontSize: '0.75rem' }}>Pemeliharaan</span>
+                ) : (
+                  <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.75rem' }}>
+                    {item.status}
+                  </span>
+                )}
               </div>
               <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', flexShrink: 0 }}>
                 {item.is_popular ? (

@@ -10,6 +10,7 @@ const DaftarRuangan = () => {
   const [error, setError] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
+  const [selectedStatus, setSelectedStatus] = useState('Semua');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -37,11 +38,27 @@ const DaftarRuangan = () => {
   }, [fetchData]);
 
   const categories = ['Semua', 'Office', 'Private Office', 'Meeting Room', 'Coworking Space', 'Creative Space'];
+  const statuses = [
+    { label: 'Semua Status', value: 'Semua' },
+    { label: 'Tersedia', value: 'Tersedia' },
+    { label: 'Penuh', value: 'Penuh' },
+    { label: 'Pemeliharaan', value: 'Pemeliharaan' }
+  ];
 
   const filteredRuangan = ruangan.filter(r => {
     const matchSearch = r.nama.toLowerCase().includes(searchTerm.toLowerCase());
     const matchCategory = selectedCategory === 'Semua' || r.kategori === selectedCategory;
-    return matchSearch && matchCategory;
+    
+    let matchStatus = true;
+    if (selectedStatus === 'Tersedia') {
+      matchStatus = !r.is_booked && r.status === 'Tersedia';
+    } else if (selectedStatus === 'Penuh') {
+      matchStatus = r.is_booked;
+    } else if (selectedStatus === 'Pemeliharaan') {
+      matchStatus = r.status === 'Maintenance' || r.status === 'Pemeliharaan';
+    }
+
+    return matchSearch && matchCategory && matchStatus;
   });
 
   return (
@@ -96,6 +113,34 @@ const DaftarRuangan = () => {
               </button>
             ))}
           </div>
+
+          {/* Status Filter Chips (Always Visible) */}
+          <div style={{ 
+            marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed var(--color-border)',
+            display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center'
+          }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-muted)', marginRight: '0.5rem' }}>Status:</span>
+            {statuses.map(st => (
+              <button
+                key={st.value}
+                onClick={() => setSelectedStatus(st.value)}
+                style={{
+                  padding: '0.4rem 1.1rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  border: '1px solid',
+                  borderColor: selectedStatus === st.value ? 'var(--color-primary)' : 'var(--color-border)',
+                  backgroundColor: selectedStatus === st.value ? 'var(--color-primary)' : 'var(--color-surface)',
+                  color: selectedStatus === st.value ? 'white' : 'var(--color-text-main)',
+                }}
+              >
+                {st.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <style>{`
@@ -138,8 +183,10 @@ const DaftarRuangan = () => {
                       <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{item.nama}</h3>
                       {item.is_booked ? (
                         <span className="badge badge-danger">Penuh</span>
+                      ) : item.status === 'Maintenance' || item.status === 'Pemeliharaan' ? (
+                        <span className="badge badge-warning">Pemeliharaan</span>
                       ) : (
-                        <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-danger'}`}>
+                        <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-neutral'}`}>
                           {item.status}
                         </span>
                       )}
