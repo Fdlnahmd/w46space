@@ -44,6 +44,7 @@
 | **Database**         | MySQL (with **Navicat** as GUI)            |
 | **Containerization** | Docker & Docker Compose                    |
 | **State Management** | React Context API                          |
+| **Monitoring**       | Grafana, Prometheus, Loki, Promtail        |
 
 ---
 
@@ -74,8 +75,78 @@ Pastikan Anda sudah menginstal **Docker Desktop**, **Docker Compose**, dan **WSL
     > Untuk mengaktifkan fitur **Lupa Password**, pastikan Anda telah mengonfigurasi `MAIL_USERNAME` dan `MAIL_PASSWORD` di file `.env` menggunakan akun SMTP (seperti Gmail App Password).
 
 4.  **Akses Aplikasi**
-    - **Frontend**: [http://localhost:5173](http://localhost:5173)
+    - **Frontend**: [http://localhost](http://localhost)
     - **Backend API**: [http://localhost:8000](http://localhost:8000)
+    - **Mobile Preview**: [http://localhost:8080](http://localhost:8080)
+
+    Port dapat diubah melalui file `.env`, misalnya `FRONTEND_PORT`, `BACKEND_PORT`, `MOBILE_PORT`, dan `GRAFANA_PORT`.
+
+---
+
+## Monitoring & Observability
+
+Project ini dilengkapi stack monitoring berbasis Docker untuk memantau data bisnis, metrik container, dan log Laravel.
+
+### Komponen Monitoring
+
+| Komponen                  | Fungsi                                                                 |
+| :------------------------ | :--------------------------------------------------------------------- |
+| **Grafana**               | Dashboard utama untuk membaca data MySQL, metrik Prometheus, dan log Loki |
+| **Prometheus**            | Menyimpan metrik time-series container                                 |
+| **Docker Stats Exporter** | Mengambil statistik container dari Docker socket                       |
+| **Loki**                  | Menyimpan dan mencari log aplikasi                                     |
+| **Promtail**              | Membaca `backend/storage/logs/*.log` dan mengirimkannya ke Loki         |
+
+### Akses Monitoring
+
+| Service                   | URL Default                              |
+| :------------------------ | :--------------------------------------- |
+| **Grafana**               | [http://localhost:3000](http://localhost:3000) |
+| **Prometheus**            | [http://localhost:9090](http://localhost:9090) |
+| **Docker Stats Exporter** | [http://localhost:9104/metrics](http://localhost:9104/metrics) |
+| **Loki Ready Check**      | [http://localhost:3100/ready](http://localhost:3100/ready) |
+
+Login default Grafana mengikuti `.env`:
+
+```env
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=admin
+```
+
+> [!WARNING]
+> Jika Grafana dibuka ke internet, ganti `GRAFANA_ADMIN_PASSWORD` dengan password yang kuat dan gunakan Cloudflare Access atau proteksi sejenis.
+
+### Dashboard Grafana
+
+- **Office Rent Overview**: metrik bisnis dari MySQL, seperti revenue, booking aktif, booking pending, user terdaftar, ruangan populer, dan booking terbaru.
+- **Office Rent Observability**: metrik teknis seperti status container, CPU, memory, network I/O, log Laravel, dan jumlah error/exception.
+
+### Alur Data Monitoring
+
+```text
+MySQL -> Grafana
+Docker containers -> Docker Stats Exporter -> Prometheus -> Grafana
+backend/storage/logs/*.log -> Promtail -> Loki -> Grafana
+```
+
+### Online Lewat Cloudflare
+
+Grafana dapat di-online-kan lewat Cloudflare Tunnel tanpa membuka port publik server. Atur `.env`:
+
+```env
+GRAFANA_DOMAIN=grafana.example.com
+GRAFANA_ROOT_URL=https://grafana.example.com
+GRAFANA_ENFORCE_DOMAIN=true
+GRAFANA_COOKIE_SECURE=true
+```
+
+Lalu di Cloudflare Zero Trust, tambahkan Public Hostname dengan service:
+
+```text
+http://grafana:3000
+```
+
+Panduan lebih lengkap tersedia di [docs/grafana.md](docs/grafana.md).
 
 ---
 

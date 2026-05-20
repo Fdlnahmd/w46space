@@ -26,7 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Admin Analytics
     Route::get('/admin/analytics', [AnalyticsController::class, 'getStats']);
 
-    // Ruangan (Admin only bisa dihandle di controller atau middleware)
+    // Ruangan (Admin only)
     Route::post('/offices', [OfficeController::class, 'store']);
     Route::put('/offices/{id}', [OfficeController::class, 'update']);
     Route::delete('/offices/{id}', [OfficeController::class, 'destroy']);
@@ -64,4 +64,3 @@ Route::get('/reviews/latest', [\App\Http\Controllers\ReviewController::class, 'l
 
 // Invoice Public (With internal security check)
 Route::get('/bookings/{id}/invoice', [InvoiceController::class, 'download']);
-

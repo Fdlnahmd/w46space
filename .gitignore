@@ -30,3 +30,7 @@ google*.html
 sitemap.xml
 *:Zone.Identifier
 
+# Flutter learning workspace (jangan masuk github)
+mobile/
+
+
