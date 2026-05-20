@@ -10,7 +10,7 @@ docker-compose up -d --build
 
 Buka:
 
-- Grafana: `http://localhost:${GRAFANA_PORT}`
+- Grafana: `http://${GRAFANA_BIND_HOST}:${GRAFANA_PORT}`
 - Prometheus: `http://${PROMETHEUS_BIND_HOST}:${PROMETHEUS_PORT}`
 - Docker stats exporter: `http://${DOCKER_STATS_EXPORTER_BIND_HOST}:${DOCKER_STATS_EXPORTER_PORT}/metrics`
 - Loki: `http://${LOKI_BIND_HOST}:${LOKI_PORT}/ready`
@@ -107,6 +107,7 @@ https://grafana.example.com
 Atur `.env`:
 
 ```env
+GRAFANA_BIND_HOST=127.0.0.1
 GRAFANA_DOMAIN=grafana.example.com
 GRAFANA_ROOT_URL=https://grafana.example.com
 GRAFANA_ENFORCE_DOMAIN=true

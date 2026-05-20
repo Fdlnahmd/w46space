@@ -79,7 +79,10 @@ Pastikan Anda sudah menginstal **Docker Desktop**, **Docker Compose**, dan **WSL
     - **Backend API**: [http://localhost:8000](http://localhost:8000)
     - **Mobile Preview**: [http://localhost:8080](http://localhost:8080)
 
-    Port dapat diubah melalui file `.env`, misalnya `FRONTEND_PORT`, `BACKEND_PORT`, `MOBILE_PORT`, dan `GRAFANA_PORT`.
+    Port dan host binding dapat diubah melalui file `.env`, misalnya `FRONTEND_BIND_HOST`, `FRONTEND_PORT`, `BACKEND_BIND_HOST`, `BACKEND_PORT`, dan `GRAFANA_PORT`.
+
+    > [!IMPORTANT]
+    > Untuk VPS/production, biarkan service internal seperti MySQL, Prometheus, Loki, Docker Stats Exporter, Mailhog, dan Grafana binding ke `127.0.0.1`. Jika pakai Cloudflare Tunnel, public hostname tetap bisa diarahkan ke service Docker seperti `http://frontend:80`, `http://backend:80`, atau `http://grafana:3000` tanpa membuka port tersebut ke internet.
 
 ---
 
@@ -111,6 +114,17 @@ Login default Grafana mengikuti `.env`:
 ```env
 GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=admin
+```
+
+Port monitoring juga mengikuti `.env`:
+
+```env
+GRAFANA_BIND_HOST=127.0.0.1
+GRAFANA_PORT=3000
+PROMETHEUS_BIND_HOST=127.0.0.1
+PROMETHEUS_PORT=9090
+LOKI_BIND_HOST=127.0.0.1
+LOKI_PORT=3100
 ```
 
 > [!WARNING]
