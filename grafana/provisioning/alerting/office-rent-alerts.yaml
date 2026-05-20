@@ -1,0 +1,297 @@
+apiVersion: 1
+
+groups:
+  # ─────────────────────────────────────────
+  # GROUP 1: Container Health (Prometheus)
+  # ─────────────────────────────────────────
+  - orgId: 1
+    name: Office Rent - Container Health
+    folder: Office Rent
+    interval: 1m
+    rules:
+
+      # Alert: Backend container tidak merespons (CPU = 0 selama 2 menit)
+      - uid: alert-backend-down
+        title: "🔴 Backend Container Down"
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: office-rent-prometheus
+            model:
+              expr: |
+                sum(rate(office_rent_container_cpu_usage_seconds_total{
+                  service="backend", state="running"
+                }[2m]))
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            queryType: ""
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: "__expr__"
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: "__expr__"
+              expression: A
+              refId: C
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 2m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Container backend office-rent tidak merespons"
+          description: "CPU usage backend = 0 selama lebih dari 2 menit. Kemungkinan container crash atau restart loop."
+
+      # Alert: MySQL container tidak merespons
+      - uid: alert-mysql-down
+        title: "🔴 MySQL Container Down"
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: office-rent-prometheus
+            model:
+              expr: |
+                sum(rate(office_rent_container_cpu_usage_seconds_total{
+                  service="mysql", state="running"
+                }[2m]))
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            queryType: ""
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: "__expr__"
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: "__expr__"
+              expression: A
+              refId: C
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 2m
+        labels:
+          severity: critical
+          service: mysql
+        annotations:
+          summary: "Container MySQL office-rent tidak merespons"
+          description: "CPU usage MySQL = 0 selama lebih dari 2 menit. Database kemungkinan crash atau OOM-killed."
+
+      # Alert: Memory container backend di atas 500MB
+      - uid: alert-backend-memory-high
+        title: "⚠️ Backend Memory Tinggi (>500MB)"
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: office-rent-prometheus
+            model:
+              expr: |
+                sum(office_rent_container_memory_usage_bytes{
+                  service="backend", state="running"
+                })
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            queryType: ""
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: "__expr__"
+            model:
+              conditions:
+                - evaluator:
+                    params: [524288000]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: "__expr__"
+              expression: A
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Memory usage backend melebihi 500MB"
+          description: "Container backend menggunakan lebih dari 500MB RAM selama 5 menit berturut-turut. Periksa kemungkinan memory leak."
+
+  # ─────────────────────────────────────────
+  # GROUP 2: Laravel Log Errors (Loki)
+  # ─────────────────────────────────────────
+  - orgId: 1
+    name: Office Rent - Laravel Log Alerts
+    folder: Office Rent
+    interval: 1m
+    rules:
+
+      # Alert: Error/Exception Laravel > 5 kali dalam 10 menit
+      - uid: alert-laravel-error-spike
+        title: "🚨 Laravel Error Spike (>5 error/10 menit)"
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: office-rent-loki
+            model:
+              expr: |
+                sum(count_over_time(
+                  {app="office-rent", job="laravel"}
+                  |~ "(?i)(error|exception|critical)"
+                  [10m]
+                ))
+              intervalMs: 60000
+              maxDataPoints: 43200
+              queryType: range
+              refId: A
+          - refId: C
+            queryType: ""
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: "__expr__"
+            model:
+              conditions:
+                - evaluator:
+                    params: [5]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: "__expr__"
+              expression: A
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        labels:
+          severity: critical
+          service: backend
+          type: log-error
+        annotations:
+          summary: "Laravel mencatat lebih dari 5 error dalam 10 menit"
+          description: "Log Laravel mendeteksi spike error/exception/critical. Segera periksa log di Grafana > Explore > Loki dengan query: {app=\"office-rent\", job=\"laravel\"} |~ \"(?i)(error|exception|critical)\""
+
+      # Alert: Log Laravel berhenti masuk (Loki tidak menerima log baru > 5 menit)
+      - uid: alert-laravel-log-silence
+        title: "⚠️ Log Laravel Berhenti (Promtail mati?)"
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: office-rent-loki
+            model:
+              expr: |
+                sum(count_over_time(
+                  {app="office-rent", job="laravel"}
+                  [5m]
+                ))
+              intervalMs: 60000
+              maxDataPoints: 43200
+              queryType: range
+              refId: A
+          - refId: C
+            queryType: ""
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: "__expr__"
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: "__expr__"
+              expression: A
+              refId: C
+              type: threshold
+        noDataState: Alerting
+        execErrState: Error
+        for: 5m
+        labels:
+          severity: warning
+          service: promtail
+          type: log-silence
+        annotations:
+          summary: "Log Laravel tidak masuk ke Loki selama 5 menit"
+          description: "Kemungkinan Promtail crash atau Laravel berhenti menulis log. Periksa: docker logs office_rent_promtail"

@@ -23,121 +23,343 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": {
-        "type": "mysql",
-        "uid": "office-rent-mysql"
-      },
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 10,
+      "title": "💰 Ringkasan Keuangan",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
+          "color": { "mode": "thresholds" },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
+            "steps": [{ "color": "green", "value": null }]
           },
           "unit": "currencyIDR"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 0,
-        "y": 0
-      },
-      "id": 1,
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 11,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
-      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "mysql",
-            "uid": "office-rent-mysql"
-          },
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(SUM(total_harga), 0) AS value\nFROM bookings\nWHERE status IN ('Dikonfirmasi', 'Selesai');",
+          "rawSql": "SELECT COALESCE(SUM(total_harga), 0) AS value FROM bookings WHERE status IN ('Dikonfirmasi', 'Selesai');",
           "refId": "A"
         }
       ],
-      "title": "Total Revenue",
+      "title": "Gross Revenue",
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "mysql",
-        "uid": "office-rent-mysql"
-      },
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
+          "color": { "mode": "thresholds" },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "unit": "currencyIDR"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(total_harga - discount_amount), 0) AS value FROM bookings WHERE status IN ('Dikonfirmasi', 'Selesai');",
+          "refId": "A"
+        }
+      ],
+      "title": "Net Revenue",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "yellow", "value": null }]
+          },
+          "unit": "currencyIDR"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 13,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(discount_amount), 0) AS value FROM bookings WHERE status IN ('Dikonfirmasi', 'Selesai');",
+          "refId": "A"
+        }
+      ],
+      "title": "Discounts Given",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          },
+          "unit": "currencyIDR"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 14,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(total_addon_price), 0) AS value FROM bookings WHERE status IN ('Dikonfirmasi', 'Selesai');",
+          "refId": "A"
+        }
+      ],
+      "title": "Addon Revenue",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "purple", "value": null }]
           },
           "unit": "short"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 6,
-        "y": 0
-      },
-      "id": 2,
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 15,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
-      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "mysql",
-            "uid": "office-rent-mysql"
-          },
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*) AS value\nFROM bookings\nWHERE status = 'Dikonfirmasi';",
+          "rawSql": "SELECT COUNT(*) AS value FROM bookings;",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Bookings",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "cyan", "value": null }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 16,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS value FROM users WHERE role = 'user';",
+          "refId": "A"
+        }
+      ],
+      "title": "Registered Customers",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 20,
+      "title": "⭐ Kepuasan Pelanggan & Operasional",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "green", "value": 4 }
+            ]
+          },
+          "max": 5,
+          "min": 0,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 6 },
+      "id": 21,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(COALESCE(AVG(rating), 0), 2) AS value FROM reviews;",
+          "refId": "A"
+        }
+      ],
+      "title": "Rata-rata Rating Ulasan",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 6 },
+      "id": 22,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS value FROM reviews;",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Ulasan Masuk",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 6 },
+      "id": 23,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS value FROM bookings WHERE status = 'Dikonfirmasi';",
           "refId": "A"
         }
       ],
@@ -145,534 +367,476 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "mysql",
-        "uid": "office-rent-mysql"
-      },
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
+          "color": { "mode": "thresholds" },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {
-                "color": "orange",
-                "value": null
-              }
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 15 },
+              { "color": "red", "value": 30 }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 0
-      },
-      "id": 3,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 6 },
+      "id": 24,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
-      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "mysql",
-            "uid": "office-rent-mysql"
-          },
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*) AS value\nFROM bookings\nWHERE status = 'Pending';",
+          "rawSql": "SELECT ROUND(100.0 * SUM(CASE WHEN status = 'Dibatalkan' THEN 1 ELSE 0 END) / COUNT(*), 1) AS value FROM bookings;",
           "refId": "A"
         }
       ],
-      "title": "Pending Bookings",
+      "title": "Cancellation Rate (%)",
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "mysql",
-        "uid": "office-rent-mysql"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "purple",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 0
-      },
-      "id": 4,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "mysql",
-            "uid": "office-rent-mysql"
-          },
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT COUNT(*) AS value\nFROM users\nWHERE role = 'user';",
-          "refId": "A"
-        }
-      ],
-      "title": "Registered Users",
-      "type": "stat"
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
+      "id": 30,
+      "title": "📈 Performa Bisnis Dari Waktu ke Waktu",
+      "type": "row"
     },
     {
-      "datasource": {
-        "type": "mysql",
-        "uid": "office-rent-mysql"
-      },
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
+          "color": { "mode": "palette-classic" },
           "custom": {
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "",
+            "axisLabel": "Pendapatan (Rp)",
             "axisPlacement": "auto",
-            "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 20,
+            "fillOpacity": 15,
             "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 4,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto"
           },
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
           "unit": "currencyIDR"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 4
-      },
-      "id": 5,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 11 },
+      "id": 31,
       "options": {
-        "legend": {
-          "calcs": [
-            "sum"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "legend": { "calcs": ["sum", "mean"], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
       },
-      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "mysql",
-            "uid": "office-rent-mysql"
-          },
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(created_at, '1d'),\n  COALESCE(SUM(total_harga), 0) AS revenue\nFROM bookings\nWHERE $__timeFilter(created_at)\n  AND status IN ('Dikonfirmasi', 'Selesai')\nGROUP BY 1\nORDER BY 1;",
+          "rawSql": "SELECT $__timeGroupAlias(created_at, '1d'), COALESCE(SUM(total_harga), 0) AS revenue, COALESCE(SUM(total_harga - discount_amount), 0) AS net_revenue FROM bookings WHERE $__timeFilter(created_at) AND status IN ('Dikonfirmasi', 'Selesai') GROUP BY 1 ORDER BY 1;",
           "refId": "A"
         }
       ],
-      "title": "Revenue Over Time",
+      "title": "Tren Revenue (Gross vs Net)",
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "mysql",
-        "uid": "office-rent-mysql"
-      },
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Booking Count",
+            "axisPlacement": "auto",
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "scaleDistribution": { "type": "linear" }
           },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 11 },
+      "id": 32,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(created_at, '1d'), COUNT(id) AS total_bookings, SUM(CASE WHEN status = 'Dibatalkan' THEN 1 ELSE 0 END) AS cancelled FROM bookings WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1;",
+          "refId": "A"
+        }
+      ],
+      "title": "Booking Volume & Pembatalan Harian",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 },
+      "id": 40,
+      "title": "📊 Analisis Status & Kategori Ruangan",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
           "custom": {
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 60,
+            "fillOpacity": 70,
             "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
             "lineWidth": 1,
-            "pointSize": 4,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "scaleDistribution": { "type": "linear" }
           },
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
+          "unit": "currencyIDR"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 4
-      },
-      "id": 6,
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 20 },
+      "id": 41,
       "options": {
-        "legend": {
-          "calcs": [
-            "sum"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "barRadius": 0.1,
+        "barWidth": 0.7,
+        "groupWidth": 0.7,
+        "legend": { "calcs": ["sum"], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" }
       },
-      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "mysql",
-            "uid": "office-rent-mysql"
-          },
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(created_at, '1d'),\n  COUNT(*) AS bookings\nFROM bookings\nWHERE $__timeFilter(created_at)\nGROUP BY 1\nORDER BY 1;",
-          "refId": "A"
-        }
-      ],
-      "title": "Booking Volume",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "mysql",
-        "uid": "office-rent-mysql"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            }
-          },
-          "mappings": [],
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 12
-      },
-      "id": 7,
-      "options": {
-        "displayLabels": [
-          "name",
-          "value",
-          "percent"
-        ],
-        "legend": {
-          "displayMode": "list",
-          "placement": "right",
-          "showLegend": true
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "mysql",
-            "uid": "office-rent-mysql"
-          },
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT status, COUNT(*) AS total\nFROM bookings\nGROUP BY status\nORDER BY total DESC;",
+          "rawSql": "SELECT o.kategori AS Kategori, COALESCE(SUM(CASE WHEN b.status IN ('Dikonfirmasi','Selesai') THEN b.total_harga ELSE 0 END), 0) AS Revenue FROM offices o LEFT JOIN bookings b ON b.office_id = o.id WHERE ($kategori = 'All' OR FIND_IN_SET(o.kategori, '$kategori')) GROUP BY o.kategori ORDER BY Revenue DESC;",
           "refId": "A"
         }
       ],
-      "title": "Booking Status",
+      "title": "Revenue per Kategori Ruangan",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 20 },
+      "id": 42,
+      "options": {
+        "displayLabels": ["name", "value", "percent"],
+        "legend": { "displayMode": "list", "placement": "right", "showLegend": true },
+        "pieType": "pie",
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT status, COUNT(*) AS total FROM bookings GROUP BY status ORDER BY total DESC;",
+          "refId": "A"
+        }
+      ],
+      "title": "Breakdown Status Booking",
       "type": "piechart"
     },
     {
-      "datasource": {
-        "type": "mysql",
-        "uid": "office-rent-mysql"
-      },
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 20 },
+      "id": 43,
+      "options": {
+        "displayLabels": ["name", "value", "percent"],
+        "legend": { "displayMode": "list", "placement": "right", "showLegend": true },
+        "pieType": "donut",
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT payment_status AS `Status Bayar`, COUNT(*) AS total FROM bookings GROUP BY payment_status ORDER BY total DESC;",
+          "refId": "A"
+        }
+      ],
+      "title": "Breakdown Status Pembayaran",
+      "type": "piechart"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 28 },
+      "id": 50,
+      "title": "🎟️ Intelijen Addons & Kupon Promo",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 70,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1,
+            "scaleDistribution": { "type": "linear" }
           },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 29 },
+      "id": 51,
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.6,
+        "groupWidth": 0.6,
+        "legend": { "calcs": ["sum"], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT a.nama AS Addon, COUNT(ba.id) AS `Total Dipesan` FROM addons a JOIN booking_addons ba ON ba.addon_id = a.id JOIN bookings b ON b.id = ba.booking_id WHERE b.status IN ('Dikonfirmasi', 'Selesai') GROUP BY a.id, a.nama ORDER BY `Total Dipesan` DESC;",
+          "refId": "A"
+        }
+      ],
+      "title": "Addons Paling Banyak Dipesan",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
           "custom": {
             "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
+            "cellOptions": { "type": "auto" },
             "inspect": false
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
+            "steps": [{ "color": "green", "value": null }]
           }
         },
         "overrides": [
           {
-            "matcher": {
-              "id": "byName",
-              "options": "revenue"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "currencyIDR"
-              }
-            ]
+            "matcher": { "id": "byName", "options": "Total Potongan Harga" },
+            "properties": [{ "id": "unit", "value": "currencyIDR" }]
           }
         ]
       },
-      "gridPos": {
-        "h": 8,
-        "w": 16,
-        "x": 8,
-        "y": 12
-      },
-      "id": 8,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 29 },
+      "id": 52,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
         "showHeader": true
       },
-      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "mysql",
-            "uid": "office-rent-mysql"
-          },
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  o.nama AS office,\n  COUNT(b.id) AS bookings,\n  COALESCE(SUM(CASE WHEN b.status IN ('Dikonfirmasi', 'Selesai') THEN b.total_harga ELSE 0 END), 0) AS revenue\nFROM offices o\nLEFT JOIN bookings b ON b.office_id = o.id\nGROUP BY o.id, o.nama\nORDER BY bookings DESC, revenue DESC\nLIMIT 10;",
+          "rawSql": "SELECT c.code AS `Kode Kupon`, c.type AS `Tipe`, c.value AS `Nilai Kupon`, COUNT(b.id) AS `Jumlah Penggunaan`, COALESCE(SUM(b.discount_amount), 0) AS `Total Potongan Harga` FROM coupons c JOIN bookings b ON b.coupon_id = c.id WHERE b.status IN ('Dikonfirmasi', 'Selesai') GROUP BY c.id, c.code, c.type, c.value ORDER BY `Jumlah Penggunaan` DESC;",
           "refId": "A"
         }
       ],
-      "title": "Top Offices",
+      "title": "Kupon Promo & Dampak Diskon",
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "mysql",
-        "uid": "office-rent-mysql"
-      },
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 37 },
+      "id": 60,
+      "title": "🏢 Ruangan & Feedback Ulasan Pelanggan",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
+          "color": { "mode": "thresholds" },
           "custom": {
             "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
+            "cellOptions": { "type": "auto" },
             "inspect": false
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
+            "steps": [{ "color": "green", "value": null }]
           }
         },
         "overrides": [
           {
-            "matcher": {
-              "id": "byName",
-              "options": "total"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "currencyIDR"
-              }
-            ]
+            "matcher": { "id": "byName", "options": "Revenue" },
+            "properties": [{ "id": "unit", "value": "currencyIDR" }]
           }
         ]
       },
-      "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 20
-      },
-      "id": 9,
+      "gridPos": { "h": 8, "w": 14, "x": 0, "y": 38 },
+      "id": 61,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
         "showHeader": true
       },
-      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "mysql",
-            "uid": "office-rent-mysql"
-          },
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  b.created_at AS created,\n  b.nama_pemesan AS customer,\n  o.nama AS office,\n  b.status,\n  b.payment_status,\n  b.total_harga AS total\nFROM bookings b\nJOIN offices o ON o.id = b.office_id\nORDER BY b.created_at DESC\nLIMIT 20;",
+          "rawSql": "SELECT o.nama AS Ruangan, o.kategori AS Kategori, COUNT(b.id) AS `Total Booking`, COALESCE(SUM(CASE WHEN b.status IN ('Dikonfirmasi', 'Selesai') THEN b.total_harga ELSE 0 END), 0) AS Revenue, COALESCE(ROUND(AVG(r.rating), 1), 0.0) AS `Rata-rata Rating`, COUNT(DISTINCT r.id) AS `Jumlah Ulasan` FROM offices o LEFT JOIN bookings b ON b.office_id = o.id LEFT JOIN reviews r ON r.office_id = o.id GROUP BY o.id, o.nama, o.kategori ORDER BY `Total Booking` DESC, Revenue DESC;",
           "refId": "A"
         }
       ],
-      "title": "Latest Bookings",
+      "title": "Daftar Ruangan Terpopuler & Rating",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 10, "x": 14, "y": 38 },
+      "id": 62,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT r.created_at AS Tanggal, u.name AS Customer, o.nama AS Ruangan, r.rating AS Rating, r.comment AS Ulasan FROM reviews r JOIN users u ON u.id = r.user_id JOIN offices o ON o.id = r.office_id ORDER BY r.created_at DESC LIMIT 20;",
+          "refId": "A"
+        }
+      ],
+      "title": "Feedback Ulasan Pelanggan Terbaru",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 46 },
+      "id": 70,
+      "title": "📝 Data Transaksi Master Terperinci",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Biaya Addon" },
+            "properties": [{ "id": "unit", "value": "currencyIDR" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Diskon" },
+            "properties": [{ "id": "unit", "value": "currencyIDR" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Total Bayar" },
+            "properties": [{ "id": "unit", "value": "currencyIDR" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 11, "w": 24, "x": 0, "y": 47 },
+      "id": 71,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "office-rent-mysql" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT b.id AS ID, b.created_at AS Tanggal, b.nama_pemesan AS Customer, b.perusahaan AS Perusahaan, o.nama AS Ruangan, o.kategori AS Kategori, b.durasi AS `Durasi (Bulan)`, COALESCE(c.code, '-') AS `Kupon`, b.discount_amount AS `Diskon`, b.total_addon_price AS `Biaya Addon`, b.total_harga AS `Total Bayar`, b.status AS Status, b.payment_status AS `Status Bayar` FROM bookings b JOIN offices o ON o.id = b.office_id LEFT JOIN coupons c ON c.id = b.coupon_id ORDER BY b.created_at DESC;",
+          "refId": "A"
+        }
+      ],
+      "title": "Master Transaksi Booking Terperinci",
       "type": "table"
     }
   ],
@@ -684,7 +848,52 @@
     "learning"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "mysql",
+          "uid": "office-rent-mysql"
+        },
+        "definition": "SELECT DISTINCT status FROM bookings ORDER BY status",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Status Booking",
+        "multi": true,
+        "name": "booking_status",
+        "options": [],
+        "query": "SELECT DISTINCT status FROM bookings ORDER BY status",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "mysql",
+          "uid": "office-rent-mysql"
+        },
+        "definition": "SELECT DISTINCT kategori FROM offices WHERE kategori IS NOT NULL ORDER BY kategori",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Kategori Ruangan",
+        "multi": true,
+        "name": "kategori",
+        "options": [],
+        "query": "SELECT DISTINCT kategori FROM offices WHERE kategori IS NOT NULL ORDER BY kategori",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-180d",
@@ -694,6 +903,6 @@
   "timezone": "browser",
   "title": "Office Rent Overview",
   "uid": "office-rent-overview",
-  "version": 1,
+  "version": 3,
   "weekStart": ""
 }
