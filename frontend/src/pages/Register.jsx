@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { UserPlus, ArrowLeft } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Register = () => {
+  const { t, lang } = useLanguage();
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const { register } = useAuth();
@@ -20,7 +22,7 @@ const Register = () => {
       await register(formData);
       navigate('/'); // Redirect to home after successful registration/login
     } catch (err) {
-      setError(err.response?.data?.message || 'Terjadi kesalahan saat registrasi');
+      setError(err.response?.data?.message || (lang === 'id' ? 'Terjadi kesalahan saat registrasi' : 'An error occurred during registration'));
     }
   };
 
@@ -32,7 +34,7 @@ const Register = () => {
         display: 'flex', alignItems: 'center', gap: '0.5rem', 
         color: 'var(--color-text-muted)', fontWeight: 500, textDecoration: 'none' 
       }}>
-        <ArrowLeft size={18} /> Kembali ke Beranda
+        <ArrowLeft size={18} /> {t('back_to_home')}
       </Link>
 
       <div className="card" style={{ padding: '3rem', width: '100%', maxWidth: '450px' }}>
@@ -40,8 +42,8 @@ const Register = () => {
           <div style={{ display: 'inline-flex', padding: '1rem', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderRadius: '50%', marginBottom: '1rem' }}>
             <UserPlus size={32} color="var(--color-primary)" />
           </div>
-          <h1 style={{ fontSize: '1.8rem', color: 'var(--color-text-main)' }}>Buat Akun Baru</h1>
-          <p style={{ color: 'var(--color-text-muted)' }}>Daftar untuk mulai menyewa ruangan</p>
+          <h1 style={{ fontSize: '1.8rem', color: 'var(--color-text-main)' }}>{t('register_title')}</h1>
+          <p style={{ color: 'var(--color-text-muted)' }}>{t('register_subtitle')}</p>
         </div>
 
         {error && (
@@ -52,24 +54,24 @@ const Register = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Nama Lengkap</label>
+            <label className="form-label">{t('register_name')}</label>
             <input required type="text" name="name" value={formData.name} onChange={handleChange} className="form-control" placeholder="Budi Santoso" />
           </div>
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label className="form-label">{t('login_email')}</label>
             <input required type="email" name="email" value={formData.email} onChange={handleChange} className="form-control" placeholder="nama@email.com" />
           </div>
           <div className="form-group" style={{ marginBottom: '2rem' }}>
-            <label className="form-label">Password</label>
-            <input required type="password" name="password" value={formData.password} onChange={handleChange} className="form-control" placeholder="Minimal 6 karakter" minLength={6} />
+            <label className="form-label">{t('login_password')}</label>
+            <input required type="password" name="password" value={formData.password} onChange={handleChange} className="form-control" placeholder={t('profile_new_password_placeholder')} minLength={6} />
           </div>
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem' }}>
-            Daftar
+            {t('register_btn')}
           </button>
         </form>
 
         <div style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-          Sudah punya akun? <Link to="/login" style={{ fontWeight: 600 }}>Masuk di sini</Link>
+          {t('register_has_account')} <Link to="/login" style={{ fontWeight: 600 }}>{t('register_login_link')}</Link>
         </div>
       </div>
     </div>

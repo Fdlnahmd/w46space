@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { updateProfile, changePassword } from '../services/apiService';
 import { User, Lock, Shield, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Profile = () => {
+  const { t, lang } = useLanguage();
   const { user } = useAuth();
   const [profileData, setProfileData] = useState({
     name: user?.name || user?.nama || '',
@@ -28,9 +30,9 @@ const Profile = () => {
       const response = await updateProfile(profileData);
       const updatedUser = { ...user, ...response.user };
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      setStatus({ type: 'success', message: 'Profil berhasil diperbarui!' });
+      setStatus({ type: 'success', message: t('profile_update_success') });
     } catch (error) {
-      setStatus({ type: 'error', message: error.response?.data?.message || 'Gagal memperbarui profil' });
+      setStatus({ type: 'error', message: error.response?.data?.message || t('profile_update_failed') });
     } finally {
       setLoading(false);
     }
@@ -47,9 +49,9 @@ const Profile = () => {
         new_password_confirmation: passwordData.new_password_confirmation,
       });
       setPasswordData({ current_password: '', new_password: '', new_password_confirmation: '' });
-      setStatus({ type: 'success', message: 'Password berhasil diubah!' });
+      setStatus({ type: 'success', message: t('password_change_success') });
     } catch (error) {
-      setStatus({ type: 'error', message: error.response?.data?.message || 'Gagal mengubah password' });
+      setStatus({ type: 'error', message: error.response?.data?.message || t('password_change_failed') });
     } finally {
       setLoading(false);
     }
@@ -72,12 +74,12 @@ const Profile = () => {
           color: 'var(--color-text-muted)'
         }}
       >
-        <ArrowLeft size={16} /> Kembali ke Beranda
+        <ArrowLeft size={16} /> {t('back_to_home_btn')}
       </Link>
 
       <div style={{ marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '2rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Pengaturan Profil</h1>
-        <p style={{ color: 'var(--color-text-muted)' }}>Kelola informasi akun dan keamanan Anda</p>
+        <h1 style={{ fontSize: '2rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>{t('profile_settings')}</h1>
+        <p style={{ color: 'var(--color-text-muted)' }}>{t('profile_desc')}</p>
       </div>
 
       {status.message && (
@@ -128,7 +130,7 @@ const Profile = () => {
               color: 'var(--color-primary)'
             }}>
               <Shield size={14} />
-              {user?.role === 'admin' ? 'Administrator' : 'Penyewa'}
+              {user?.role === 'admin' ? 'Administrator' : user?.role === 'helpdesk' ? 'Helpdesk' : (lang === 'id' ? 'Penyewa' : 'Tenant')}
             </div>
           </div>
         </div>
@@ -138,11 +140,11 @@ const Profile = () => {
           {/* Edit Profile Form */}
           <div className="card" style={{ padding: '2rem' }}>
             <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <User size={18} color="var(--color-primary)" /> Informasi Pribadi
+              <User size={18} color="var(--color-primary)" /> {t('profile_personal_info')}
             </h3>
             <form onSubmit={handleProfileUpdate}>
               <div className="form-group">
-                <label className="form-label">Nama Lengkap</label>
+                <label className="form-label">{t('profile_full_name')}</label>
                 <input
                   type="text"
                   required
@@ -152,7 +154,7 @@ const Profile = () => {
                 />
               </div>
               <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-                <label className="form-label">Alamat Email</label>
+                <label className="form-label">{t('profile_email_address')}</label>
                 <input
                   type="email"
                   required
@@ -162,7 +164,7 @@ const Profile = () => {
                 />
               </div>
               <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                {loading ? t('submitting') : t('save_changes')}
               </button>
             </form>
           </div>
@@ -170,46 +172,46 @@ const Profile = () => {
           {/* Change Password Form */}
           <div className="card" style={{ padding: '2rem' }}>
             <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Lock size={18} color="var(--color-primary)" /> Keamanan Password
+              <Lock size={18} color="var(--color-primary)" /> {t('profile_security')}
             </h3>
             <form onSubmit={handlePasswordChange}>
               <div className="form-group">
-                <label className="form-label">Password Sekarang</label>
+                <label className="form-label">{t('profile_current_password')}</label>
                 <input
                   type="password"
                   required
                   className="form-control"
-                  placeholder="Masukkan password saat ini"
+                  placeholder={t('profile_current_password_placeholder')}
                   value={passwordData.current_password}
                   onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
                 />
               </div>
               <div className="password-grid">
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Password Baru</label>
+                  <label className="form-label">{t('profile_new_password')}</label>
                   <input
                     type="password"
                     required
                     className="form-control"
-                    placeholder="Minimal 6 karakter"
+                    placeholder={t('profile_new_password_placeholder')}
                     value={passwordData.new_password}
                     onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
                   />
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Konfirmasi Password</label>
+                  <label className="form-label">{t('profile_confirm_password')}</label>
                   <input
                     type="password"
                     required
                     className="form-control"
-                    placeholder="Ulangi password baru"
+                    placeholder={t('profile_confirm_password_placeholder')}
                     value={passwordData.new_password_confirmation}
                     onChange={(e) => setPasswordData({ ...passwordData, new_password_confirmation: e.target.value })}
                   />
                 </div>
               </div>
               <button type="submit" className="btn btn-outline" disabled={loading} style={{ borderColor: 'var(--color-text-main)' }}>
-                {loading ? 'Memproses...' : 'Ganti Password'}
+                {loading ? t('submitting') : t('change_password_btn')}
               </button>
             </form>
           </div>

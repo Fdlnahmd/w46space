@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { getRuanganById, createPemesanan, getPemesananById, getAddons, checkCoupon } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import { Users, CheckCircle2, ArrowLeft, LogIn, ShieldAlert, Coffee, Wifi, Monitor, Printer, Ticket, Check, X } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const iconMap = {
   Coffee: <Coffee size={18} />,
@@ -27,6 +28,7 @@ import 'react-calendar/dist/Calendar.css';
 import './CalendarCustom.css';
 
 const DetailRuangan = () => {
+  const { t, lang } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -150,7 +152,7 @@ const DetailRuangan = () => {
       setCouponData(res.coupon || res); 
     } catch (err) {
       setCouponData(null);
-      setCouponError(err.response?.data?.message || 'Kupon tidak valid');
+      setCouponError(err.response?.data?.message || (lang === 'id' ? 'Kupon tidak valid' : 'Invalid coupon code'));
     }
   };
 
@@ -196,15 +198,15 @@ const DetailRuangan = () => {
       setModal({
         isOpen: true,
         type: 'error',
-        title: 'Tanggal Belum Dipilih',
-        message: 'Silakan pilih tanggal mulai kontrak terlebih dahulu melalui kalender yang tersedia.'
+        title: lang === 'id' ? 'Tanggal Belum Dipilih' : 'Date Not Selected',
+        message: lang === 'id' ? 'Silakan pilih tanggal mulai kontrak terlebih dahulu melalui kalender yang tersedia.' : 'Please select the contract start date first using the available calendar.'
       });
       return;
     }
 
     try {
       const tanggalAkhir = hitungTanggalAkhir(formData.tanggalMulai, formData.durasi);
-      if (!tanggalAkhir) throw new Error('Format tanggal tidak valid');
+      if (!tanggalAkhir) throw new Error(lang === 'id' ? 'Format tanggal tidak valid' : 'Invalid date format');
 
       const dataKeBackend = {
         id_ruangan: parseInt(id),
@@ -226,16 +228,16 @@ const DetailRuangan = () => {
       setModal({
         isOpen: true,
         type: 'success',
-        title: 'Pemesanan Berhasil',
-        message: 'Permintaan pemesanan Anda telah diterima. Silakan cek status berkala di halaman Pesanan Saya.'
+        title: lang === 'id' ? 'Pemesanan Berhasil' : 'Booking Successful',
+        message: lang === 'id' ? 'Permintaan pemesanan Anda telah diterima. Silakan cek status berkala di halaman Pesanan Saya.' : 'Your booking request has been received. Please check the status regularly on the My Bookings page.'
       });
     } catch (error) {
       console.error('Booking error:', error);
       setModal({
         isOpen: true,
         type: 'error',
-        title: 'Pemesanan Gagal',
-        message: error.response?.data?.message || 'Terjadi kesalahan saat memproses pesanan Anda. Silakan coba lagi.'
+        title: lang === 'id' ? 'Pemesanan Gagal' : 'Booking Failed',
+        message: error.response?.data?.message || (lang === 'id' ? 'Terjadi kesalahan saat memproses pesanan Anda. Silakan coba lagi.' : 'An error occurred while processing your booking. Please try again.')
       });
     } finally {
       setLoading(false);
@@ -251,7 +253,7 @@ const DetailRuangan = () => {
 
   if (!ruangan) return (
     <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-      Memuat data ruangan...
+      {lang === 'id' ? 'Memuat data ruangan...' : 'Loading room details...'}
     </div>
   );
 
@@ -268,12 +270,14 @@ const DetailRuangan = () => {
           borderRadius: 'var(--border-radius)'
         }}>
           <ShieldAlert size={48} color="var(--color-warning)" />
-          <h3 style={{ color: '#92400e' }}>Akses Terbatas untuk {isHelpdesk ? 'Helpdesk' : 'Admin'}</h3>
+          <h3 style={{ color: '#92400e' }}>{lang === 'id' ? 'Akses Terbatas untuk' : 'Restricted Access for'} {isHelpdesk ? 'Helpdesk' : 'Admin'}</h3>
           <p style={{ color: '#78350f' }}>
-            Akun {isHelpdesk ? 'Helpdesk' : 'Admin'} hanya memiliki akses ke panel operasional. Pemesanan ruangan dilakukan oleh pengguna terdaftar.
+            {lang === 'id' 
+              ? `Akun ${isHelpdesk ? 'Helpdesk' : 'Admin'} hanya memiliki akses ke panel operasional. Pemesanan ruangan dilakukan oleh pengguna terdaftar.`
+              : `${isHelpdesk ? 'Helpdesk' : 'Admin'} accounts only have access to the operational panel. Room bookings must be made by registered users.`}
           </p>
           <Link to="/admin" className="btn btn-outline" style={{ marginTop: '0.5rem' }}>
-            Pergi ke Panel {isHelpdesk ? 'Helpdesk' : 'Admin'}
+            {lang === 'id' ? 'Pergi ke Panel' : 'Go to Panel'} {isHelpdesk ? 'Helpdesk' : 'Admin'}
           </Link>
         </div>
       );
@@ -288,13 +292,13 @@ const DetailRuangan = () => {
           backgroundColor: 'var(--color-secondary)', borderRadius: 'var(--border-radius)'
         }}>
           <LogIn size={48} color="var(--color-text-muted)" />
-          <h3>Anda belum login</h3>
+          <h3>{lang === 'id' ? 'Anda belum login' : 'You are not logged in'}</h3>
           <p style={{ color: 'var(--color-text-muted)' }}>
-            Silakan masuk atau daftar akun terlebih dahulu untuk melakukan pemesanan.
+            {lang === 'id' ? 'Silakan masuk atau daftar akun terlebih dahulu untuk melakukan pemesanan.' : 'Please sign in or register an account first to make a booking.'}
           </p>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Link to="/login" className="btn btn-primary">Masuk ke Akun</Link>
-            <Link to="/register" className="btn btn-outline">Daftar Akun Baru</Link>
+            <Link to="/login" className="btn btn-primary">{lang === 'id' ? 'Masuk ke Akun' : 'Sign In'}</Link>
+            <Link to="/register" className="btn btn-outline">{lang === 'id' ? 'Daftar Akun Baru' : 'Register New Account'}</Link>
           </div>
         </div>
       );
@@ -321,15 +325,15 @@ const DetailRuangan = () => {
           }}>
             <ShieldAlert size={20} color="#d97706" />
             <div style={{ textAlign: 'left' }}>
-              <strong>Informasi Ketersediaan:</strong> Ruangan ini sedang disewa hingga tanggal{' '}
-              <strong>{new Date(ruangan.booked_until).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
-              Namun, Anda tetap dapat memesannya untuk tanggal setelahnya.
+              <strong>{lang === 'id' ? 'Informasi Ketersediaan:' : 'Availability Info:'}</strong> {lang === 'id' ? 'Ruangan ini sedang disewa hingga tanggal' : 'This room is currently rented until'}{' '}
+              <strong>{new Date(ruangan.booked_until).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
+              {lang === 'id' ? 'Namun, Anda tetap dapat memesannya untuk tanggal setelahnya.' : 'However, you can still book it for dates after this period.'}
             </div>
           </div>
         )}
         {/* Nama Pemesan */}
         <div className="form-group">
-          <label className="form-label">Nama Pemesan</label>
+          <label className="form-label">{lang === 'id' ? 'Nama Pemesan' : 'Booker Name'}</label>
           <input
             type="text" className="form-control"
             value={formData.namaPemesan}
@@ -341,18 +345,18 @@ const DetailRuangan = () => {
 
         {/* Perusahaan */}
         <div className="form-group">
-          <label className="form-label">Nama Perusahaan (Opsional)</label>
+          <label className="form-label">{lang === 'id' ? 'Nama Perusahaan (Opsional)' : 'Company Name (Optional)'}</label>
           <input
             type="text" className="form-control"
             value={formData.perusahaan}
             onChange={(e) => setFormData({ ...formData, perusahaan: e.target.value })}
-            placeholder="PT. Nama Perusahaan"
+            placeholder={lang === 'id' ? 'PT. Nama Perusahaan' : 'PT. Company Name'}
           />
         </div>
 
         {/* Visual Calendar */}
         <div style={{ gridColumn: '1 / -1', marginBottom: '1rem' }}>
-          <label className="form-label">Cek Ketersediaan (Kalender)</label>
+          <label className="form-label">{lang === 'id' ? 'Cek Ketersediaan (Kalender)' : 'Check Availability (Calendar)'}</label>
           <Calendar
             onChange={(date) => {
               const yyyy = date.getFullYear();
@@ -370,7 +374,7 @@ const DetailRuangan = () => {
 
         {/* Fasilitas Tambahan (Addons) */}
         <div style={{ gridColumn: '1 / -1' }}>
-          <label className="form-label">Fasilitas Tambahan (Opsional)</label>
+          <label className="form-label">{lang === 'id' ? 'Fasilitas Tambahan (Opsional)' : 'Additional Facilities (Optional)'}</label>
           <div className="addons-mobile-grid" style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
@@ -405,13 +409,13 @@ const DetailRuangan = () => {
 
         {/* Coupon Code */}
         <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-          <label className="form-label">Punya Kode Promo?</label>
+          <label className="form-label">{lang === 'id' ? 'Punya Kode Promo?' : 'Have a Promo Code?'}</label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <div style={{ position: 'relative', flex: 1 }}>
               <Ticket size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
               <input
                 type="text" className="form-control"
-                placeholder="Masukkan kode (misal: KUPONSAYA)"
+                placeholder={lang === 'id' ? 'Masukkan kode (misal: KUPONSAYA)' : 'Enter code (e.g. MYCOUPON)'}
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                 style={{ paddingLeft: '2.5rem' }}
@@ -423,52 +427,52 @@ const DetailRuangan = () => {
                 <X size={18} />
               </button>
             ) : (
-              <button type="button" onClick={handleApplyCoupon} className="btn btn-outline">Gunakan</button>
+              <button type="button" onClick={handleApplyCoupon} className="btn btn-outline">{lang === 'id' ? 'Gunakan' : 'Apply'}</button>
             )}
           </div>
           {couponError && <p style={{ color: 'var(--color-danger)', fontSize: '0.8rem', marginTop: '0.25rem' }}>{couponError}</p>}
           {couponData && (
             <p style={{ color: 'var(--color-success)', fontSize: '0.8rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <Check size={14} /> Kupon <strong>{couponData.code}</strong> berhasil dipasang!
+              <Check size={14} /> {lang === 'id' ? 'Kupon' : 'Coupon'} <strong>{couponData.code}</strong> {lang === 'id' ? 'berhasil dipasang!' : 'successfully applied!'}
             </p>
           )}
         </div>
 
         {/* Tanggal Mulai & Durasi */}
         <div className="form-group">
-          <label className="form-label">Tanggal Mulai Kontrak</label>
+          <label className="form-label">{lang === 'id' ? 'Tanggal Mulai Kontrak' : 'Contract Start Date'}</label>
           <div style={{ 
             padding: '0.75rem', backgroundColor: 'var(--color-secondary)', 
             borderRadius: 'var(--border-radius)', border: '1px solid var(--color-border)',
             fontWeight: 600, color: formData.tanggalMulai ? 'var(--color-text-main)' : 'var(--color-text-muted)'
           }}>
-            {formData.tanggalMulai ? new Date(formData.tanggalMulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Pilih di kalender'}
+            {formData.tanggalMulai ? new Date(formData.tanggalMulai).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : (lang === 'id' ? 'Pilih di kalender' : 'Select on calendar')}
           </div>
         </div>
 
         <div className="form-group">
-          <label className="form-label">Durasi Kontrak</label>
+          <label className="form-label">{t('duration')}</label>
           <select
             className="form-control"
             value={formData.durasi}
             onChange={(e) => setFormData({ ...formData, durasi: e.target.value })}
           >
-            <option value={1}>1 Bulan</option>
-            <option value={2}>2 Bulan</option>
-            <option value={3}>3 Bulan</option>
-            <option value={6}>6 Bulan</option>
-            <option value={12}>12 Bulan (1 Tahun)</option>
+            <option value={1}>1 {t('months')}</option>
+            <option value={2}>2 {t('months')}</option>
+            <option value={3}>3 {t('months')}</option>
+            <option value={6}>6 {t('months')}</option>
+            <option value={12}>12 {t('months')} ({lang === 'id' ? '1 Tahun' : '1 Year'})</option>
           </select>
         </div>
 
         {/* Waktu */}
         <div className="time-input-group" style={{ display: 'flex', gap: '1rem', gridColumn: '1 / -1' }}>
           <div className="form-group" style={{ flex: 1 }}>
-            <label className="form-label">Jam Masuk</label>
+            <label className="form-label">{lang === 'id' ? 'Jam Masuk' : 'Check-in Time'}</label>
             <input type="time" className="form-control" style={{ minHeight: '45px' }} value={formData.waktuMulai} onChange={(e) => setFormData({ ...formData, waktuMulai: e.target.value })} />
           </div>
           <div className="form-group" style={{ flex: 1 }}>
-            <label className="form-label">Jam Keluar</label>
+            <label className="form-label">{lang === 'id' ? 'Jam Keluar' : 'Check-out Time'}</label>
             <input type="time" className="form-control" style={{ minHeight: '45px' }} value={formData.waktuSelesai} onChange={(e) => setFormData({ ...formData, waktuSelesai: e.target.value })} />
           </div>
         </div>
@@ -480,26 +484,26 @@ const DetailRuangan = () => {
             borderRadius: 'var(--border-radius)', border: '1px solid var(--color-border)'
           }}>
             <div className="summary-row">
-              <span>Harga Ruangan ({formData.durasi} bln):</span>
+              <span>{lang === 'id' ? `Harga Ruangan (${formData.durasi} bln):` : `Room Price (${formData.durasi} mo):`}</span>
               <span className="price-text">Rp {(Number(ruangan?.harga ?? 0) * 26 * formData.durasi).toLocaleString('id-ID')}</span>
             </div>
             
             {selectedAddons.length > 0 && (
               <div className="summary-row">
-                <span>Fasilitas Tambahan:</span>
+                <span>{lang === 'id' ? 'Fasilitas Tambahan:' : 'Additional Facilities:'}</span>
                 <span className="price-text">+ Rp {Number(availableAddons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.harga, 0) ?? 0).toLocaleString('id-ID')}</span>
               </div>
             )}
 
             {couponData && (
               <div className="summary-row" style={{ color: 'var(--color-success)' }}>
-                <span>Diskon Kupon ({couponData.code}):</span>
+                <span>{lang === 'id' ? `Diskon Kupon (${couponData.code}):` : `Coupon Discount (${couponData.code}):`}</span>
                 <span className="price-text">- Rp {Number(couponData.type === 'percentage' ? (Number(ruangan?.harga ?? 0) * 26 * formData.durasi * couponData.value / 100) : couponData.value).toLocaleString('id-ID')}</span>
               </div>
             )}
 
             <div className="summary-row total-row" style={{ borderTop: '1px solid var(--color-border)', marginTop: '0.75rem', paddingTop: '0.75rem' }}>
-              <span style={{ fontWeight: 600 }}>Total Harga:</span>
+              <span style={{ fontWeight: 600 }}>{t('total_price')}:</span>
               <span className="total-price-text">
                 Rp {Number(totalHarga ?? 0).toLocaleString('id-ID')}
               </span>
@@ -513,7 +517,7 @@ const DetailRuangan = () => {
             style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
             disabled={ruangan.status !== 'Tersedia' || loading}
           >
-            {loading ? 'Mengajukan...' : (ruangan.status === 'Tersedia' ? 'Ajukan Pemesanan' : 'Ruangan Tidak Tersedia')}
+            {loading ? (lang === 'id' ? 'Mengajukan...' : 'Submitting...') : (ruangan.status === 'Tersedia' ? (lang === 'id' ? 'Ajukan Pemesanan' : 'Submit Booking') : (lang === 'id' ? 'Ruangan Tidak Tersedia' : 'Room Not Available'))}
           </button>
         </div>
       </form>
@@ -524,7 +528,7 @@ const DetailRuangan = () => {
     <div className="detail-page-container" style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh', padding: '2rem 0' }}>
       <div className="container">
         <button onClick={() => navigate(-1)} className="btn btn-outline" style={{ marginBottom: '1.5rem', display: 'inline-flex' }}>
-          <ArrowLeft size={18} /> Kembali
+          <ArrowLeft size={18} /> {lang === 'id' ? 'Kembali' : 'Back'}
         </button>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -551,29 +555,29 @@ const DetailRuangan = () => {
                   <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>{ruangan.nama}</h1>
                   {ruangan.is_booked ? (
                     <span className="badge badge-danger" style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
-                      Penuh
+                      {t('status_full')}
                     </span>
                   ) : ruangan.status === 'Maintenance' || ruangan.status === 'Pemeliharaan' ? (
                     <span className="badge badge-warning" style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
-                      Pemeliharaan
+                      {t('status_maintenance')}
                     </span>
                   ) : (
                     <span className={`badge ${ruangan.status === 'Tersedia' ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
-                      {ruangan.status}
+                      {ruangan.status === 'Tersedia' ? t('status_available') : ruangan.status}
                     </span>
                   )}
                 </div>
                 <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-primary)' }}>
                   Rp {Number(ruangan?.harga ?? 0).toLocaleString('id-ID')}
-                  <span style={{ fontSize: '1rem', color: 'var(--color-text-muted)', fontWeight: 400 }}> /hari</span>
+                  <span style={{ fontSize: '1rem', color: 'var(--color-text-muted)', fontWeight: 400 }}> /{lang === 'id' ? 'hari' : 'day'}</span>
                 </p>
                 <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.6 }}>{ruangan.deskripsi}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}>
                   <Users size={20} color="var(--color-primary)" />
-                  Kapasitas Maksimal: {ruangan.kapasitas} orang
+                  {lang === 'id' ? 'Kapasitas Maksimal' : 'Maximum Capacity'}: {ruangan.kapasitas} {lang === 'id' ? 'orang' : 'people'}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Fasilitas:</h3>
+                  <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>{lang === 'id' ? 'Fasilitas' : 'Facilities'}:</h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {ruangan.fasilitas.map((f, i) => (
                       <span key={i} style={{
@@ -594,7 +598,7 @@ const DetailRuangan = () => {
           {/* Formulir / Info Booking */}
         <div style={{ card: 'card', padding: '2rem' }}>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
-              Formulir Pemesanan
+              {lang === 'id' ? 'Formulir Pemesanan' : 'Booking Form'}
             </h2>
             {renderBookingSection()}
           </div>

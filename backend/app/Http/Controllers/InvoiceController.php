@@ -12,7 +12,7 @@ class InvoiceController extends Controller
     /**
      * @param int $id
      */
-    public function download($id)
+    public function download(Request $request, $id)
     {
         $booking = Booking::with(['office', 'user', 'addons', 'coupon'])->find($id);
 
@@ -29,20 +29,22 @@ class InvoiceController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::guard('sanctum')->user() ?: Auth::user();
         
-        // Catatan: Jika dibuka via window.open, Auth::user() mungkin null karena tidak ada header Bearer.
-        // Untuk kemudahan (development), kita izinkan download jika pesanan ditemukan.
-        // Di produksi, sebaiknya gunakan Signed URL.
-        /*
-        if (!$user || ($user->role !== 'admin' && $booking->user_id !== $user->id)) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
-        }
-        */
+        $lang = $request->query('lang', 'id');
 
         try {
+            $englishMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            $indonesianMonths = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            
+            $formattedDate = date('d F Y');
+            if ($lang === 'id') {
+                $formattedDate = str_replace($englishMonths, $indonesianMonths, $formattedDate);
+            }
+
             $data = [
                 'booking' => $booking,
-                'date' => date('d F Y'),
-                'invoice_no' => 'INV-' . str_pad($booking->id, 5, '0', STR_PAD_LEFT)
+                'date' => $formattedDate,
+                'invoice_no' => 'INV-' . str_pad($booking->id, 5, '0', STR_PAD_LEFT),
+                'lang' => $lang
             ];
 
             $pdf = PDF::loadView('pdf.invoice', $data);

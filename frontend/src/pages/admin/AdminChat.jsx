@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const AdminChat = () => {
+  const { lang } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const { user } = useAuth();
@@ -17,11 +19,12 @@ const AdminChat = () => {
       if (msg.sender) {
         const senderRole = msg.sender.role === 'helpdesk' ? 'Helpdesk' : 'Admin';
         if (user && msg.sender_id === user.id) {
-          return `Saya (${senderRole}) 🎧`;
+          return lang === 'id' ? `Saya (${senderRole}) 🎧` : `Me (${senderRole}) 🎧`;
         }
         return `${msg.sender.name} (${senderRole}) 🎧`;
       }
-      return role === 'helpdesk' ? 'Saya (Helpdesk) 🎧' : 'Saya (Admin) 🎧';
+      const defaultRole = role === 'helpdesk' ? 'Helpdesk' : 'Admin';
+      return lang === 'id' ? `Saya (${defaultRole}) 🎧` : `Me (${defaultRole}) 🎧`;
     }
     return 'User 👤';
   };
@@ -271,8 +274,10 @@ const AdminChat = () => {
   const handleCloseSession = () => {
     if (!activeSession) return;
     showConfirm(
-      'Selesaikan Sesi Chat',
-      'Apakah Anda yakin ingin menyelesaikan sesi obrolan ini? Bot AI akan kembali mengambil alih.',
+      lang === 'id' ? 'Selesaikan Sesi Chat' : 'End Chat Session',
+      lang === 'id' 
+        ? 'Apakah Anda yakin ingin menyelesaikan sesi obrolan ini? Bot AI akan kembali mengambil alih.'
+        : 'Are you sure you want to end this chat session? The AI Bot will take over again.',
       async () => {
         closeModal();
         const token = getToken();
@@ -294,11 +299,17 @@ const AdminChat = () => {
           } else {
             const errBody = await res.text();
             console.error('Close session failed:', res.status, errBody);
-            showAlert('Gagal Menutup Sesi', `Terjadi kesalahan saat menutup sesi. Status: ${res.status}`);
+            showAlert(
+              lang === 'id' ? 'Gagal Menutup Sesi' : 'Failed to Close Session', 
+              lang === 'id' ? `Terjadi kesalahan saat menutup sesi. Status: ${res.status}` : `An error occurred while closing the session. Status: ${res.status}`
+            );
           }
         } catch (err) {
           console.error('Error closing chat session:', err);
-          showAlert('Error Jaringan', `Tidak dapat terhubung ke server: ${err.message}`);
+          showAlert(
+            lang === 'id' ? 'Error Jaringan' : 'Network Error', 
+            lang === 'id' ? `Tidak dapat terhubung ke server: ${err.message}` : `Could not connect to server: ${err.message}`
+          );
         }
       }
     );
@@ -329,7 +340,7 @@ const AdminChat = () => {
           borderBottom: '2px solid #eab308'
         }}>
           <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.025em' }}>
-            Percakapan Masuk
+            {lang === 'id' ? 'Percakapan Masuk' : 'Incoming Chats'}
           </h3>
           <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#eab308', fontWeight: 600 }}>
             ⚡ Hybrid AI + Live Chat System
@@ -339,7 +350,7 @@ const AdminChat = () => {
         <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
           {sessions.length === 0 ? (
             <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
-              Tidak ada sesi chat aktif saat ini.
+              {lang === 'id' ? 'Tidak ada sesi chat aktif saat ini.' : 'No active chat sessions currently.'}
             </div>
           ) : (
             sessions.map(s => {
@@ -397,10 +408,10 @@ const AdminChat = () => {
                       maxWidth: '140px',
                       fontWeight: isActive ? 600 : 400
                     }}>
-                      {s.last_message_preview || 'Belum ada pesan'}
+                      {s.last_message_preview || (lang === 'id' ? 'Belum ada pesan' : 'No messages yet')}
                     </span>
                     {s.mode === 'waiting' ? (
-                      <span style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: '1px solid #fca5a5', ...badgeStyle }}>CS Takeover Needed ⚠️</span>
+                      <span style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: '1px solid #fca5a5', ...badgeStyle }}>{lang === 'id' ? 'Butuh Takeover ⚠️' : 'Takeover Needed ⚠️'}</span>
                     ) : s.mode === 'human' ? (
                       <span style={{ backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', ...badgeStyle }}>Live Chat 🟢</span>
                     ) : (
@@ -444,7 +455,11 @@ const AdminChat = () => {
                     borderRadius: '4px',
                     fontSize: '0.7rem'
                   }}>
-                    {activeSession.mode === 'waiting' ? 'WAITING CS' : activeSession.mode === 'human' ? 'LIVE CS CHAT' : 'AI BOT ACTIVE'}
+                    {activeSession.mode === 'waiting' 
+                      ? (lang === 'id' ? 'MENUNGGU CS' : 'WAITING CS') 
+                      : activeSession.mode === 'human' 
+                        ? (lang === 'id' ? 'LIVE CHAT CS' : 'LIVE CS CHAT') 
+                        : (lang === 'id' ? 'AI BOT AKTIF' : 'AI BOT ACTIVE')}
                   </strong>
                 </p>
               </div>
@@ -476,7 +491,7 @@ const AdminChat = () => {
                       e.currentTarget.style.boxShadow = '0 4px 15px rgba(234, 179, 8, 0.25)';
                     }}
                   >
-                    Take Over Chat (Eskalasi ke CS) 🙋
+                    {lang === 'id' ? 'Take Over Chat (Eskalasi ke CS) 🙋' : 'Take Over Chat (Escalate to CS) 🙋'}
                   </button>
                 )}
 
@@ -488,7 +503,7 @@ const AdminChat = () => {
                       fontSize: '0.8rem', fontWeight: 700, padding: '0.5rem 1rem',
                       borderRadius: '8px', border: '1px solid #bbf7d0'
                     }}>
-                      Tim Live Chat Terkoneksi ✓
+                      {lang === 'id' ? 'Tim Live Chat Terkoneksi ✓' : 'Live Chat Team Connected ✓'}
                     </span>
                     <button
                       onClick={handleCloseSession}
@@ -506,7 +521,7 @@ const AdminChat = () => {
                       onMouseEnter={e => e.currentTarget.style.background = 'linear-gradient(135deg, #fecaca 0%, #fca5a5 100%)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'}
                     >
-                      Selesaikan Chat ✕
+                      {lang === 'id' ? 'Selesaikan Chat ✕' : 'End Chat ✕'}
                     </button>
                   </>
                 )}
@@ -523,7 +538,7 @@ const AdminChat = () => {
               gap: '0.75rem',
             }}>
               {loading ? (
-                <div style={{ margin: 'auto', color: '#94a3b8', fontSize: '0.9rem', fontWeight: 600 }}>Memuat pesan...</div>
+                <div style={{ margin: 'auto', color: '#94a3b8', fontSize: '0.9rem', fontWeight: 600 }}>{lang === 'id' ? 'Memuat pesan...' : 'Loading messages...'}</div>
               ) : (
                 messages.map(msg => {
                   const isUser = msg.sender_type === 'user';
@@ -550,7 +565,6 @@ const AdminChat = () => {
                     );
                   }
 
-                  const isBot = msg.sender_type === 'bot';
                   const isAdminMsg = msg.sender_type === 'admin';
 
                   return (
@@ -616,7 +630,9 @@ const AdminChat = () => {
                 onChange={e => setInputText(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && activeSession.mode === 'human' && handleSend()}
                 disabled={activeSession.mode !== 'human'}
-                placeholder={activeSession.mode !== 'human' ? 'Gunakan tombol "Take Over Chat" di atas untuk dapat mengirim balasan manual.' : 'Tulis balasan Anda di sini...'}
+                placeholder={activeSession.mode !== 'human' 
+                  ? (lang === 'id' ? 'Gunakan tombol "Take Over Chat" di atas untuk dapat mengirim balasan manual.' : 'Use the "Take Over Chat" button above to reply manually.')
+                  : (lang === 'id' ? 'Tulis balasan Anda di sini...' : 'Type your reply here...')}
                 style={{
                   flex: 1,
                   padding: '0.8rem 1.2rem',
@@ -666,7 +682,7 @@ const AdminChat = () => {
                   }
                 }}
               >
-                Kirim
+                {lang === 'id' ? 'Kirim' : 'Send'}
               </button>
             </div>
           </>
@@ -701,7 +717,9 @@ const AdminChat = () => {
               Wisma 46 Space Live Chat Dashboard
             </h4>
             <p style={{ margin: '8px 0 0 0', fontSize: '0.875rem', color: isDark ? '#cbd5e1' : '#475569', maxWidth: '380px', lineHeight: '1.6' }}>
-              Silakan pilih obrolan aktif dari panel kiri untuk membalas pesan pelanggan, melakukan *takeover*, atau memonitor asisten virtual AI.
+              {lang === 'id' 
+                ? 'Silakan pilih obrolan aktif dari panel kiri untuk membalas pesan pelanggan, melakukan takeover, atau memonitor asisten virtual AI.'
+                : 'Please select an active chat from the left panel to reply to customer messages, takeover chats, or monitor the AI virtual assistant.'}
             </p>
           </div>
         )}
@@ -776,7 +794,7 @@ const AdminChat = () => {
                   onMouseEnter={e => e.currentTarget.style.opacity = '0.75'}
                   onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                 >
-                  Batal
+                  {lang === 'id' ? 'Batal' : 'Cancel'}
                 </button>
               )}
               <button
@@ -798,7 +816,9 @@ const AdminChat = () => {
                 onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
                 onMouseLeave={e => e.currentTarget.style.opacity = '1'}
               >
-                {modal.type === 'confirm' ? 'Ya, Selesaikan' : 'OK'}
+                {modal.type === 'confirm' 
+                  ? (lang === 'id' ? 'Ya, Selesaikan' : 'Yes, End Session')
+                  : 'OK'}
               </button>
             </div>
           </div>

@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAllReviewsAdmin, deleteReviewAdmin } from '../../services/apiService';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Star, Trash2, MessageSquare, ShieldAlert, Search, Filter, TrendingUp } from 'lucide-react';
 
 const AdminReviews = () => {
+  const { lang } = useLanguage();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,7 +56,7 @@ const AdminReviews = () => {
       setModal({ isOpen: false, id: null });
     } catch (error) {
       console.error(error);
-      alert('Gagal menghapus ulasan');
+      alert(lang === 'id' ? 'Gagal menghapus ulasan' : 'Failed to delete review');
     }
   };
 
@@ -74,16 +76,16 @@ const AdminReviews = () => {
     );
   };
 
-  if (loading) return <div className="container" style={{ padding: '4rem', textAlign: 'center' }}>Memuat ulasan...</div>;
+  if (loading) return <div className="container" style={{ padding: '4rem', textAlign: 'center' }}>{lang === 'id' ? 'Memuat ulasan...' : 'Loading reviews...'}</div>;
 
   return (
     <div className="container" style={{ padding: '2rem 0' }}>
       {/* Page Header */}
       <div style={{ marginBottom: '3rem' }}>
         <h1 style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--color-text-main)', letterSpacing: '-0.025em', marginBottom: '0.5rem' }}>
-          Dashboard <span style={{ color: 'var(--color-primary)' }}>Ulasan</span>
+          Dashboard <span style={{ color: 'var(--color-primary)' }}>{lang === 'id' ? 'Ulasan' : 'Reviews'}</span>
         </h1>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '1.1rem' }}>Moderasi dan kelola ulasan dari pengguna di seluruh platform.</p>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '1.1rem' }}>{lang === 'id' ? 'Moderasi dan kelola ulasan dari pengguna di seluruh platform.' : 'Moderate and manage user reviews across the platform.'}</p>
       </div>
 
       {/* Stats Cards */}
@@ -92,9 +94,9 @@ const AdminReviews = () => {
         gap: '1.5rem', marginBottom: '2.5rem' 
       }}>
         {[
-          { label: 'Total Ulasan', value: stats.total, icon: MessageSquare, color: '#2563eb', bg: 'rgba(37, 99, 235, 0.1)' },
-          { label: 'Rata-rata Rating', value: stats.avg, icon: TrendingUp, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-          { label: 'Bintang 5', value: stats.fiveStars, icon: Star, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
+          { label: lang === 'id' ? 'Total Ulasan' : 'Total Reviews', value: stats.total, icon: MessageSquare, color: '#2563eb', bg: 'rgba(37, 99, 235, 0.1)' },
+          { label: lang === 'id' ? 'Rata-rata Rating' : 'Average Rating', value: stats.avg, icon: TrendingUp, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+          { label: lang === 'id' ? 'Bintang 5' : '5 Stars', value: stats.fiveStars, icon: Star, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
         ].map((stat, i) => (
           <div key={i} className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem', border: '1px solid var(--color-border)' }}>
             <div style={{ backgroundColor: stat.bg, color: stat.color, padding: '1rem', borderRadius: '12px', display: 'flex' }}>
@@ -114,7 +116,7 @@ const AdminReviews = () => {
           <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
           <input 
             type="text" 
-            placeholder="Cari user, ruangan, atau komentar..." 
+            placeholder={lang === 'id' ? 'Cari user, ruangan, atau komentar...' : 'Search user, room, or comment...'} 
             className="input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -134,8 +136,8 @@ const AdminReviews = () => {
             onChange={(e) => setRatingFilter(e.target.value)}
             style={{ marginBottom: 0, padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text-main)', cursor: 'pointer' }}
           >
-            <option value="all">Semua Rating</option>
-            {[5,4,3,2,1].map(n => <option key={n} value={n}>{n} Bintang</option>)}
+            <option value="all">{lang === 'id' ? 'Semua Rating' : 'All Ratings'}</option>
+            {[5,4,3,2,1].map(n => <option key={n} value={n}>{n} {lang === 'id' ? 'Bintang' : 'Stars'}</option>)}
           </select>
         </div>
       </div>
@@ -146,11 +148,11 @@ const AdminReviews = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text-muted)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               <tr>
-                <th style={{ padding: '1.25rem 1.5rem' }}>Pengguna</th>
-                <th style={{ padding: '1.25rem 1.5rem' }}>Ruangan</th>
-                <th style={{ padding: '1.25rem 1.5rem' }}>Rating</th>
-                <th style={{ padding: '1.25rem 1.5rem' }}>Komentar</th>
-                <th style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>Aksi</th>
+                <th style={{ padding: '1.25rem 1.5rem' }}>{lang === 'id' ? 'Pengguna' : 'User'}</th>
+                <th style={{ padding: '1.25rem 1.5rem' }}>{lang === 'id' ? 'Ruangan' : 'Room'}</th>
+                <th style={{ padding: '1.25rem 1.5rem' }}>{lang === 'id' ? 'Rating' : 'Rating'}</th>
+                <th style={{ padding: '1.25rem 1.5rem' }}>{lang === 'id' ? 'Komentar' : 'Comment'}</th>
+                <th style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>{lang === 'id' ? 'Aksi' : 'Action'}</th>
               </tr>
             </thead>
             <tbody>
@@ -178,12 +180,12 @@ const AdminReviews = () => {
                   <td style={{ padding: '1.25rem 1.5rem' }}>
                     <div style={{ color: 'var(--color-primary)', fontWeight: 600, fontSize: '0.95rem' }}>{r.office?.nama}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-                      {new Date(r.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                      {new Date(r.created_at).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'short' })}
                     </div>
                   </td>
                   <td style={{ padding: '1.25rem 1.5rem' }}>
                     {renderStars(r.rating)}
-                    <div style={{ fontSize: '0.8rem', marginTop: '4px', color: 'var(--color-text-muted)' }}>Skor: <strong>{r.rating}/5</strong></div>
+                    <div style={{ fontSize: '0.8rem', marginTop: '4px', color: 'var(--color-text-muted)' }}>{lang === 'id' ? 'Skor' : 'Score'}: <strong>{r.rating}/5</strong></div>
                   </td>
                   <td style={{ padding: '1.25rem 1.5rem', maxWidth: '400px' }}>
                     <div style={{ color: 'var(--color-text-main)', lineHeight: '1.6', fontSize: '0.95rem' }}>
@@ -209,7 +211,7 @@ const AdminReviews = () => {
                 <tr>
                   <td colSpan="5" style={{ textAlign: 'center', padding: '6rem', color: '#94a3b8' }}>
                     <Search size={48} style={{ marginBottom: '1.5rem', opacity: 0.1 }} />
-                    <p style={{ fontSize: '1.1rem' }}>Tidak menemukan ulasan yang sesuai kriteria.</p>
+                    <p style={{ fontSize: '1.1rem' }}>{lang === 'id' ? 'Tidak menemukan ulasan yang sesuai kriteria.' : 'No reviews match your criteria.'}</p>
                   </td>
                 </tr>
               )}
@@ -232,13 +234,15 @@ const AdminReviews = () => {
             }}>
               <ShieldAlert size={36} />
             </div>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem', color: '#1e293b' }}>Hapus Permanen?</h3>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem', color: '#1e293b' }}>{lang === 'id' ? 'Hapus Permanen?' : 'Delete Permanently?'}</h3>
             <p style={{ color: '#64748b', marginBottom: '2.5rem', lineHeight: '1.6' }}>
-              Ulasan ini akan dihapus dari sistem dan tidak dapat dipulihkan kembali.
+              {lang === 'id' 
+                ? 'Ulasan ini akan dihapus dari sistem dan tidak dapat dipulihkan kembali.' 
+                : 'This review will be permanently deleted from the system and cannot be recovered.'}
             </p>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <button onClick={() => setModal({ isOpen: false, id: null })} className="btn btn-outline" style={{ flex: 1, padding: '0.85rem', borderRadius: '12px' }}>Batal</button>
-              <button onClick={handleDelete} className="btn btn-danger" style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', backgroundColor: '#e11d48' }}>Hapus Sekarang</button>
+              <button onClick={() => setModal({ isOpen: false, id: null })} className="btn btn-outline" style={{ flex: 1, padding: '0.85rem', borderRadius: '12px' }}>{lang === 'id' ? 'Batal' : 'Cancel'}</button>
+              <button onClick={handleDelete} className="btn btn-danger" style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', backgroundColor: '#e11d48' }}>{lang === 'id' ? 'Hapus Sekarang' : 'Delete Now'}</button>
             </div>
           </div>
         </div>

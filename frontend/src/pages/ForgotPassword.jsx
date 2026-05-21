@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPassword } from '../services/apiService';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const ForgotPassword = () => {
+  const { t, lang } = useLanguage();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState({ type: '', message: '' });
   const [loading, setLoading] = useState(false);
@@ -19,7 +21,7 @@ const ForgotPassword = () => {
     } catch (error) {
       const msg = error.response?.data?.debug_status 
         ? `${error.response.data.message}: ${error.response.data.debug_status}`
-        : error.response?.data?.message || 'Terjadi kesalahan saat mengirim link';
+        : error.response?.data?.message || (lang === 'id' ? 'Terjadi kesalahan saat mengirim link' : 'An error occurred while sending the link');
       setStatus({ type: 'error', message: msg });
     } finally {
       setLoading(false);
@@ -34,7 +36,7 @@ const ForgotPassword = () => {
         display: 'flex', alignItems: 'center', gap: '0.5rem', 
         color: 'var(--color-text-muted)', fontWeight: 500, textDecoration: 'none' 
       }}>
-        <ArrowLeft size={18} /> Kembali ke Beranda
+        <ArrowLeft size={18} /> {t('back_to_home')}
       </Link>
 
       <div className="card" style={{ padding: '3rem', width: '100%', maxWidth: '450px' }}>
@@ -42,9 +44,9 @@ const ForgotPassword = () => {
           <div style={{ display: 'inline-flex', padding: '1rem', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderRadius: '50%', marginBottom: '1.5rem' }}>
             <Mail size={32} color="var(--color-primary)" />
           </div>
-          <h1 style={{ fontSize: '1.8rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Lupa Password?</h1>
+          <h1 style={{ fontSize: '1.8rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>{t('login_forgot')}</h1>
           <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
-            Kami akan mengirimkan instruksi untuk meriset password Anda melalui email.
+            {lang === 'id' ? 'Kami akan mengirimkan instruksi untuk meriset password Anda melalui email.' : 'We will send instructions to reset your password via email.'}
           </p>
         </div>
 
@@ -67,7 +69,7 @@ const ForgotPassword = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group" style={{ marginBottom: '2rem' }}>
-            <label className="form-label">Alamat Email</label>
+            <label className="form-label">{lang === 'id' ? 'Alamat Email' : 'Email Address'}</label>
             <input
               type="email"
               required
@@ -84,7 +86,7 @@ const ForgotPassword = () => {
             className="btn btn-primary"
             style={{ width: '100%', padding: '0.75rem' }}
           >
-            {loading ? 'Mengirim...' : 'Kirim Link Reset'}
+            {loading ? (lang === 'id' ? 'Mengirim...' : 'Sending...') : (lang === 'id' ? 'Kirim Link Reset' : 'Send Reset Link')}
           </button>
 
           <div style={{ textAlign: 'center', marginTop: '2rem' }}>
@@ -92,7 +94,7 @@ const ForgotPassword = () => {
               to="/login"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--color-text-muted)', fontWeight: 500, fontSize: '0.9rem' }}
             >
-              <ArrowLeft size={16} /> Kembali ke Login
+              <ArrowLeft size={16} /> {lang === 'id' ? 'Kembali ke Login' : 'Back to Sign In'}
             </Link>
           </div>
         </form>

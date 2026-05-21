@@ -2,10 +2,12 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   LineChart, Line, PieChart, Pie, Cell, Legend
 } from 'recharts';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export const RevenueChart = ({ data }) => {
+  const { lang } = useLanguage();
   if (!data || data.length === 0) {
-    return <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Belum ada data pendapatan</div>;
+    return <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>{lang === 'id' ? 'Belum ada data pendapatan' : 'No revenue data available'}</div>;
   }
 
   const chartData = data.map(d => ({
@@ -37,8 +39,9 @@ export const RevenueChart = ({ data }) => {
 };
 
 export const PopularRoomsChart = ({ data }) => {
+  const { lang } = useLanguage();
   if (!data || data.length === 0) {
-    return <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Belum ada data ruangan</div>;
+    return <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>{lang === 'id' ? 'Belum ada data ruangan' : 'No room data available'}</div>;
   }
 
   return (
@@ -59,7 +62,7 @@ export const PopularRoomsChart = ({ data }) => {
             cursor={{ fill: 'rgba(37, 99, 235, 0.05)' }}
             contentStyle={{ borderRadius: '12px', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
           />
-          <Bar dataKey="bookings" name="Total Pesanan" fill="var(--color-success)" radius={[0, 6, 6, 0]} barSize={20} />
+          <Bar dataKey="bookings" name={lang === 'id' ? 'Total Pesanan' : 'Total Bookings'} fill="var(--color-success)" radius={[0, 6, 6, 0]} barSize={20} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -67,18 +70,33 @@ export const PopularRoomsChart = ({ data }) => {
 };
 
 export const StatusChart = ({ data }) => {
+  const { lang } = useLanguage();
   if (!data || data.length === 0) {
-    return <div style={{ height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Belum ada data status</div>;
+    return <div style={{ height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>{lang === 'id' ? 'Belum ada data status' : 'No status data available'}</div>;
   }
 
   const COLORS = ['#f59e0b', '#10b981', '#ef4444', '#6366f1'];
+
+  const translatedData = data.map(d => {
+    let statusLabel = d.status;
+    if (lang === 'id') {
+      if (d.status === 'Confirmed') statusLabel = 'Dikonfirmasi';
+      else if (d.status === 'Cancelled') statusLabel = 'Dibatalkan';
+      else if (d.status === 'Completed') statusLabel = 'Selesai';
+    } else {
+      if (d.status === 'Dikonfirmasi') statusLabel = 'Confirmed';
+      else if (d.status === 'Dibatalkan') statusLabel = 'Cancelled';
+      else if (d.status === 'Selesai') statusLabel = 'Completed';
+    }
+    return { ...d, status: statusLabel };
+  });
   
   return (
     <div style={{ width: '100%', height: 250 }}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
-            data={data}
+            data={translatedData}
             cx="50%"
             cy="50%"
             innerRadius={60}
@@ -87,7 +105,7 @@ export const StatusChart = ({ data }) => {
             dataKey="count"
             nameKey="status"
           >
-            {data.map((entry, index) => (
+            {translatedData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>

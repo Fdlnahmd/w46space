@@ -81,8 +81,8 @@ export const confirmAddon = async (bookingId, addonId) => {
 
 
 // --- INVOICE ---
-export const getInvoiceUrl = (id) => {
-  return `${API_URL}/bookings/${id}/invoice`;
+export const getInvoiceUrl = (id, lang = 'id') => {
+  return `${API_URL}/bookings/${id}/invoice?lang=${lang}`;
 };
 
 // --- ANALYTICS ---

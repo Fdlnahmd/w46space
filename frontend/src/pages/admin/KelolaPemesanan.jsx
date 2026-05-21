@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { getPemesanan, updateStatusPemesanan, deletePemesanan } from '../../services/apiService';
 import { Trash2, Eye, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import Modal from '../../components/Modal';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const statusOptions = ['Semua', 'Pending', 'Dikonfirmasi', 'Selesai', 'Dibatalkan'];
 
@@ -15,12 +16,25 @@ const getStatusStyle = (status) => {
   }
 };
 
+const getStatusLabel = (opt, lang) => {
+  if (lang === 'id') return opt;
+  switch (opt) {
+    case 'Semua': return 'All';
+    case 'Pending': return 'Pending';
+    case 'Dikonfirmasi': return 'Confirmed';
+    case 'Selesai': return 'Completed';
+    case 'Dibatalkan': return 'Canceled';
+    default: return opt;
+  }
+};
+
 const formatDate = (dateString) => {
   if (!dateString) return '—';
   return dateString.split('T')[0];
 };
 
 const KelolaPemesanan = () => {
+  const { lang } = useLanguage();
   const location = useLocation();
   const [pemesanan, setPemesanan] = useState([]);
   const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
@@ -91,7 +105,7 @@ const KelolaPemesanan = () => {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>Kelola Pemesanan</h1>
+        <h1>{lang === 'id' ? 'Kelola Pemesanan' : 'Manage Bookings'}</h1>
       </div>
 
       {/* Filter Bar */}
@@ -100,7 +114,7 @@ const KelolaPemesanan = () => {
           <Search size={18} color="var(--color-text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
           <input 
             type="text" 
-            placeholder="Cari pemesan, perusahaan, atau ruangan..." 
+            placeholder={lang === 'id' ? 'Cari pemesan, perusahaan, atau ruangan...' : 'Search booking, company, or room...'} 
             className="form-control"
             style={{ paddingLeft: '2.75rem' }}
             value={searchTerm}
@@ -110,7 +124,7 @@ const KelolaPemesanan = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
-            <Filter size={18} /> Filter Status:
+            <Filter size={18} /> {lang === 'id' ? 'Filter Status:' : 'Filter Status:'}
           </div>
           <select 
             className="form-control" 
@@ -118,7 +132,7 @@ const KelolaPemesanan = () => {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            {statusOptions.map(opt => <option key={opt} value={opt}>{getStatusLabel(opt, lang)}</option>)}
           </select>
         </div>
       </div>
@@ -130,22 +144,22 @@ const KelolaPemesanan = () => {
             <thead style={{ backgroundColor: 'var(--color-background)', textAlign: 'left' }}>
               <tr>
                 <th style={{ padding: '1rem' }}>ID</th>
-                <th style={{ padding: '1rem' }}>Penyewa</th>
-                <th style={{ padding: '1rem' }}>Ruangan</th>
-                <th style={{ padding: '1rem' }}>Tanggal</th>
-                <th style={{ padding: '1rem' }}>Total Harga</th>
+                <th style={{ padding: '1rem' }}>{lang === 'id' ? 'Penyewa' : 'Tenant'}</th>
+                <th style={{ padding: '1rem' }}>{lang === 'id' ? 'Ruangan' : 'Room'}</th>
+                <th style={{ padding: '1rem' }}>{lang === 'id' ? 'Tanggal' : 'Date'}</th>
+                <th style={{ padding: '1rem' }}>{lang === 'id' ? 'Total Harga' : 'Total Price'}</th>
                 <th style={{ padding: '1rem' }}>Status</th>
-                <th style={{ padding: '1rem', textAlign: 'center' }}>Aksi</th>
+                <th style={{ padding: '1rem', textAlign: 'center' }}>{lang === 'id' ? 'Aksi' : 'Action'}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Memuat data...</td>
+                  <td colSpan="7" style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>{lang === 'id' ? 'Memuat data...' : 'Loading data...'}</td>
                 </tr>
               ) : filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Tidak ada data pemesanan.</td>
+                  <td colSpan="7" style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>{lang === 'id' ? 'Tidak ada data pemesanan.' : 'No booking data.'}</td>
                 </tr>
               ) : filteredData.map(item => {
                 const pendingAddons = item.addons ? item.addons.filter(addon => addon.pivot?.status === 'pending') : [];
@@ -161,7 +175,7 @@ const KelolaPemesanan = () => {
                           borderRadius: '4px', marginTop: '4px', display: 'inline-block',
                           border: '1px solid rgba(37, 99, 235, 0.2)'
                         }}>
-                          PERPANJANGAN
+                          {lang === 'id' ? 'PERPANJANGAN' : 'EXTENSION'}
                         </div>
                       )}
                     </td>
@@ -188,9 +202,9 @@ const KelolaPemesanan = () => {
                               color: 'var(--color-warning)',
                               border: '1px solid rgba(245, 158, 11, 0.3)'
                             }}
-                            title={`${pendingAddons.length} fasilitas tambahan perlu konfirmasi`}
+                            title={lang === 'id' ? `${pendingAddons.length} fasilitas tambahan perlu konfirmasi` : `${pendingAddons.length} amenities need confirmation`}
                           >
-                            ⚠️ {pendingAddons.length} Fasilitas Baru Perlu Konfirmasi
+                            ⚠️ {pendingAddons.length} {lang === 'id' ? 'Fasilitas Baru Perlu Konfirmasi' : 'New Amenities Need Confirmation'}
                           </span>
                         </div>
                       )}
@@ -199,7 +213,7 @@ const KelolaPemesanan = () => {
                     <div style={{ fontWeight: 500 }}>{formatDate(item.tanggal_mulai)}</div>
                     {item.tanggal_akhir && (
                       <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                        s/d {formatDate(item.tanggal_akhir)}
+                        {lang === 'id' ? 's/d' : 'to'} {formatDate(item.tanggal_akhir)}
                       </div>
                     )}
                   </td>
@@ -218,7 +232,7 @@ const KelolaPemesanan = () => {
                       }}
                     >
                       {statusOptions.filter(o => o !== 'Semua').map(opt => (
-                        <option key={opt} value={opt} style={{ color: '#000', backgroundColor: '#fff' }}>{opt}</option>
+                        <option key={opt} value={opt} style={{ color: '#000', backgroundColor: '#fff' }}>{getStatusLabel(opt, lang)}</option>
                       ))}
                     </select>
                   </td>
@@ -228,7 +242,7 @@ const KelolaPemesanan = () => {
                         to={`/admin/pemesanan/${item.id}`} 
                         className="btn btn-outline" 
                         style={{ padding: '0.4rem', minWidth: '36px', height: '36px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                        title="Lihat Detail"
+                        title={lang === 'id' ? 'Lihat Detail' : 'View Details'}
                       >
                         <Eye size={16} />
                       </Link>
@@ -236,7 +250,7 @@ const KelolaPemesanan = () => {
                         onClick={() => setDeleteModal({ isOpen: true, id: item.id })}
                         className="btn btn-outline-danger" 
                         style={{ padding: '0.4rem', minWidth: '36px', height: '36px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                        title="Hapus"
+                        title={lang === 'id' ? 'Hapus' : 'Delete'}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -253,9 +267,9 @@ const KelolaPemesanan = () => {
       {/* Mobile Card List View */}
       <div className="show-only-on-mobile">
         {loading ? (
-          <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Memuat data...</div>
+          <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>{lang === 'id' ? 'Memuat data...' : 'Loading data...'}</div>
         ) : filteredData.length === 0 ? (
-          <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Tidak ada data pemesanan.</div>
+          <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>{lang === 'id' ? 'Tidak ada data pemesanan.' : 'No booking data.'}</div>
         ) : filteredData.map(item => {
           const pendingAddons = item.addons ? item.addons.filter(addon => addon.pivot?.status === 'pending') : [];
           const hasPendingAddons = pendingAddons.length > 0;
@@ -271,7 +285,7 @@ const KelolaPemesanan = () => {
                       borderRadius: '4px', marginLeft: '0.5rem', fontWeight: 'bold',
                       border: '1px solid rgba(37, 99, 235, 0.2)', display: 'inline-block'
                     }}>
-                      PERPANJANGAN
+                      {lang === 'id' ? 'PERPANJANGAN' : 'EXTENSION'}
                     </span>
                   )}
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-main)', marginTop: '0.25rem' }}>{item.nama_pemesan || '—'}</h3>
@@ -291,7 +305,7 @@ const KelolaPemesanan = () => {
                     }}
                   >
                     {statusOptions.filter(o => o !== 'Semua').map(opt => (
-                      <option key={opt} value={opt} style={{ color: '#000', backgroundColor: '#fff' }}>{opt}</option>
+                      <option key={opt} value={opt} style={{ color: '#000', backgroundColor: '#fff' }}>{getStatusLabel(opt, lang)}</option>
                     ))}
                   </select>
                 </div>
@@ -299,7 +313,7 @@ const KelolaPemesanan = () => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.75rem', fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
-                  <span style={{ color: 'var(--color-text-muted)', flexShrink: 0 }}>Ruangan:</span>
+                  <span style={{ color: 'var(--color-text-muted)', flexShrink: 0 }}>{lang === 'id' ? 'Ruangan:' : 'Room:'}</span>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                     <span style={{ fontWeight: 500, textAlign: 'right' }}>{item.office?.nama || '—'}</span>
                     {hasPendingAddons && (
@@ -318,21 +332,21 @@ const KelolaPemesanan = () => {
                             border: '1px solid rgba(245, 158, 11, 0.3)'
                           }}
                         >
-                          ⚠️ {pendingAddons.length} Fasilitas Baru
+                          ⚠️ {pendingAddons.length} {lang === 'id' ? 'Fasilitas Baru' : 'New Amenities'}
                         </span>
                       </div>
                     )}
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-                  <span style={{ color: 'var(--color-text-muted)' }}>Tanggal:</span>
+                  <span style={{ color: 'var(--color-text-muted)' }}>{lang === 'id' ? 'Tanggal:' : 'Date:'}</span>
                   <span style={{ fontWeight: 500, textAlign: 'right' }}>
                     {formatDate(item.tanggal_mulai)}
-                    {item.tanggal_akhir && ` s/d ${formatDate(item.tanggal_akhir)}`}
+                    {item.tanggal_akhir && ` ${lang === 'id' ? 's/d' : 'to'} ${formatDate(item.tanggal_akhir)}`}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed var(--color-border)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
-                  <span style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>Total Harga:</span>
+                  <span style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>{lang === 'id' ? 'Total Harga:' : 'Total Price:'}</span>
                   <span style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '0.95rem' }}>
                     Rp {Number(item.total_harga).toLocaleString('id-ID')}
                   </span>
@@ -344,17 +358,17 @@ const KelolaPemesanan = () => {
                   to={`/admin/pemesanan/${item.id}`} 
                   className="btn btn-outline" 
                   style={{ flex: 1, padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
-                  title="Lihat Detail"
+                  title={lang === 'id' ? 'Lihat Detail' : 'View Details'}
                 >
-                  <Eye size={16} /> Detail
+                  <Eye size={16} /> {lang === 'id' ? 'Detail' : 'Details'}
                 </Link>
                 <button 
                   onClick={() => setDeleteModal({ isOpen: true, id: item.id })}
                   className="btn btn-outline-danger" 
                   style={{ flex: 1, padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
-                  title="Hapus"
+                  title={lang === 'id' ? 'Hapus' : 'Delete'}
                 >
-                  <Trash2 size={16} /> Hapus
+                  <Trash2 size={16} /> {lang === 'id' ? 'Hapus' : 'Delete'}
                 </button>
               </div>
             </div>
@@ -370,10 +384,10 @@ const KelolaPemesanan = () => {
           onClick={() => loadData(pagination.current_page - 1)}
           style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
         >
-          <ChevronLeft size={18} /> Sebelumnya
+          <ChevronLeft size={18} /> {lang === 'id' ? 'Sebelumnya' : 'Previous'}
         </button>
         <div style={{ fontWeight: 600 }}>
-          Halaman {pagination.current_page} dari {pagination.last_page}
+          {lang === 'id' ? `Halaman ${pagination.current_page} dari ${pagination.last_page}` : `Page ${pagination.current_page} of ${pagination.last_page}`}
         </div>
         <button 
           className="btn btn-outline" 
@@ -381,7 +395,7 @@ const KelolaPemesanan = () => {
           onClick={() => loadData(pagination.current_page + 1)}
           style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
         >
-          Selanjutnya <ChevronRight size={18} />
+          {lang === 'id' ? 'Selanjutnya' : 'Next'} <ChevronRight size={18} />
         </button>
       </div>
 
@@ -389,15 +403,15 @@ const KelolaPemesanan = () => {
         isOpen={deleteModal.isOpen} 
         onClose={() => setDeleteModal({ isOpen: false, id: null })}
         onConfirm={handleDelete}
-        title="Hapus Pemesanan"
-        message="Apakah Anda yakin ingin menghapus data pemesanan ini? Tindakan ini tidak dapat dibatalkan."
+        title={lang === 'id' ? 'Hapus Pemesanan' : 'Delete Booking'}
+        message={lang === 'id' ? 'Apakah Anda yakin ingin menghapus data pemesanan ini? Tindakan ini tidak dapat dibatalkan.' : 'Are you sure you want to delete this booking? This action cannot be undone.'}
         type="danger"
       />
 
       <Modal 
         isOpen={errorModal.isOpen} 
         onClose={() => setErrorModal({ isOpen: false, message: '' })}
-        title="Pesanan Tidak Ditemukan"
+        title={lang === 'id' ? 'Pesanan Tidak Ditemukan' : 'Booking Not Found'}
         message={errorModal.message}
         type="warning"
       />

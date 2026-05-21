@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Building, BookOpen, LogOut, LayoutDashboard, X, MessageSquare, Ticket } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const AdminSidebar = ({ isOpen, onToggle }) => {
   const location = useLocation();
   const { user } = useAuth();
+  const { t, lang } = useLanguage();
   const [waitingCount, setWaitingCount] = useState(0);
   const isHelpdesk = user?.role === 'helpdesk';
 
@@ -15,16 +17,11 @@ const AdminSidebar = ({ isOpen, onToggle }) => {
       const userStr = localStorage.getItem('user');
       if (!userStr) return;
       
-      let token = null;
       try {
         const userObj = JSON.parse(userStr);
-        token = userObj?.token;
-      } catch (e) {
-        return;
-      }
-      if (!token) return;
+        const token = userObj?.token;
+        if (!token) return;
 
-      try {
         const res = await fetch('/api/admin/chat/sessions', {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -95,7 +92,7 @@ const AdminSidebar = ({ isOpen, onToggle }) => {
             Wisma 46 Space
           </h2>
           <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', paddingLeft: '1.75rem', letterSpacing: '0.05em' }}>
-            {isHelpdesk ? '🎧 Helpdesk Panel' : 'Admin Panel'}
+            {isHelpdesk ? (lang === 'id' ? '🎧 Panel Helpdesk' : '🎧 Helpdesk Panel') : (lang === 'id' ? 'Panel Admin' : 'Admin Panel')}
           </span>
         </div>
         {/* Close button on mobile */}
@@ -107,25 +104,25 @@ const AdminSidebar = ({ isOpen, onToggle }) => {
       <nav style={{ display: 'flex', flexDirection: 'column' }}>
         {!isHelpdesk && (
           <Link to="/admin" onClick={handleLinkClick} style={navItemStyle('/admin')}>
-            <LayoutDashboard size={20} /> Dashboard
+            <LayoutDashboard size={20} /> {t('admin_dashboard')}
           </Link>
         )}
         {!isHelpdesk && (
           <Link to="/admin/ruangan" onClick={handleLinkClick} style={navItemStyle('/admin/ruangan')}>
-            <Building size={20} /> Kelola Ruangan
+            <Building size={20} /> {t('admin_rooms')}
           </Link>
         )}
         <Link to="/admin/pemesanan" onClick={handleLinkClick} style={navItemStyle('/admin/pemesanan')}>
-          <BookOpen size={20} /> Kelola Pemesanan
+          <BookOpen size={20} /> {t('admin_orders')}
         </Link>
         {!isHelpdesk && (
           <Link to="/admin/ulasan" onClick={handleLinkClick} style={navItemStyle('/admin/ulasan')}>
-            <MessageSquare size={20} /> Moderasi Ulasan
+            <MessageSquare size={20} /> {t('admin_reviews')}
           </Link>
         )}
         {!isHelpdesk && (
           <Link to="/admin/kupon" onClick={handleLinkClick} style={navItemStyle('/admin/kupon')}>
-            <Ticket size={20} /> Kelola Kupon
+            <Ticket size={20} /> {t('admin_coupons')}
           </Link>
         )}
         <Link to="/admin/chat" onClick={handleLinkClick} style={navItemStyle('/admin/chat')}>
@@ -156,7 +153,7 @@ const AdminSidebar = ({ isOpen, onToggle }) => {
 
       <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
         <Link to="/" style={{ ...navItemStyle('/logout'), color: '#f87171', marginBottom: 0 }}>
-          <LogOut size={20} /> Kembali ke Web
+          <LogOut size={20} /> {t('admin_back')}
         </Link>
       </div>
 

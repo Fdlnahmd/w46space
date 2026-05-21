@@ -1,6 +1,6 @@
-# 📐 Arsitektur & Alur Sistem - Sewa Ruang
+# 📐 Arsitektur & Alur Sistem - Wisma 46 Space
 
-Dokumen ini menjelaskan alur kerja dan arsitektur dari platform **Sewa Ruang**.
+Dokumen ini menjelaskan alur kerja dan arsitektur dari platform **Wisma 46 Space**.
 
 ---
 
@@ -18,7 +18,7 @@ graph LR
         A["🔑 Admin"]
     end
 
-    subgraph "Sewa Ruang System"
+    subgraph "Wisma 46 Space System"
         UC1("Registrasi & Login")
         UC2("Cari & Detail Ruangan")
         UC3("Pesan Ruangan & Addons")
@@ -37,6 +37,7 @@ graph LR
         UC13("Moderasi Ulasan")
         UC16("Chatting Helpdesk/Admin Terpadu")
         UC17("Terima Alert Container Down via Email")
+        UC18("Ubah Bahasa / Switch Language (ID/EN)")
     end
 
     U --> UC1
@@ -49,9 +50,11 @@ graph LR
     U --> UC8
     U --> UC14
     U --> UC15
+    U --> UC18
 
     H --> UC1
     H --> UC16
+    H --> UC18
 
     A --> UC1
     A --> UC9
@@ -61,6 +64,7 @@ graph LR
     A --> UC13
     A --> UC16
     A --> UC17
+    A --> UC18
 
     %% Styling
     style U fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
@@ -68,7 +72,7 @@ graph LR
     style A fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     
     classDef usecase fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#0f172a
-    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17 usecase
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17,UC18 usecase
 ```
 
 </details>

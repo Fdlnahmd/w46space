@@ -4,6 +4,7 @@ import { RevenueChart, PopularRoomsChart, StatusChart } from './DashboardCharts'
 import { 
   Building, Activity, DollarSign, Hourglass, CheckCircle, XCircle
 } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
   <div className="card stat-card" style={{ 
@@ -35,6 +36,7 @@ const StatCard = ({ title, value, icon: Icon, color }) => (
 );
 
 const AdminDashboard = () => {
+  const { lang } = useLanguage();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -52,36 +54,36 @@ const AdminDashboard = () => {
     fetchAnalytics();
   }, []);
 
-  if (loading) return <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Memuat Analitik...</div>;
+  if (loading) return <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>{lang === 'id' ? 'Memuat Analitik...' : 'Loading Analytics...'}</div>;
   if (!stats) return null;
 
   return (
     <div style={{ paddingBottom: '3rem', maxWidth: '1400px', margin: '0 auto' }}>
       <div style={{ marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0' }}>Ringkasan Bisnis</h1>
-        <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>Selamat datang kembali! Berikut adalah performa terbaru bisnis Anda.</p>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem 0' }}>{lang === 'id' ? 'Ringkasan Bisnis' : 'Business Summary'}</h1>
+        <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>{lang === 'id' ? 'Selamat datang kembali! Berikut adalah performa terbaru bisnis Anda.' : 'Welcome back! Here is your latest business performance.'}</p>
       </div>
       
       <div className="grid md:grid-cols-3" style={{ marginBottom: '2.5rem', gap: '1.5rem' }}>
         <StatCard 
-          title="Pendapatan" 
+          title={lang === 'id' ? 'Pendapatan' : 'Revenue'} 
           value={`Rp ${Number(stats?.summary?.revenue ?? 0).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} 
           icon={DollarSign} 
           color="#10b981" 
         />
         <StatCard title="Pending" value={stats?.summary?.pendingBookings ?? 0} icon={Hourglass} color="#f59e0b" />
-        <StatCard title="Aktif" value={stats?.summary?.activeBookings ?? 0} icon={Activity} color="#3b82f6" />
-        <StatCard title="Selesai" value={stats?.summary?.completedBookings ?? 0} icon={CheckCircle} color="#059669" />
-        <StatCard title="Batal" value={stats?.summary?.cancelledBookings ?? 0} icon={XCircle} color="#ef4444" />
-        <StatCard title="Ruangan" value={stats?.summary?.totalRooms ?? 0} icon={Building} color="#8b5cf6" />
+        <StatCard title={lang === 'id' ? 'Aktif' : 'Active'} value={stats?.summary?.activeBookings ?? 0} icon={Activity} color="#3b82f6" />
+        <StatCard title={lang === 'id' ? 'Selesai' : 'Completed'} value={stats?.summary?.completedBookings ?? 0} icon={CheckCircle} color="#059669" />
+        <StatCard title={lang === 'id' ? 'Batal' : 'Canceled'} value={stats?.summary?.cancelledBookings ?? 0} icon={XCircle} color="#ef4444" />
+        <StatCard title={lang === 'id' ? 'Ruangan' : 'Rooms'} value={stats?.summary?.totalRooms ?? 0} icon={Building} color="#8b5cf6" />
       </div>
 
       <div className="grid md:grid-cols-2" style={{ gap: '1.5rem', marginBottom: '2.5rem' }}>
         {/* Grafik Pendapatan */}
         <div className="card shadow-sm" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', border: '1px solid var(--color-border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Tren Pendapatan</h3>
-            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-primary)', backgroundColor: 'rgba(37, 99, 235, 0.05)', padding: '0.3rem 0.75rem', borderRadius: '20px' }}>6 Bulan Terakhir</span>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>{lang === 'id' ? 'Tren Pendapatan' : 'Revenue Trend'}</h3>
+            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-primary)', backgroundColor: 'rgba(37, 99, 235, 0.05)', padding: '0.3rem 0.75rem', borderRadius: '20px' }}>{lang === 'id' ? '6 Bulan Terakhir' : 'Last 6 Months'}</span>
           </div>
           <RevenueChart data={stats.revenueChart} />
         </div>
@@ -89,7 +91,7 @@ const AdminDashboard = () => {
         {/* Ruangan Terpopuler */}
         <div className="card shadow-sm" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', border: '1px solid var(--color-border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Ruangan Terpopuler</h3>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>{lang === 'id' ? 'Ruangan Terpopuler' : 'Most Popular Rooms'}</h3>
             <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '0.4rem', borderRadius: '8px' }}>
               <Activity size={16} style={{ color: 'var(--color-success)' }} />
             </div>
@@ -101,7 +103,7 @@ const AdminDashboard = () => {
       <div className="grid md:grid-cols-12" style={{ gap: '1.5rem' }}>
         {/* Status Distribusi */}
         <div className="card shadow-sm md:col-span-4" style={{ padding: '1.5rem', border: '1px solid var(--color-border)' }}>
-          <h3 style={{ marginBottom: '1.5rem', fontSize: '1rem', fontWeight: 700 }}>Status Pesanan</h3>
+          <h3 style={{ marginBottom: '1.5rem', fontSize: '1rem', fontWeight: 700 }}>{lang === 'id' ? 'Status Pesanan' : 'Order Status'}</h3>
           <StatusChart data={stats.statusStats} />
         </div>
 
@@ -125,25 +127,31 @@ const AdminDashboard = () => {
               <div style={{ padding: '0.6rem', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '10px' }}>
                 <Activity size={20} color="white" />
               </div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>Analisis Bisnis Anda</h2>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>{lang === 'id' ? 'Analisis Bisnis Anda' : 'Your Business Analysis'}</h2>
             </div>
             
             <p style={{ opacity: 0.9, lineHeight: 1.7, fontSize: '1rem', marginBottom: '1.75rem', maxWidth: '600px' }}>
-              Berdasarkan performa saat ini, bisnis Anda menunjukkan tren yang positif. Fokuslah pada ruangan yang paling sering dipesan untuk meningkatkan profitabilitas.
+              {lang === 'id' 
+                ? 'Berdasarkan performa saat ini, bisnis Anda menunjukkan tren yang positif. Fokuslah pada ruangan yang paling sering dipesan untuk meningkatkan profitabilitas.'
+                : 'Based on current performance, your business is showing a positive trend. Focus on the most frequently booked rooms to increase profitability.'}
             </p>
             
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               <div style={{ padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '12px', flex: 1, minWidth: '200px' }}>
                 <p style={{ margin: '0 0 0.4rem 0', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <DollarSign size={14} /> Keuangan
+                  <DollarSign size={14} /> {lang === 'id' ? 'Keuangan' : 'Finance'}
                 </p>
-                <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>Pantau status "Dikonfirmasi" untuk realisasi pendapatan.</p>
+                <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>
+                  {lang === 'id' ? 'Pantau status "Dikonfirmasi" untuk realisasi pendapatan.' : 'Monitor "Confirmed" status for revenue realization.'}
+                </p>
               </div>
               <div style={{ padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '12px', flex: 1, minWidth: '200px' }}>
                 <p style={{ margin: '0 0 0.4rem 0', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Building size={14} /> Operasional
+                  <Building size={14} /> {lang === 'id' ? 'Operasional' : 'Operations'}
                 </p>
-                <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>Maksimalkan penggunaan ruangan dengan promosi add-on.</p>
+                <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>
+                  {lang === 'id' ? 'Maksimalkan penggunaan ruangan dengan promosi add-on.' : 'Maximize room usage with add-on promotions.'}
+                </p>
               </div>
             </div>
           </div>

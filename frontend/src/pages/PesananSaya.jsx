@@ -5,15 +5,17 @@ import { getPemesananByUser, batalkanPemesanan, getInvoiceUrl } from '../service
 import { ClipboardList, XCircle, CheckCircle, Eye, Hourglass, BadgeCheck, AlertCircle, RefreshCw, Star, Printer } from 'lucide-react';
 import SkeletonLoader from '../components/SkeletonLoader';
 import Modal from '../components/Modal';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const statusConfig = {
-  Pending:      { class: 'badge-warning', Icon: Hourglass,   label: 'Menunggu Konfirmasi' },
-  Dikonfirmasi: { class: 'badge-success', Icon: BadgeCheck,  label: 'Dikonfirmasi' },
-  Selesai:      { class: 'badge-neutral', Icon: CheckCircle, label: 'Selesai' },
-  Dibatalkan:   { class: 'badge-danger',  Icon: XCircle,     label: 'Dibatalkan' },
+  Pending:      { class: 'badge-warning', Icon: Hourglass,   labelKey: 'status_pending' },
+  Dikonfirmasi: { class: 'badge-success', Icon: BadgeCheck,  labelKey: 'status_confirmed' },
+  Selesai:      { class: 'badge-neutral', Icon: CheckCircle, labelKey: 'status_completed' },
+  Dibatalkan:   { class: 'badge-danger',  Icon: XCircle,     labelKey: 'status_canceled' },
 };
 
 const PesananSaya = () => {
+  const { t, lang } = useLanguage();
   const { user } = useAuth();
   const location = useLocation();
   const [pesananList, setPesananList] = useState([]);
@@ -62,9 +64,9 @@ const PesananSaya = () => {
   }, [loadData]);
 
   const handleBatalkan = (id) => {
-    if (!window.confirm('Yakin ingin membatalkan pesanan ini?')) return;
+    if (!window.confirm(t('cancel_confirm'))) return;
     batalkanPemesanan(id)
-      .then(() => { alert('Pesanan berhasil dibatalkan.'); loadData(); })
+      .then(() => { alert(t('cancel_success')); loadData(); })
       .catch(err => alert(err.message));
   };
 
@@ -73,13 +75,27 @@ const PesananSaya = () => {
     return dateString.split('T')[0];
   };
 
-  const renderStatus = (status) => {
+  const renderStatus = (status, isUpcoming) => {
     const cfg = statusConfig[status] || statusConfig['Pending'];
     const Icon = cfg.Icon;
     return (
-      <span className={`badge ${cfg.class}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-        <Icon size={13} /> {cfg.label}
-      </span>
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <span className={`badge ${cfg.class}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+          <Icon size={13} /> {t(cfg.labelKey)}
+        </span>
+        {isUpcoming && (
+          <span className="badge" style={{ 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            gap: '0.35rem', 
+            backgroundColor: 'rgba(59, 130, 246, 0.12)', 
+            color: '#3b82f6', 
+            border: '1px solid rgba(59, 130, 246, 0.3)' 
+          }}>
+            🕒 {lang === 'id' ? 'Belum Berjalan' : 'Not Started'}
+          </span>
+        )}
+      </div>
     );
   };
 
@@ -93,9 +109,9 @@ const PesananSaya = () => {
             <ClipboardList size={28} color="var(--color-primary)" />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 700 }}>Pesanan Saya</h1>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 700 }}>{t('my_bookings_title')}</h1>
             <p style={{ color: 'var(--color-text-muted)' }}>
-              Riwayat semua pemesanan ruangan Anda
+              {t('my_bookings_subtitle')}
             </p>
           </div>
         </div>
@@ -106,10 +122,10 @@ const PesananSaya = () => {
         ) : error ? (
           <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--color-danger)' }}>
             <AlertCircle size={48} style={{ marginBottom: '1rem' }} />
-            <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Gagal memuat pesanan Anda</h3>
-            <p>Pastikan koneksi internet Anda stabil dan coba lagi.</p>
+            <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{t('fail_load_bookings')}</h3>
+            <p>{t('please_check_connection')}</p>
             <button onClick={() => loadData()} className="btn btn-primary" style={{ marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-              <RefreshCw size={18} /> Coba Lagi
+              <RefreshCw size={18} /> {t('try_again')}
             </button>
           </div>
         ) : pesananList.length === 0 ? (
@@ -117,150 +133,154 @@ const PesananSaya = () => {
             <div style={{ backgroundColor: 'var(--color-background)', padding: '2rem', borderRadius: '50%', marginBottom: '1.5rem', border: '1px solid var(--color-border)' }}>
               <ClipboardList size={64} color="var(--color-text-muted)" />
             </div>
-            <h3 style={{ marginBottom: '0.5rem' }}>Belum ada pesanan</h3>
+            <h3 style={{ marginBottom: '0.5rem' }}>{t('no_bookings')}</h3>
             <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
-              Anda belum pernah melakukan pemesanan ruangan.
+              {t('no_bookings_desc')}
             </p>
-            <Link to="/ruangan" className="btn btn-primary">Cari Ruangan Sekarang</Link>
+            <Link to="/ruangan" className="btn btn-primary">{t('order_now')}</Link>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {pesananList.map(item => (
-              <div key={item.id} className="card" style={{ padding: '1.5rem' }}>
-                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            {pesananList.map(item => {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const startDate = item.tanggal_mulai ? new Date(item.tanggal_mulai.split('T')[0] + 'T00:00:00') : null;
+              const isUpcoming = item.status === 'Dikonfirmasi' && startDate && startDate.getTime() > today.getTime();
 
-                  {/* Foto ruangan kecil */}
-                  {item.office?.gambar && (
-                    <img
-                      src={item.office.gambar}
-                      alt={item.office.nama}
-                      style={{ width: '100px', height: '80px', objectFit: 'cover', borderRadius: 'var(--border-radius)', flexShrink: 0 }}
-                    />
-                  )}
+              return (
+                <div key={item.id} className="card" style={{ padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
 
-                  <div style={{ flex: 1, minWidth: '200px' }}>
-                    {/* Nama + Status */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                      <div>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>#{item.id}</p>
-                        <h3 style={{ fontSize: '1.15rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          {item.office?.nama || 'Ruangan tidak ditemukan'}
-                          {item.parent_id && (
-                            <span style={{ 
-                              fontSize: '0.65rem', backgroundColor: 'var(--color-secondary)', 
-                              color: 'var(--color-primary)', padding: '2px 8px', borderRadius: '12px',
-                              border: '1px solid var(--color-primary)'
-                            }}>
-                              Perpanjangan
-                            </span>
-                          )}
-                        </h3>
-                      </div>
-                      {renderStatus(item.status)}
-                    </div>
+                    {/* Foto ruangan kecil */}
+                    {item.office?.gambar && (
+                      <img
+                        src={item.office.gambar}
+                        alt={item.office.nama}
+                        style={{ width: '100px', height: '80px', objectFit: 'cover', borderRadius: 'var(--border-radius)', flexShrink: 0 }}
+                      />
+                    )}
 
-                    {/* Info singkat */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem', color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                      {item.tanggal_mulai && (
-                        <span>📅 <strong>Mulai:</strong> {formatDate(item.tanggal_mulai)}</span>
-                      )}
-                      {item.tanggal_akhir && (
-                        <span>🏁 <strong>Akhir:</strong> {formatDate(item.tanggal_akhir)}</span>
-                      )}
-                      {item.durasi && (
-                        <span>⏱ <strong>Durasi:</strong> {item.durasi} Bulan</span>
-                      )}
-                      {item.waktu_mulai && item.waktu_selesai && (
-                        <span>⏰ {item.waktu_mulai} – {item.waktu_selesai}</span>
-                      )}
-                      {item.perusahaan && (
-                        <span>🏢 {item.perusahaan}</span>
-                      )}
-                    </div>
-
-                    {/* Footer: harga + aksi */}
-                    <div className="order-card-footer">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <AlertCircle size={18} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                      {/* Nama + Status */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
                         <div>
-                          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Total Harga</p>
-                          <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
-                            Rp {Number(item.total_harga || 0).toLocaleString('id-ID')}
-                          </p>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>#{item.id}</p>
+                          <h3 style={{ fontSize: '1.15rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {item.office?.nama || t('room_not_found')}
+                            {item.parent_id && (
+                              <span style={{ 
+                                fontSize: '0.65rem', backgroundColor: 'var(--color-secondary)', 
+                                color: 'var(--color-primary)', padding: '2px 8px', borderRadius: '12px',
+                                border: '1px solid var(--color-primary)'
+                              }}>
+                                {t('extension')}
+                              </span>
+                            )}
+                          </h3>
                         </div>
+                        {renderStatus(item.status, isUpcoming)}
                       </div>
 
-                      <div className="order-actions-group">
-                        {/* Tombol utama: Lihat Detail Pesanan */}
-                        <Link
-                          to={`/pesanan-saya/${item.id}`}
-                          className="btn btn-primary"
-                          style={{ padding: '0.45rem 0.85rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-                        >
-                          <Eye size={15} /> Lihat Detail
-                        </Link>
-
-                        {(item.status === 'Dikonfirmasi' || item.status === 'Selesai') && (
-                          <button 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              window.open(getInvoiceUrl(item.id), '_blank');
-                            }}
-                            className="btn btn-outline"
-                            style={{ 
-                              padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
-                              display: 'flex', alignItems: 'center', gap: '0.35rem',
-                              borderColor: '#2563eb', color: '#2563eb'
-                            }}
-                          >
-                            <Printer size={15} /> Invoice
-                          </button>
+                      {/* Info singkat */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem', color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                        {item.tanggal_mulai && (
+                          <span>📅 <strong>{lang === 'id' ? 'Mulai' : 'Start'}:</strong> {formatDate(item.tanggal_mulai)}</span>
                         )}
-
-                        {/* Tombol Beri Ulasan & Perpanjang — Jika Dikonfirmasi atau Selesai */}
-                        {(item.status === 'Dikonfirmasi' || item.status === 'Selesai') && (
-                          <>
-                            <Link
-                              to={`/ruangan/${item.office_id}#reviews`}
-                              className="btn btn-outline"
-                              style={{ 
-                                padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
-                                display: 'flex', alignItems: 'center', gap: '0.35rem',
-                                borderColor: '#f59e0b', color: '#f59e0b'
-                              }}
-                            >
-                              <Star size={15} /> Beri Ulasan
-                            </Link>
-                            <Link
-                              to={`/ruangan/${item.office_id}?extend_from=${item.id}`}
-                              className="btn btn-outline"
-                              style={{ 
-                                padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
-                                display: 'flex', alignItems: 'center', gap: '0.35rem',
-                                borderColor: '#2563eb', color: '#2563eb'
-                              }}
-                            >
-                              <RefreshCw size={15} /> Perpanjang
-                            </Link>
-                          </>
+                        {item.tanggal_akhir && (
+                          <span>🏁 <strong>{lang === 'id' ? 'Akhir' : 'End'}:</strong> {formatDate(item.tanggal_akhir)}</span>
                         )}
+                        {item.durasi && (
+                          <span>⏱ <strong>{t('duration')}:</strong> {item.durasi} {t('months')}</span>
+                        )}
+                        {item.waktu_mulai && item.waktu_selesai && (
+                          <span>⏰ {item.waktu_mulai} – {item.waktu_selesai}</span>
+                        )}
+                        {item.perusahaan && (
+                          <span>🏢 {item.perusahaan}</span>
+                        )}
+                      </div>
 
-                        {/* Batalkan — hanya jika Pending */}
-                        {item.status === 'Pending' && (
-                          <button
-                            onClick={() => handleBatalkan(item.id)}
-                            className="btn btn-danger"
+                      {/* Footer: harga + aksi */}
+                      <div className="order-card-footer">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <AlertCircle size={18} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                          <div>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{t('total_price')}</p>
+                            <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
+                              Rp {Number(item.total_harga || 0).toLocaleString('id-ID')}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="order-actions-group">
+                          {/* Tombol utama: Lihat Detail Pesanan */}
+                          <Link
+                            to={`/pesanan-saya/${item.id}`}
+                            className="btn btn-primary"
                             style={{ padding: '0.45rem 0.85rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                           >
-                            <XCircle size={15} /> Batalkan
-                          </button>
-                        )}
+                            <Eye size={15} /> {t('detail')}
+                          </Link>
+
+                          {(item.status === 'Dikonfirmasi' || item.status === 'Selesai') && (
+                            <button 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                window.open(getInvoiceUrl(item.id, lang), '_blank');
+                              }}
+                              className="btn btn-outline-primary-custom"
+                              style={{ 
+                                padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
+                                display: 'flex', alignItems: 'center', gap: '0.35rem'
+                              }}
+                            >
+                              <Printer size={15} /> Invoice
+                            </button>
+                          )}
+
+                          {/* Tombol Beri Ulasan & Perpanjang — Jika Dikonfirmasi atau Selesai dan tidak upcoming */}
+                          {(item.status === 'Dikonfirmasi' || item.status === 'Selesai') && !isUpcoming && (
+                            <>
+                              <Link
+                                  to={`/ruangan/${item.office_id}#reviews`}
+                                className="btn btn-outline-warning-custom"
+                                style={{ 
+                                  padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
+                                  display: 'flex', alignItems: 'center', gap: '0.35rem'
+                                }}
+                              >
+                                <Star size={15} /> {t('write_review')}
+                              </Link>
+                              <Link
+                                to={`/ruangan/${item.office_id}?extend_from=${item.id}`}
+                                className="btn btn-outline-primary-custom"
+                                style={{ 
+                                  padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
+                                  display: 'flex', alignItems: 'center', gap: '0.35rem'
+                                }}
+                              >
+                                <RefreshCw size={15} /> {t('extend')}
+                              </Link>
+                            </>
+                          )}
+
+                          {/* Batalkan — hanya jika Pending */}
+                          {item.status === 'Pending' && (
+                            <button
+                              onClick={() => handleBatalkan(item.id)}
+                              className="btn btn-danger"
+                              style={{ padding: '0.45rem 0.85rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                            >
+                              <XCircle size={15} /> {t('cancel_booking')}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       <style>{`
@@ -313,12 +333,32 @@ const PesananSaya = () => {
             grid-column: span 1 !important;
           }
         }
+        .btn-outline-primary-custom {
+          background-color: transparent !important;
+          border: 1px solid var(--color-primary) !important;
+          color: var(--color-primary) !important;
+          transition: var(--transition) !important;
+        }
+        .btn-outline-primary-custom:hover {
+          background-color: var(--color-primary) !important;
+          color: white !important;
+        }
+        .btn-outline-warning-custom {
+          background-color: transparent !important;
+          border: 1px solid var(--color-warning) !important;
+          color: var(--color-warning) !important;
+          transition: var(--transition) !important;
+        }
+        .btn-outline-warning-custom:hover {
+          background-color: var(--color-warning) !important;
+          color: white !important;
+        }
       `}</style>
       
       <Modal 
         isOpen={errorModal.isOpen} 
         onClose={() => setErrorModal({ isOpen: false, message: '' })}
-        title="Pesanan Tidak Ditemukan"
+        title={t('booking_not_found')}
         message={errorModal.message}
         type="warning"
       />

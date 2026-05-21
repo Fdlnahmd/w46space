@@ -1,10 +1,64 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, Calendar, User, LogOut, ClipboardList, Menu, X, Star, Sun, Moon, Bell, Headset } from 'lucide-react';
+import { Building2, User, LogOut, ClipboardList, Menu, X, Star, Sun, Moon, Bell, Headset } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/apiService';
+
+const translateNotification = (title, message, lang) => {
+  if (lang === 'id') return { title, message };
+
+  let tTitle = title;
+  let tMessage = message;
+
+  if (title === 'Pesanan Baru Masuk!') {
+    tTitle = 'New Booking Received!';
+  } else if (title.startsWith('Status Pesanan #')) {
+    const id = title.replace('Status Pesanan #', '').replace(' Berubah', '');
+    tTitle = `Booking #${id} Status Changed`;
+  } else if (title === 'Permintaan Fasilitas Baru') {
+    tTitle = 'New Add-on Request';
+  } else if (title === 'Fasilitas Dikonfirmasi') {
+    tTitle = 'Add-on Confirmed';
+  } else if (title === 'Pembayaran Berhasil!') {
+    tTitle = 'Payment Successful!';
+  }
+
+  if (message.startsWith('Pesanan baru dari ')) {
+    const match = message.match(/Pesanan baru dari (.*) untuk ruangan (.*)\./);
+    if (match) {
+      tMessage = `New booking from ${match[1]} for room ${match[2]}.`;
+    }
+  } else if (message.startsWith('Pesanan Anda untuk ')) {
+    const match = message.match(/Pesanan Anda untuk (.*) sekarang berstatus: (.*)\./);
+    if (match) {
+      let statusStr = match[2];
+      if (statusStr === 'Dikonfirmasi') statusStr = 'Confirmed';
+      else if (statusStr === 'Pending') statusStr = 'Pending';
+      else if (statusStr === 'Selesai') statusStr = 'Completed';
+      else if (statusStr === 'Dibatalkan') statusStr = 'Canceled';
+      tMessage = `Your booking for ${match[1]} is now: ${statusStr}.`;
+    }
+  } else if (message.endsWith('meminta tambahan fasilitas. Segera konfirmasi pembayaran.')) {
+    const match = message.match(/Pesanan #(.*) meminta tambahan fasilitas\. Segera konfirmasi pembayaran\./);
+    if (match) {
+      tMessage = `Booking #${match[1]} requested additional amenities. Please verify payment.`;
+    }
+  } else if (message.startsWith('Fasilitas ') && message.endsWith('telah aktif.')) {
+    const match = message.match(/Fasilitas (.*) untuk pesanan #(.*) telah aktif\./);
+    if (match) {
+      tMessage = `Amenity ${match[1]} for booking #${match[2]} is now active.`;
+    }
+  } else if (message.startsWith('Pembayaran untuk pesanan #') && message.endsWith('telah kami terima. Selamat menikmati ruangan Anda!')) {
+    const match = message.match(/Pembayaran untuk pesanan #(.*) telah kami terima\. Selamat menikmati ruangan Anda!/);
+    if (match) {
+      tMessage = `Payment for booking #${match[1]} has been received. Enjoy your workspace!`;
+    }
+  }
+
+  return { title: tTitle, message: tMessage };
+};
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -188,13 +242,13 @@ const Navbar = () => {
                     zIndex: 2100, padding: '1.25rem', maxHeight: '450px', overflowY: 'auto'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                      <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Notifikasi</h4>
+                      <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{lang === 'id' ? 'Notifikasi' : 'Notifications'}</h4>
                       {unreadCount > 0 && (
                         <button 
                           onClick={handleMarkAllRead}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-primary)', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
                         >
-                          Tandai semua dibaca
+                          {lang === 'id' ? 'Tandai semua dibaca' : 'Mark all as read'}
                         </button>
                       )}
                     </div>
@@ -202,25 +256,28 @@ const Navbar = () => {
                       {notifications.length === 0 ? (
                         <div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
                           <Bell size={32} style={{ color: 'var(--color-text-muted)', marginBottom: '0.5rem', opacity: 0.3 }} />
-                          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>Tidak ada notifikasi baru</p>
+                          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>{lang === 'id' ? 'Tidak ada notifikasi baru' : 'No new notifications'}</p>
                         </div>
                       ) : (
-                        notifications.map(n => (
-                          <div 
-                            key={n.id} 
-                            onClick={() => { if (n.link) navigate(n.link); setIsNotifOpen(false); handleMarkRead(n.id); }}
-                            style={{
-                              padding: '0.75rem', borderRadius: '12px',
-                              backgroundColor: n.is_read ? 'transparent' : 'rgba(37, 99, 235, 0.05)',
-                              borderLeft: n.is_read ? 'none' : '4px solid var(--color-primary)',
-                              cursor: 'pointer', transition: 'all 0.2s', position: 'relative'
-                            }}
-                          >
-                            <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: '0 0 0.25rem 0', color: n.is_read ? 'var(--color-text-main)' : 'var(--color-primary)' }}>{n.title}</p>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.4 }}>{n.message}</p>
-                            <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.5rem', opacity: 0.7 }}>{new Date(n.created_at).toLocaleTimeString()}</p>
-                          </div>
-                        ))
+                        notifications.map(n => {
+                          const trans = translateNotification(n.title, n.message, lang);
+                          return (
+                            <div 
+                              key={n.id} 
+                              onClick={() => { if (n.link) navigate(n.link); setIsNotifOpen(false); handleMarkRead(n.id); }}
+                              style={{
+                                padding: '0.75rem', borderRadius: '12px',
+                                backgroundColor: n.is_read ? 'transparent' : 'rgba(37, 99, 235, 0.05)',
+                                borderLeft: n.is_read ? 'none' : '4px solid var(--color-primary)',
+                                cursor: 'pointer', transition: 'all 0.2s', position: 'relative'
+                              }}
+                            >
+                              <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: '0 0 0.25rem 0', color: n.is_read ? 'var(--color-text-main)' : 'var(--color-primary)' }}>{trans.title}</p>
+                              <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.4 }}>{trans.message}</p>
+                              <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.5rem', opacity: 0.7 }}>{new Date(n.created_at).toLocaleTimeString()}</p>
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   </div>

@@ -253,6 +253,10 @@
 <body>
 <div class="page">
 
+    @php
+        $lang = $lang ?? 'id';
+    @endphp
+
     <!-- HEADER -->
     <table class="header-table">
         <tr>
@@ -267,8 +271,8 @@
             <td class="header-right">
                 <div class="invoice-label">INVOICE</div>
                 <div class="invoice-meta-text">No: <strong>{{ $invoice_no }}</strong></div>
-                <div class="invoice-meta-text">Tanggal: <strong>{{ $date }}</strong></div>
-                <div class="status-badge">LUNAS</div>
+                <div class="invoice-meta-text">{{ $lang === 'en' ? 'Date:' : 'Tanggal:' }} <strong>{{ $date }}</strong></div>
+                <div class="status-badge">{{ $lang === 'en' ? 'PAID' : 'LUNAS' }}</div>
             </td>
         </tr>
     </table>
@@ -277,32 +281,34 @@
     <div class="body">
 
         <!-- Tenant Info -->
-        <div class="section-label">Informasi Penyewa</div>
+        <div class="section-label">{{ $lang === 'en' ? 'Tenant Information' : 'Informasi Penyewa' }}</div>
         <table class="tenant-table">
             <tr>
                 <td class="tenant-cell" style="border-right: 1px solid #e2e8f0;">
-                    <div class="label">Nama Lengkap</div>
+                    <div class="label">{{ $lang === 'en' ? 'Full Name' : 'Nama Lengkap' }}</div>
                     <div class="value">{{ $booking->nama_pemesan }}</div>
                 </td>
                 <td class="tenant-cell" style="border-right: 1px solid #e2e8f0;">
-                    <div class="label">Perusahaan</div>
+                    <div class="label">{{ $lang === 'en' ? 'Company' : 'Perusahaan' }}</div>
                     <div class="value">{{ $booking->perusahaan ?: '—' }}</div>
                 </td>
                 <td class="tenant-cell">
-                    <div class="label">Status Pesanan</div>
-                    <div class="value">{{ $booking->status }}</div>
+                    <div class="label">{{ $lang === 'en' ? 'Booking Status' : 'Status Pesanan' }}</div>
+                    <div class="value">
+                        {{ $lang === 'en' ? (['Pending' => 'Pending', 'Dikonfirmasi' => 'Confirmed', 'Selesai' => 'Completed', 'Dibatalkan' => 'Cancelled'][$booking->status] ?? $booking->status) : $booking->status }}
+                    </div>
                 </td>
             </tr>
         </table>
 
         <!-- Detail Pemesanan -->
-        <div class="section-label">Detail Pemesanan</div>
+        <div class="section-label">{{ $lang === 'en' ? 'Booking Details' : 'Detail Pemesanan' }}</div>
         <table class="items-table">
             <thead>
                 <tr>
-                    <th style="width:45%">Deskripsi</th>
-                    <th style="width:30%">Periode</th>
-                    <th style="width:25%" class="text-right">Harga</th>
+                    <th style="width:45%">{{ $lang === 'en' ? 'Description' : 'Deskripsi' }}</th>
+                    <th style="width:30%">{{ $lang === 'en' ? 'Period' : 'Periode' }}</th>
+                    <th style="width:25%" class="text-right">{{ $lang === 'en' ? 'Price' : 'Harga' }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -314,11 +320,11 @@
                         </span>
                     </td>
                     <td>
-                        {{ $booking->durasi }} Bulan<br>
+                        {{ $booking->durasi }} {{ $lang === 'en' ? 'Month(s)' : 'Bulan' }}<br>
                         <span style="font-size:11px;color:#64748b;">
-                            {{ $booking->tanggal_mulai ? $booking->tanggal_mulai->format('d M Y') : '-' }}
+                            {{ $booking->tanggal_mulai ? ($lang === 'en' ? $booking->tanggal_mulai->locale('en')->isoFormat('DD MMM YYYY') : $booking->tanggal_mulai->locale('id')->isoFormat('DD MMM YYYY')) : '-' }}
                             –
-                            {{ $booking->tanggal_akhir ? $booking->tanggal_akhir->format('d M Y') : '-' }}
+                            {{ $booking->tanggal_akhir ? ($lang === 'en' ? $booking->tanggal_akhir->locale('en')->isoFormat('DD MMM YYYY') : $booking->tanggal_akhir->locale('id')->isoFormat('DD MMM YYYY')) : '-' }}
                         </span>
                     </td>
                     <td class="text-right">Rp {{ number_format($booking->office_price_total ?: ($booking->total_harga - $booking->total_addon_price + $booking->discount_amount), 0, ',', '.') }}</td>
@@ -331,7 +337,7 @@
                             Add-on: <strong>{{ $addon->nama }}</strong>
                         </td>
                         <td>
-                            {{ ($addon->pivot && $addon->pivot->status === 'confirmed') ? 'Aktif' : 'Menunggu Konfirmasi' }}
+                            {{ ($addon->pivot && $addon->pivot->status === 'confirmed') ? ($lang === 'en' ? 'Active' : 'Aktif') : ($lang === 'en' ? 'Awaiting Confirmation' : 'Menunggu Konfirmasi') }}
                         </td>
                         <td class="text-right">Rp {{ number_format($addon->pivot->price_at_booking ?? 0, 0, ',', '.') }}</td>
                     </tr>
@@ -340,7 +346,7 @@
 
                 @if($booking->discount_amount > 0)
                 <tr class="row-discount">
-                    <td colspan="2">Diskon Kupon: <strong>{{ $booking->coupon->code ?? 'Kupon' }}</strong></td>
+                    <td colspan="2">{{ $lang === 'en' ? 'Coupon Discount:' : 'Diskon Kupon:' }} <strong>{{ $booking->coupon->code ?? 'Kupon' }}</strong></td>
                     <td class="text-right">− Rp {{ number_format($booking->discount_amount, 0, ',', '.') }}</td>
                 </tr>
                 @endif
@@ -352,7 +358,7 @@
             <tr>
                 <td style="width: 50%;"></td>
                 <td style="width: 50%;" class="total-box">
-                    <span class="total-label">Total Pembayaran</span>
+                    <span class="total-label">{{ $lang === 'en' ? 'Total Payment' : 'Total Pembayaran' }}</span>
                     <span class="total-amount">Rp {{ number_format($booking->total_harga, 0, ',', '.') }}</span>
                 </td>
             </tr>
@@ -360,8 +366,8 @@
 
         <!-- Payment Info -->
         <div class="payment-box">
-            <div class="pay-label">Informasi Pembayaran</div>
-            <p>Konfirmasi pembayaran & pertanyaan: <strong>WhatsApp 0812 3456 7890</strong> (Admin)</p>
+            <div class="pay-label">{{ $lang === 'en' ? 'Payment Information' : 'Informasi Pembayaran' }}</div>
+            <p>{{ $lang === 'en' ? 'Payment confirmation & inquiries:' : 'Konfirmasi pembayaran & pertanyaan:' }} <strong>WhatsApp 0812 3456 7890</strong> (Admin)</p>
             <p>Email: <strong>info@wisma46space.com</strong></p>
         </div>
 
@@ -369,8 +375,8 @@
 
     <!-- FOOTER -->
     <div class="footer">
-        <p>Terima kasih telah memilih <strong>Wisma 46 Space</strong> sebagai solusi ruang kerja premium Anda.</p>
-        <p>Invoice ini diterbitkan secara otomatis dan sah tanpa tanda tangan basah.</p>
+        <p>{{ $lang === 'en' ? 'Thank you for choosing' : 'Terima kasih telah memilih' }} <strong>Wisma 46 Space</strong>{{ $lang === 'en' ? ' as your premium workspace solution.' : ' sebagai solusi ruang kerja premium Anda.' }}</p>
+        <p>{{ $lang === 'en' ? 'This invoice is generated automatically and is valid without physical signature.' : 'Invoice ini diterbitkan secara otomatis dan sah tanpa tanda tangan basah.' }}</p>
         <div class="contact">
             Wisma 46 · Jl. Jend. Sudirman Kav. 1, Jakarta 10220 · (021) 0000-0000 · info@wisma46space.com
         </div>

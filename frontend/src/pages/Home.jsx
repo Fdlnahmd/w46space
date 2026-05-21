@@ -25,16 +25,7 @@ const Home = () => {
   return (
     <div>
       {/* Hero Section */}
-      <section style={{
-        background: theme === 'dark'
-          ? "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(10,30,80,0.72) 100%), url('https://www.wisma46.com/lib/images/banner/slide-website-30th.png') center center / cover no-repeat"
-          : "linear-gradient(to bottom, rgba(37,99,235,0.65) 0%, rgba(15,50,130,0.55) 100%), url('https://www.wisma46.com/lib/images/banner/slide-website-30th.png') center center / cover no-repeat",
-        color: 'white',
-        padding: '7rem 0',
-        textAlign: 'center',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
+      <section className="hero-section">
         <div className="container" style={{ position: 'relative', zIndex: 10 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
@@ -70,6 +61,16 @@ const Home = () => {
         </div>
 
         <style>{`
+          .hero-section {
+            background: ${theme === 'dark'
+              ? "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(10,30,80,0.72) 100%), url('https://www.wisma46.com/lib/images/banner/slide-website-30th.png') center center / cover no-repeat"
+              : "linear-gradient(to bottom, rgba(37,99,235,0.65) 0%, rgba(15,50,130,0.55) 100%), url('https://www.wisma46.com/lib/images/banner/slide-website-30th.png') center center / cover no-repeat"};
+            color: white;
+            padding: 7rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+          }
           .btn-hero-cta {
             background: rgba(255, 255, 255, 0.08);
             color: #ffffff;
@@ -88,8 +89,12 @@ const Home = () => {
             transform: translateY(0);
           }
           @media (max-width: 768px) {
-            h1 { font-size: 2.25rem !important; }
-            p { font-size: 1rem !important; }
+            .hero-section {
+              padding: 4.5rem 0 !important;
+              background-position: 70% center !important; /* Keep the Wisma 46 building tower in frame on mobile */
+            }
+            h1 { font-size: 2rem !important; }
+            p { font-size: 0.95rem !important; }
           }
         `}</style>
       </section>

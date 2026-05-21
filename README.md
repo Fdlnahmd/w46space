@@ -1,6 +1,6 @@
-# 🏢 Sewa Ruang - Office Booking Platform
+# 🏢 Wisma 46 Space - Office Booking Platform
 
-**Sewa Ruang** adalah platform modern berbasis web untuk menyewa berbagai jenis ruang kerja, mulai dari Private Office, Coworking Space, hingga Meeting Room eksklusif. Aplikasi ini dirancang untuk memberikan pengalaman pemesanan yang cepat, transparan, dan efisien bagi pengguna maupun admin.
+**Wisma 46 Space** adalah platform modern berbasis web untuk menyewa berbagai jenis ruang kerja, mulai dari Private Office, Coworking Space, hingga Meeting Room eksklusif. Aplikasi ini dirancang untuk memberikan pengalaman pemesanan yang cepat, transparan, dan efisien bagi pengguna maupun admin.
 
 ---
 
@@ -30,6 +30,7 @@
 
 ### 📱 Keunggulan & Stabilisasi UX Modern
 
+- **Dukungan Dua Bahasa (Bilingual - ID/EN)**: Seluruh antarmuka platform (Landing Page, Form Booking, Dashboard Admin/Helpdesk, grafik statistik, ulasan, kupon) hingga berkas cetak **Invoice PDF** dapat berganti bahasa secara dinamis secara instan.
 - **Mobile Card-List Layout**: Menggantikan tabel horizontal tradisional pada resolusi ponsel dengan **Daftar Kartu Informasi** vertikal otomatis. Tidak perlu menggeser (swipe-X) layar lagi di perangkat ponsel!
 - **Bulletproof Redirection (Anti-Crash)**: Penanganan data `404 Not Found` yang tangguh pada detail pesanan. Menghindari crash atau loading tak terbatas (_"Memuat..."_) jika mengakses pesanan yang telah dihapus melalui tautan notifikasi lama.
 - **Sistem Notifikasi Cerdas & Modal Popup**: Admin dan pengguna akan menerima modal pemberitahuan informatif jika diarahkan kembali karena tautan pesanan usang.
@@ -172,7 +173,7 @@ Panduan lebih lengkap tersedia di [docs/grafana.md](docs/grafana.md).
 
 | Role      | Email               | Password |
 | :-------- | :------------------ | :------- |
-| **Admin** | admin@sewaruang.com | password |
+| **Admin** | admin@w46space.com  | password |
 | **User**  | budi@gmail.com      | password |
 
 ---
@@ -191,7 +192,7 @@ graph LR
         A["🔑 Admin"]
     end
 
-    subgraph "Sewa Ruang System"
+    subgraph "Wisma 46 Space System"
         UC1("Registrasi & Login")
         UC2("Cari & Detail Ruangan")
         UC3("Pesan Ruangan & Addons")
@@ -210,6 +211,7 @@ graph LR
         UC13("Moderasi Ulasan")
         UC16("Chatting Helpdesk/Admin Terpadu")
         UC17("Terima Alert Container Down via Email")
+        UC18("Ubah Bahasa / Switch Language (ID/EN)")
     end
 
     U --> UC1
@@ -222,9 +224,11 @@ graph LR
     U --> UC8
     U --> UC14
     U --> UC15
+    U --> UC18
 
     H --> UC1
     H --> UC16
+    H --> UC18
 
     A --> UC1
     A --> UC9
@@ -234,6 +238,7 @@ graph LR
     A --> UC13
     A --> UC16
     A --> UC17
+    A --> UC18
 
     %% Styling
     style U fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
@@ -241,7 +246,7 @@ graph LR
     style A fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
 
     classDef usecase fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#0f172a
-    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17 usecase
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17,UC18 usecase
 ```
 
 ### 🌊 Flowchart: Alur Pemesanan Ruangan

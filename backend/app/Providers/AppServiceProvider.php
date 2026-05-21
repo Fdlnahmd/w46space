@@ -29,19 +29,16 @@ class AppServiceProvider extends ServiceProvider
             return config('app.url') . '/reset-password?token=' . $token . '&email=' . $notifiable->getEmailForPasswordReset();
         });
 
-        // Kustomisasi Isi Email Reset Password (Tema Sewa Ruang)
+        // Kustomisasi Isi Email Reset Password (Tema Wisma 46 Space)
         ResetPassword::toMailUsing(function (object $notifiable, string $token) {
             $url = config('app.url') . '/reset-password?token=' . $token . '&email=' . $notifiable->getEmailForPasswordReset();
 
             return (new \Illuminate\Notifications\Messages\MailMessage)
                 ->subject('[' . config('app.name') . '] Permintaan Atur Ulang Kata Sandi')
-                ->greeting('Halo, ' . $notifiable->name . '!')
-                ->line('Kami menerima permintaan untuk mengatur ulang kata sandi akun Anda di platform **Sewa Ruang**.')
-                ->line('Silakan klik tombol di bawah ini untuk melanjutkan proses pembaruan kata sandi:')
-                ->action('Atur Ulang Kata Sandi', $url)
-                ->line('Tautan ini hanya berlaku selama **60 menit** demi keamanan akun Anda.')
-                ->line('Jika Anda tidak merasa melakukan permintaan ini, abaikan saja email ini. Keamanan akun Anda tetap terjaga selama tautan tidak diklik.')
-                ->salutation("Terima kasih,\nTim " . config('app.name'));
+                ->view('emails.reset_password', [
+                    'name' => $notifiable->name,
+                    'url' => $url
+                ]);
         });
 
         // 3. Rate Limiting Login (5 kali per menit per IP)

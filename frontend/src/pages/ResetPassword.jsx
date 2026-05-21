@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { resetPassword } from '../services/apiService';
 import { Lock, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const ResetPassword = () => {
+  const { t, lang } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
@@ -19,7 +21,7 @@ const ResetPassword = () => {
 
   const [status, setStatus] = useState(() => {
     if (!rawEmail || !searchParams.get('token')) {
-      return { type: 'error', message: 'Link reset tidak valid atau sudah kadaluarsa.' };
+      return { type: 'error', message: lang === 'id' ? 'Link reset tidak valid atau sudah kadaluarsa.' : 'Reset link is invalid or has expired.' };
     }
     return { type: '', message: '' };
   });
@@ -36,7 +38,7 @@ const ResetPassword = () => {
         navigate('/login');
       }, 3000);
     } catch (error) {
-      setStatus({ type: 'error', message: error.response?.data?.message || 'Gagal meriset password' });
+      setStatus({ type: 'error', message: error.response?.data?.message || (lang === 'id' ? 'Gagal meriset password' : 'Failed to reset password') });
     } finally {
       setLoading(false);
     }
@@ -50,7 +52,7 @@ const ResetPassword = () => {
         display: 'flex', alignItems: 'center', gap: '0.5rem', 
         color: 'var(--color-text-muted)', fontWeight: 500, textDecoration: 'none' 
       }}>
-        <ArrowLeft size={18} /> Kembali ke Beranda
+        <ArrowLeft size={18} /> {t('back_to_home')}
       </Link>
 
       <div className="card" style={{ padding: '3rem', width: '100%', maxWidth: '450px' }}>
@@ -58,9 +60,9 @@ const ResetPassword = () => {
           <div style={{ display: 'inline-flex', padding: '1rem', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderRadius: '50%', marginBottom: '1.5rem' }}>
             <Lock size={32} color="var(--color-primary)" />
           </div>
-          <h1 style={{ fontSize: '1.8rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Password Baru</h1>
+          <h1 style={{ fontSize: '1.8rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>{lang === 'id' ? 'Password Baru' : 'New Password'}</h1>
           <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
-            Silakan masukkan password baru Anda untuk mengamankan akun.
+            {lang === 'id' ? 'Silakan masukkan password baru Anda untuk mengamankan akun.' : 'Please enter your new password to secure your account.'}
           </p>
         </div>
 
@@ -83,11 +85,11 @@ const ResetPassword = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Password Baru</label>
+            <label className="form-label">{t('profile_new_password')}</label>
             <input
               type="password"
               required
-              placeholder="Minimal 6 karakter"
+              placeholder={t('profile_new_password_placeholder')}
               className="form-control"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -95,11 +97,11 @@ const ResetPassword = () => {
           </div>
 
           <div className="form-group" style={{ marginBottom: '2rem' }}>
-            <label className="form-label">Konfirmasi Password Baru</label>
+            <label className="form-label">{t('profile_confirm_password')}</label>
             <input
               type="password"
               required
-              placeholder="Ulangi password baru"
+              placeholder={t('profile_confirm_password_placeholder')}
               className="form-control"
               value={formData.password_confirmation}
               onChange={(e) => setFormData({ ...formData, password_confirmation: e.target.value })}
@@ -112,7 +114,7 @@ const ResetPassword = () => {
             className="btn btn-primary"
             style={{ width: '100%', padding: '0.75rem' }}
           >
-            {loading ? 'Menyimpan...' : 'Setel Ulang Password'}
+            {loading ? (lang === 'id' ? 'Menyimpan...' : 'Saving...') : (lang === 'id' ? 'Setel Ulang Password' : 'Reset Password')}
           </button>
 
           <div style={{ textAlign: 'center', marginTop: '2rem' }}>
@@ -120,7 +122,7 @@ const ResetPassword = () => {
               to="/login"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--color-text-muted)', fontWeight: 500, fontSize: '0.9rem' }}
             >
-              <ArrowLeft size={16} /> Kembali ke Login
+              <ArrowLeft size={16} /> {lang === 'id' ? 'Kembali ke Login' : 'Back to Sign In'}
             </Link>
           </div>
         </form>

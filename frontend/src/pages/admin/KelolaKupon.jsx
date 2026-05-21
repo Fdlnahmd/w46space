@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getCoupons, createCoupon, updateCoupon, deleteCoupon } from '../../services/apiService';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Plus, Trash2, Edit2, Calendar, Users } from 'lucide-react';
 import Modal from '../../components/Modal';
 
 const KelolaKupon = () => {
+  const { lang } = useLanguage();
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState({ isOpen: false, type: 'add', data: null });
@@ -43,7 +45,7 @@ const KelolaKupon = () => {
       setModal({ isOpen: false, type: 'add', data: null });
       setFormData({ code: '', type: 'fixed', value: '', expiry_date: '', usage_limit: 100 });
     }).catch(err => {
-      alert(err.response?.data?.message || 'Terjadi kesalahan');
+      alert(err.response?.data?.message || (lang === 'id' ? 'Terjadi kesalahan' : 'An error occurred'));
     });
   };
 
@@ -68,7 +70,7 @@ const KelolaKupon = () => {
   return (
     <div>
       <div className="page-header-admin">
-        <h1>Kelola Kupon Diskon</h1>
+        <h1>{lang === 'id' ? 'Kelola Kupon Diskon' : 'Manage Discount Coupons'}</h1>
         <button 
           className="btn btn-primary" 
           onClick={() => {
@@ -77,13 +79,13 @@ const KelolaKupon = () => {
           }}
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
         >
-          <Plus size={18} /> Tambah Kupon
+          <Plus size={18} /> {lang === 'id' ? 'Tambah Kupon' : 'Add Coupon'}
         </button>
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3" style={{ gap: '1.5rem' }}>
         {loading ? (
-          <p>Memuat data...</p>
+          <p>{lang === 'id' ? 'Memuat data...' : 'Loading data...'}</p>
         ) : coupons.map(coupon => (
           <div key={coupon.id} className="card" style={{ padding: '1.5rem', position: 'relative' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
@@ -109,15 +111,17 @@ const KelolaKupon = () => {
             </div>
 
             <h3 style={{ margin: '0 0 0.5rem 0' }}>
-              {coupon.type === 'percentage' ? `${Math.floor(coupon.value)}% Diskon` : `Rp ${Number(coupon.value).toLocaleString('id-ID')} Potongan`}
+              {coupon.type === 'percentage' 
+                ? `${Math.floor(coupon.value)}% ${lang === 'id' ? 'Diskon' : 'Discount'}` 
+                : `Rp ${Number(coupon.value).toLocaleString('id-ID')} ${lang === 'id' ? 'Potongan' : 'Off'}`}
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Calendar size={14} /> Berakhir: {coupon.expiry_date || 'Selamanya'}
+                <Calendar size={14} /> {lang === 'id' ? 'Berakhir:' : 'Expires:'} {coupon.expiry_date || (lang === 'id' ? 'Selamanya' : 'Forever')}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Users size={14} /> Digunakan: {coupon.used_count} / {coupon.usage_limit}
+                <Users size={14} /> {lang === 'id' ? 'Digunakan:' : 'Used:'} {coupon.used_count} / {coupon.usage_limit}
               </div>
             </div>
           </div>
@@ -128,31 +132,31 @@ const KelolaKupon = () => {
       <Modal 
         isOpen={modal.isOpen} 
         onClose={() => setModal({ isOpen: false, type: 'add', data: null })}
-        title={modal.type === 'add' ? 'Tambah Kupon Baru' : 'Edit Kupon'}
+        title={modal.type === 'add' ? (lang === 'id' ? 'Tambah Kupon Baru' : 'Add New Coupon') : (lang === 'id' ? 'Edit Kupon' : 'Edit Coupon')}
         showIcon={false}
       >
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label>Kode Kupon</label>
+            <label>{lang === 'id' ? 'Kode Kupon' : 'Coupon Code'}</label>
             <input 
               type="text" 
               className="form-control" 
               required 
               value={formData.code} 
               onChange={e => setFormData({...formData, code: e.target.value.toUpperCase()})}
-              placeholder="Contoh: HEMAT50"
+              placeholder={lang === 'id' ? 'Contoh: HEMAT50' : 'Example: HEMAT50'}
             />
           </div>
           <div className="grid grid-cols-2" style={{ gap: '1rem' }}>
             <div>
-              <label>Tipe Diskon</label>
+              <label>{lang === 'id' ? 'Tipe Diskon' : 'Discount Type'}</label>
               <select className="form-control" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
-                <option value="fixed">Nominal Tetap (Rp)</option>
-                <option value="percentage">Persentase (%)</option>
+                <option value="fixed">{lang === 'id' ? 'Nominal Tetap (Rp)' : 'Fixed Amount (Rp)'}</option>
+                <option value="percentage">{lang === 'id' ? 'Persentase (%)' : 'Percentage (%)'}</option>
               </select>
             </div>
             <div>
-              <label>Nilai Diskon</label>
+              <label>{lang === 'id' ? 'Nilai Diskon' : 'Discount Value'}</label>
               <input 
                 type="number" 
                 className="form-control" 
@@ -164,7 +168,7 @@ const KelolaKupon = () => {
           </div>
           <div className="grid grid-cols-2" style={{ gap: '1rem' }}>
             <div>
-              <label>Batas Penggunaan</label>
+              <label>{lang === 'id' ? 'Batas Penggunaan' : 'Usage Limit'}</label>
               <input 
                 type="number" 
                 className="form-control" 
@@ -173,7 +177,7 @@ const KelolaKupon = () => {
               />
             </div>
             <div>
-              <label>Tanggal Kadaluarsa</label>
+              <label>{lang === 'id' ? 'Tanggal Kadaluarsa' : 'Expiry Date'}</label>
               <input 
                 type="date" 
                 className="form-control" 
@@ -183,7 +187,7 @@ const KelolaKupon = () => {
             </div>
           </div>
           <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>
-            {modal.type === 'add' ? 'Buat Kupon' : 'Simpan Perubahan'}
+            {modal.type === 'add' ? (lang === 'id' ? 'Buat Kupon' : 'Create Coupon') : (lang === 'id' ? 'Simpan Perubahan' : 'Save Changes')}
           </button>
         </form>
       </Modal>
@@ -193,8 +197,9 @@ const KelolaKupon = () => {
         onClose={() => setDeleteModal({ isOpen: false, id: null })}
         onConfirm={handleDelete}
         type="danger"
-        title="Hapus Kupon"
-        message="Apakah Anda yakin ingin menghapus kupon ini?"
+        title={lang === 'id' ? 'Hapus Kupon' : 'Delete Coupon'}
+        message={lang === 'id' ? 'Apakah Anda yakin ingin menghapus kupon ini?' : 'Are you sure you want to delete this coupon?'}
+        confirmText={lang === 'id' ? 'Ya, Hapus' : 'Yes, Delete'}
       />
     </div>
   );

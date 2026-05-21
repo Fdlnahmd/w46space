@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { getRuangan } from '../services/apiService';
 import { Search, Users, AlertCircle, RefreshCw } from 'lucide-react';
 import SkeletonLoader from '../components/SkeletonLoader';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const DaftarRuangan = () => {
+  const { t, lang } = useLanguage();
   const [ruangan, setRuangan] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -39,10 +41,10 @@ const DaftarRuangan = () => {
 
   const categories = ['Semua', 'Office', 'Private Office', 'Meeting Room', 'Coworking Space', 'Creative Space'];
   const statuses = [
-    { label: 'Semua Status', value: 'Semua' },
-    { label: 'Tersedia', value: 'Tersedia' },
-    { label: 'Penuh', value: 'Penuh' },
-    { label: 'Pemeliharaan', value: 'Pemeliharaan' }
+    { label: t('all'), value: 'Semua' },
+    { label: t('status_available'), value: 'Tersedia' },
+    { label: t('status_full'), value: 'Penuh' },
+    { label: t('status_maintenance'), value: 'Pemeliharaan' }
   ];
 
   const filteredRuangan = ruangan.filter(r => {
@@ -66,10 +68,10 @@ const DaftarRuangan = () => {
       <div className="container">
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <h1 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>
-            Daftar Ruangan
+            {t('browse_rooms_title')}
           </h1>
           <p style={{ color: 'var(--color-text-muted)' }}>
-            Temukan ruang kerja terbaik yang sesuai dengan kebutuhan profesional Anda.
+            {t('browse_rooms_subtitle')}
           </p>
         </div>
         
@@ -79,7 +81,7 @@ const DaftarRuangan = () => {
             <Search size={20} color="var(--color-text-muted)" style={{ position: 'absolute', top: '50%', left: '1rem', transform: 'translateY(-50%)' }} />
             <input 
               type="text" 
-              placeholder="Cari nama ruangan..." 
+              placeholder={t('search_placeholder')}
               className="form-control"
               style={{ paddingLeft: '3rem' }}
               value={searchTerm}
@@ -109,7 +111,7 @@ const DaftarRuangan = () => {
                   color: selectedCategory === cat ? 'white' : 'var(--color-text-main)',
                 }}
               >
-                {cat}
+                {cat === 'Semua' ? t('all') : cat}
               </button>
             ))}
           </div>
@@ -119,7 +121,7 @@ const DaftarRuangan = () => {
             marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed var(--color-border)',
             display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center'
           }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-muted)', marginRight: '0.5rem' }}>Status:</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-muted)', marginRight: '0.5rem' }}>{t('status')}:</span>
             {statuses.map(st => (
               <button
                 key={st.value}
@@ -155,10 +157,10 @@ const DaftarRuangan = () => {
         ) : error ? (
           <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--color-danger)' }}>
             <AlertCircle size={48} style={{ marginBottom: '1rem' }} />
-            <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Gagal memuat data ruangan</h3>
-            <p>Pastikan koneksi internet Anda stabil dan coba lagi.</p>
+            <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{t('fail_load_rooms')}</h3>
+            <p>{t('please_check_connection')}</p>
             <button onClick={fetchData} className="btn btn-primary" style={{ marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-              <RefreshCw size={18} /> Coba Lagi
+              <RefreshCw size={18} /> {t('try_again')}
             </button>
           </div>
         ) : (
@@ -182,12 +184,12 @@ const DaftarRuangan = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                       <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{item.nama}</h3>
                       {item.is_booked ? (
-                        <span className="badge badge-danger">Penuh</span>
+                        <span className="badge badge-danger">{t('status_full')}</span>
                       ) : item.status === 'Maintenance' || item.status === 'Pemeliharaan' ? (
-                        <span className="badge badge-warning">Pemeliharaan</span>
+                        <span className="badge badge-warning">{t('status_maintenance')}</span>
                       ) : (
                         <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-neutral'}`}>
-                          {item.status}
+                          {item.status === 'Tersedia' ? t('status_available') : item.status}
                         </span>
                       )}
                     </div>
@@ -198,21 +200,21 @@ const DaftarRuangan = () => {
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', color: 'var(--color-text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Users size={16} /> Kapasitas: {item.kapasitas} orang
+                        <Users size={16} /> {t('capacity')}: {item.kapasitas} {t('people')}
                       </span>
                       {item.is_booked && item.booked_until && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-danger)', fontWeight: 500 }}>
-                          <AlertCircle size={14} /> Tersedia: {new Date(item.booked_until).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}
+                          <AlertCircle size={14} /> {t('status_available')}: {new Date(item.booked_until).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long' })}
                         </span>
                       )}
                     </div>
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
                       <div>
-                        <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.1rem' }}>Rp {(item.harga ?? 0).toLocaleString('id-ID')}<span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>/hari</span></p>
+                        <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.1rem' }}>Rp {(item.harga ?? 0).toLocaleString('id-ID')}<span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>{t('per_day')}</span></p>
                       </div>
                       <Link to={`/ruangan/${item.id}`} className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>
-                        Lihat Detail
+                        {t('detail')}
                       </Link>
                     </div>
                   </div>
@@ -225,8 +227,8 @@ const DaftarRuangan = () => {
                 <div style={{ backgroundColor: '#f1f5f9', padding: '2rem', borderRadius: '50%', marginBottom: '1.5rem' }}>
                   <Search size={64} color="var(--color-text-muted)" />
                 </div>
-                <h3 style={{ fontSize: '1.5rem', color: 'var(--color-text-main)' }}>Ruangan tidak ditemukan</h3>
-                <p>Silakan coba kata kunci pencarian atau kategori yang lain.</p>
+                <h3 style={{ fontSize: '1.5rem', color: 'var(--color-text-main)' }}>{t('search_not_found')}</h3>
+                <p>{t('search_not_found_desc')}</p>
               </div>
             )}
           </>

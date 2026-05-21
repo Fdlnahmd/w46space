@@ -13,14 +13,15 @@ import {
   CheckCircle, XCircle, Timer, AlertCircle, BadgeCheck, Hourglass, Check, X,
   Plus, Coffee, Wifi, Monitor, Printer
 } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 const statusConfig = {
-  Pending:      { label: 'Menunggu Konfirmasi', color: '#92400e', bg: '#fef3c7', border: '#fde68a', Icon: Hourglass },
-  Dikonfirmasi: { label: 'Dikonfirmasi',         color: '#065f46', bg: '#d1fae5', border: '#6ee7b7', Icon: BadgeCheck },
-  Selesai:      { label: 'Selesai',              color: '#334155', bg: '#f1f5f9', border: '#cbd5e1', Icon: CheckCircle },
-  Dibatalkan:   { label: 'Dibatalkan',           color: '#991b1b', bg: '#fee2e2', border: '#fca5a5', Icon: XCircle },
+  Pending:      { labelKey: 'status_pending', color: '#92400e', bg: '#fef3c7', border: '#fde68a', Icon: Hourglass },
+  Dikonfirmasi: { labelKey: 'status_confirmed', color: '#065f46', bg: '#d1fae5', border: '#6ee7b7', Icon: BadgeCheck },
+  Selesai:      { labelKey: 'status_completed', color: '#334155', bg: '#f1f5f9', border: '#cbd5e1', Icon: CheckCircle },
+  Dibatalkan:   { labelKey: 'status_canceled',  color: '#991b1b', bg: '#fee2e2', border: '#fca5a5', Icon: XCircle },
 };
 
 // Hitung sisa waktu dan status kontrak
@@ -83,6 +84,7 @@ const formatDate = (dateString) => {
 };
 
 const DetailPesanan = () => {
+  const { t, lang } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -140,13 +142,13 @@ const DetailPesanan = () => {
     setProcessing(true);
     try {
       await addAddonsToBooking(pesanan.id, selectedAddons);
-      showToast('Permintaan fasilitas terkirim! Menunggu konfirmasi admin.');
+      showToast(lang === 'id' ? 'Permintaan fasilitas terkirim! Menunggu konfirmasi admin.' : 'Facility request sent! Awaiting admin confirmation.');
       setShowAddonModal(false);
       setSelectedAddons([]);
       fetchDetail();
     } catch (error) {
       console.error(error);
-      showToast('Gagal menambahkan fasilitas', 'error');
+      showToast(lang === 'id' ? 'Gagal menambahkan fasilitas' : 'Failed to add facilities', 'error');
     } finally {
       setProcessing(false);
     }
@@ -154,7 +156,7 @@ const DetailPesanan = () => {
 
 
   const handleDownloadInvoice = () => {
-    window.open(getInvoiceUrl(pesanan.id), '_blank');
+    window.open(getInvoiceUrl(pesanan.id, lang), '_blank');
   };
 
   const toggleAddon = (id) => {
@@ -188,7 +190,7 @@ const DetailPesanan = () => {
 
   if (loading) return (
     <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-      Memuat detail pesanan...
+      {t('loading')}
     </div>
   );
 
@@ -207,7 +209,7 @@ const DetailPesanan = () => {
 
         {/* Tombol kembali */}
         <button onClick={() => navigate('/pesanan-saya')} className="btn btn-outline" style={{ marginBottom: '1.5rem', display: 'inline-flex', gap: '0.4rem' }}>
-          <ArrowLeft size={18} /> Kembali ke Pesanan Saya
+          <ArrowLeft size={18} /> {t('back_to_my_orders')}
         </button>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -217,7 +219,7 @@ const DetailPesanan = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
                 <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
-                  ID Pesanan: <strong>#{pesanan.id}</strong>
+                  {t('booking_id')}: <strong>#{pesanan.id}</strong>
                 </p>
                 <h1 style={{ fontSize: '1.6rem', fontWeight: 700 }}>
                   {pesanan.office?.nama || 'Ruangan'}
@@ -231,7 +233,7 @@ const DetailPesanan = () => {
                   color: cfg.color, fontWeight: 600
                 }}>
                   <StatusIcon size={16} />
-                  {cfg.label}
+                  {t(cfg.labelKey)}
                 </div>
 
                 {user?.role === 'admin' && pesanan.status === 'Pending' && (
@@ -242,7 +244,7 @@ const DetailPesanan = () => {
                       className="btn btn-primary" 
                       style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
                     >
-                      <Check size={16} /> {processing ? '...' : 'Terima'}
+                      <Check size={16} /> {processing ? '...' : (lang === 'id' ? 'Terima' : 'Accept')}
                     </button>
                     <button 
                       onClick={() => handleStatusUpdate('Dibatalkan')}
@@ -250,7 +252,7 @@ const DetailPesanan = () => {
                       className="btn btn-outline" 
                       style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
                     >
-                      <X size={16} /> {processing ? '...' : 'Tolak'}
+                      <X size={16} /> {processing ? '...' : (lang === 'id' ? 'Tolak' : 'Reject')}
                     </button>
                   </div>
                 )}
@@ -264,7 +266,7 @@ const DetailPesanan = () => {
                       fontSize: '0.85rem', padding: '0.5rem 1rem'
                     }}
                   >
-                    <Printer size={16} /> Download Invoice
+                    <Printer size={16} /> Invoice
                   </button>
                 )}
               </div>
@@ -282,13 +284,13 @@ const DetailPesanan = () => {
             {/* Detail Grid */}
             <div className="grid md:grid-cols-2" style={{ gap: '1rem' }}>
               {[
-                { icon: User,      label: 'Nama Pemesan',  value: pesanan.nama_pemesan },
-                { icon: Briefcase, label: 'Perusahaan',    value: pesanan.perusahaan || '—' },
-                { icon: Calendar,  label: 'Tanggal Mulai', value: formatDate(pesanan.tanggal_mulai) },
-                { icon: Calendar,  label: 'Tanggal Akhir', value: formatDate(pesanan.tanggal_akhir) },
-                { icon: Timer,     label: 'Durasi Kontrak',value: pesanan.durasi ? `${pesanan.durasi} Bulan` : '—' },
-                { icon: Clock,     label: 'Jam Operasional', value: pesanan.waktu_mulai && pesanan.waktu_selesai ? `${pesanan.waktu_mulai} – ${pesanan.waktu_selesai}` : '—' },
-                { icon: Building,  label: 'Ruangan',       value: pesanan.office?.nama || '—' },
+                { icon: User,      label: t('customer_name'),  value: pesanan.nama_pemesan },
+                { icon: Briefcase, label: t('company'),    value: pesanan.perusahaan || '—' },
+                { icon: Calendar,  label: lang === 'id' ? 'Tanggal Mulai' : 'Start Date', value: formatDate(pesanan.tanggal_mulai) },
+                { icon: Calendar,  label: lang === 'id' ? 'Tanggal Akhir' : 'End Date', value: formatDate(pesanan.tanggal_akhir) },
+                { icon: Timer,     label: t('duration'),value: pesanan.durasi ? `${pesanan.durasi} ${t('months')}` : '—' },
+                { icon: Clock,     label: lang === 'id' ? 'Jam Operasional' : 'Operational Hours', value: pesanan.waktu_mulai && pesanan.waktu_selesai ? `${pesanan.waktu_mulai} – ${pesanan.waktu_selesai}` : '—' },
+                { icon: Building,  label: t('booked_room'),       value: pesanan.office?.nama || '—' },
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} style={{
                   display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
@@ -311,7 +313,7 @@ const DetailPesanan = () => {
               }}>
                 <AlertCircle size={18} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Total Harga</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{t('total_price')}</p>
                   <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
                     Rp {Number(pesanan.total_harga || 0).toLocaleString('id-ID')}
                   </p>
@@ -325,7 +327,7 @@ const DetailPesanan = () => {
             <div className="card" style={{ padding: '2rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Timer size={22} color="var(--color-primary)" />
-                {isUpcoming ? 'Waktu Kontrak Akan Datang' : 'Status Kontrak Berjalan'}
+                {isUpcoming ? (lang === 'id' ? 'Waktu Kontrak Akan Datang' : 'Contract Commencing Soon') : (lang === 'id' ? 'Status Kontrak Berjalan' : 'Active Contract Status')}
               </h2>
 
               {/* Tampilan Aktif atau Upcoming */}
@@ -335,8 +337,8 @@ const DetailPesanan = () => {
                   {isActive && (
                     <div style={{ marginBottom: '1.5rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
-                        <span>Mulai: {formatDate(pesanan.tanggal_mulai)}</span>
-                        <span>Akhir: {formatDate(pesanan.tanggal_akhir)}</span>
+                        <span>{lang === 'id' ? 'Mulai' : 'Start'}: {formatDate(pesanan.tanggal_mulai)}</span>
+                        <span>{lang === 'id' ? 'Akhir' : 'End'}: {formatDate(pesanan.tanggal_akhir)}</span>
                       </div>
                       <div style={{ height: '10px', backgroundColor: 'var(--color-border)', borderRadius: '9999px', overflow: 'hidden' }}>
                         <div style={{
@@ -347,7 +349,7 @@ const DetailPesanan = () => {
                         }} />
                       </div>
                       <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', marginTop: '0.35rem', textAlign: 'right' }}>
-                        {persen.toFixed(1)}% masa kontrak telah berjalan
+                        {persen.toFixed(1)}% {lang === 'id' ? 'masa kontrak telah berjalan' : 'of contract duration has elapsed'}
                       </p>
                     </div>
                   )}
@@ -355,18 +357,18 @@ const DetailPesanan = () => {
                   {/* Countdown blocks */}
                   <div>
                     <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1rem', textAlign: 'center' }}>
-                      {isUpcoming ? '⏳ Kontrak dimulai dalam:' : '⏳ Sisa waktu kontrak berakhir:'}
+                      {isUpcoming ? (lang === 'id' ? '⏳ Kontrak dimulai dalam:' : '⏳ Contract starts in:') : (lang === 'id' ? '⏳ Sisa waktu kontrak berakhir:' : '⏳ Time remaining on contract:')}
                     </p>
                     <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <CountdownBox value={statusWaktu.hari}  label="Hari" />
-                      <CountdownBox value={statusWaktu.jam}   label="Jam" />
-                      <CountdownBox value={statusWaktu.menit} label="Menit" />
-                      <CountdownBox value={statusWaktu.detik} label="Detik" />
+                      <CountdownBox value={statusWaktu.hari}  label={lang === 'id' ? 'Hari' : 'Days'} />
+                      <CountdownBox value={statusWaktu.jam}   label={lang === 'id' ? 'Jam' : 'Hours'} />
+                      <CountdownBox value={statusWaktu.menit} label={lang === 'id' ? 'Menit' : 'Mins'} />
+                      <CountdownBox value={statusWaktu.detik} label={lang === 'id' ? 'Detik' : 'Secs'} />
                     </div>
                     <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
                       {isUpcoming 
-                        ? `Kontrak akan dimulai pada ${formatDate(pesanan.tanggal_mulai)}`
-                        : `Kontrak berakhir pada ${formatDate(pesanan.tanggal_akhir)}`
+                        ? (lang === 'id' ? `Kontrak akan dimulai pada ${formatDate(pesanan.tanggal_mulai)}` : `Contract starts on ${formatDate(pesanan.tanggal_mulai)}`)
+                        : (lang === 'id' ? `Kontrak berakhir pada ${formatDate(pesanan.tanggal_akhir)}` : `Contract ends on ${formatDate(pesanan.tanggal_akhir)}`)
                       }
                     </p>
                   </div>
@@ -379,12 +381,12 @@ const DetailPesanan = () => {
                   <div style={{ display: 'inline-flex', padding: '1rem', backgroundColor: '#f1f5f9', borderRadius: '50%', marginBottom: '1rem' }}>
                     <CheckCircle size={32} color="var(--color-success)" />
                   </div>
-                  <h3>Masa Kontrak Telah Berakhir</h3>
+                  <h3>{lang === 'id' ? 'Masa Kontrak Telah Berakhir' : 'Contract Term Expired'}</h3>
                   <p style={{ color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
-                    Sewa ruangan ini telah selesai pada {formatDate(pesanan.tanggal_akhir)}.
+                    {lang === 'id' ? `Sewa ruangan ini telah selesai pada ${formatDate(pesanan.tanggal_akhir)}.` : `Room rental ended on ${formatDate(pesanan.tanggal_akhir)}.`}
                   </p>
                   <Link to="/ruangan" className="btn btn-primary" style={{ marginTop: '1.5rem' }}>
-                    Sewa Ruangan Lagi
+                    {lang === 'id' ? 'Sewa Ruangan Lagi' : 'Rent Room Again'}
                   </Link>
                 </div>
               )}
@@ -394,14 +396,14 @@ const DetailPesanan = () => {
           {/* Fasilitas Ruangan & Addons */}
           <div className="card" style={{ padding: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Fasilitas & Layanan</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>{lang === 'id' ? 'Fasilitas & Layanan' : 'Facilities & Services'}</h3>
               {pesanan.status === 'Dikonfirmasi' && !isExpired && (
                 <button 
                   onClick={() => setShowAddonModal(true)}
                   className="btn btn-outline" 
                   style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
                 >
-                  <Plus size={16} /> Tambah Fasilitas
+                  <Plus size={16} /> {lang === 'id' ? 'Tambah Fasilitas' : 'Add Facilities'}
                 </button>
               )}
             </div>
@@ -409,7 +411,7 @@ const DetailPesanan = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {/* Fasilitas Standar */}
               <div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Fasilitas Standar:</p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>{lang === 'id' ? 'Fasilitas Standar:' : 'Standard Facilities:'}</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {pesanan.office?.fasilitas?.map((f, i) => (
                     <span key={i} style={{
@@ -427,7 +429,7 @@ const DetailPesanan = () => {
               {/* Addons yang sudah ada */}
               {pesanan.addons?.length > 0 && (
                 <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Layanan Tambahan Aktif:</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>{lang === 'id' ? 'Layanan Tambahan Aktif:' : 'Active Add-on Services:'}</p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {pesanan.addons.map((addon) => (
                       <span key={addon.id} style={{
@@ -439,7 +441,7 @@ const DetailPesanan = () => {
                         color: addon.pivot?.status === 'pending' ? 'var(--color-warning)' : 'var(--color-primary)'
                       }}>
                         {addon.pivot?.status === 'pending' ? <Hourglass size={14} /> : <CheckCircle size={14} />}
-                        {addon.nama} {addon.pivot?.status === 'pending' && '(Pending)'}
+                        {addon.nama} {addon.pivot?.status === 'pending' && ` (${lang === 'id' ? 'Menunggu' : 'Pending'})`}
                       </span>
                     ))}
                   </div>
@@ -468,9 +470,9 @@ const DetailPesanan = () => {
             </button>
 
             <>
-              <h3 style={{ marginBottom: '0.5rem' }}>Tambah Fasilitas</h3>
+              <h3 style={{ marginBottom: '0.5rem' }}>{lang === 'id' ? 'Tambah Fasilitas' : 'Add Facilities'}</h3>
               <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
-                Pilih fasilitas tambahan untuk pesanan ini.
+                {lang === 'id' ? 'Pilih fasilitas tambahan untuk pesanan ini.' : 'Select additional facilities for this booking.'}
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.5rem' }}>
@@ -480,9 +482,9 @@ const DetailPesanan = () => {
                     borderRadius: 'var(--border-radius)', border: '1px dashed var(--color-border)' 
                   }}>
                     <BadgeCheck size={40} color="var(--color-success)" style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                    <p style={{ margin: 0, fontWeight: 600 }}>Semua fasilitas telah ditambahkan</p>
+                    <p style={{ margin: 0, fontWeight: 600 }}>{lang === 'id' ? 'Semua fasilitas telah ditambahkan' : 'All facilities added'}</p>
                     <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-                      Pesanan ini sudah memiliki semua fasilitas yang tersedia.
+                      {lang === 'id' ? 'Pesanan ini sudah memiliki semua fasilitas yang tersedia.' : 'This booking already has all available facilities.'}
                     </p>
                   </div>
                 ) : (
@@ -531,7 +533,7 @@ const DetailPesanan = () => {
                   border: '1px dashed var(--color-border)'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 600 }}>
-                    <span>Total Biaya Tambahan:</span>
+                    <span>{lang === 'id' ? 'Total Biaya Tambahan:' : 'Total Additional Cost:'}</span>
                     <span style={{ color: 'var(--color-primary)' }}>
                       Rp {availableAddons
                         .filter(a => selectedAddons.includes(a.id))
@@ -545,18 +547,18 @@ const DetailPesanan = () => {
               <div style={{ display: 'flex', gap: '1rem' }}>
                 {availableAddons.filter(addon => !pesanan.addons?.find(a => a.id === addon.id)).length === 0 ? (
                   <button onClick={() => setShowAddonModal(false)} className="btn btn-primary" style={{ flex: 1 }}>
-                    Tutup
+                    {lang === 'id' ? 'Tutup' : 'Close'}
                   </button>
                 ) : (
                   <>
-                    <button onClick={() => { setShowAddonModal(false); setSelectedAddons([]); }} className="btn btn-outline" style={{ flex: 1 }}>Batal</button>
+                    <button onClick={() => { setShowAddonModal(false); setSelectedAddons([]); }} className="btn btn-outline" style={{ flex: 1 }}>{lang === 'id' ? 'Batal' : 'Cancel'}</button>
                     <button 
                       onClick={handleAddAddons}
                       disabled={selectedAddons.length === 0 || processing}
                       className="btn btn-primary" 
                       style={{ flex: 2 }}
                     >
-                      {processing ? 'Memproses...' : 'Kirim Permintaan'}
+                      {processing ? t('submitting') : (lang === 'id' ? 'Kirim Permintaan' : 'Send Request')}
                     </button>
                   </>
                 )}
