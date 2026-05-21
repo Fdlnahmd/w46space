@@ -97,6 +97,7 @@ class ChatController extends Controller
         $userMessage = ChatMessage::create([
             'session_id' => $session->id,
             'sender_type' => 'user',
+            'sender_id' => $user->id,
             'content' => $request->content,
             'is_read_admin' => false,
         ]);

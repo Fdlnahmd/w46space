@@ -10,7 +10,7 @@ groups:
     interval: 1m
     rules:
 
-      # Alert: Backend container tidak merespons (CPU = 0 selama 2 menit)
+      # Alert: Backend container tidak merespons atau mati
       - uid: alert-backend-down
         title: "🔴 Backend Container Down"
         condition: C
@@ -23,9 +23,7 @@ groups:
             datasourceUid: office-rent-prometheus
             model:
               expr: |
-                sum(rate(office_rent_container_cpu_usage_seconds_total{
-                  service="backend", state="running"
-                }[2m]))
+                sum(office_rent_container_up{service="backend"})
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
@@ -38,7 +36,7 @@ groups:
             model:
               conditions:
                 - evaluator:
-                    params: [0]
+                    params: [1]
                     type: lt
                   operator:
                     type: and
@@ -61,12 +59,12 @@ groups:
           severity: critical
           service: backend
         annotations:
-          summary: "Container backend office-rent tidak merespons"
-          description: "CPU usage backend = 0 selama lebih dari 2 menit. Kemungkinan container crash atau restart loop."
+          summary: "Container backend office-rent tidak aktif"
+          description: "Status container backend mati atau tidak aktif (up = 0) selama lebih dari 2 menit."
 
-      # Alert: MySQL container tidak merespons
-      - uid: alert-mysql-down
-        title: "🔴 MySQL Container Down"
+      # Alert: Frontend container tidak merespons atau mati
+      - uid: alert-frontend-down
+        title: "🔴 Frontend Container Down"
         condition: C
         data:
           - refId: A
@@ -77,9 +75,7 @@ groups:
             datasourceUid: office-rent-prometheus
             model:
               expr: |
-                sum(rate(office_rent_container_cpu_usage_seconds_total{
-                  service="mysql", state="running"
-                }[2m]))
+                sum(office_rent_container_up{service="frontend"})
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
@@ -92,7 +88,59 @@ groups:
             model:
               conditions:
                 - evaluator:
-                    params: [0]
+                    params: [1]
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: "__expr__"
+              expression: A
+              refId: C
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 2m
+        labels:
+          severity: critical
+          service: frontend
+        annotations:
+          summary: "Container frontend office-rent tidak aktif"
+          description: "Status container frontend mati atau tidak aktif (up = 0) selama lebih dari 2 menit."
+
+      # Alert: MySQL container tidak merespons atau mati
+      - uid: alert-mysql-down
+        title: "🔴 MySQL Container Down"
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: office-rent-prometheus
+            model:
+              expr: |
+                sum(office_rent_container_up{service="mysql"})
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            queryType: ""
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: "__expr__"
+            model:
+              conditions:
+                - evaluator:
+                    params: [1]
                     type: lt
                   operator:
                     type: and
@@ -115,8 +163,8 @@ groups:
           severity: critical
           service: mysql
         annotations:
-          summary: "Container MySQL office-rent tidak merespons"
-          description: "CPU usage MySQL = 0 selama lebih dari 2 menit. Database kemungkinan crash atau OOM-killed."
+          summary: "Container MySQL office-rent tidak aktif"
+          description: "Status container MySQL mati atau tidak aktif (up = 0) selama lebih dari 2 menit."
 
       # Alert: Memory container backend di atas 500MB
       - uid: alert-backend-memory-high

@@ -70,6 +70,17 @@ const DetailRuangan = () => {
             }));
           setOccupiedDates(dates);
         }
+        if (data.is_booked && data.booked_until && !extendFromId) {
+          const nextAvailDate = new Date(data.booked_until);
+          nextAvailDate.setDate(nextAvailDate.getDate() + 1);
+          const yyyy = nextAvailDate.getFullYear();
+          const mm = String(nextAvailDate.getMonth() + 1).padStart(2, '0');
+          const dd = String(nextAvailDate.getDate()).padStart(2, '0');
+          setFormData(prev => {
+            if (prev.tanggalMulai) return prev;
+            return { ...prev, tanggalMulai: `${yyyy}-${mm}-${dd}` };
+          });
+        }
       } else {
         navigate('/ruangan');
       }
@@ -287,32 +298,33 @@ const DetailRuangan = () => {
       );
     }
 
-    // Ruangan sedang dipesan (Penuh)
-    if (ruangan.is_booked) {
-      return (
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
-          textAlign: 'center', padding: '2rem',
-          backgroundColor: '#fef2f2', border: '1px solid #fee2e2',
-          borderRadius: 'var(--border-radius)'
-        }}>
-          <ShieldAlert size={48} color="var(--color-danger)" />
-          <h3 style={{ color: '#991b1b' }}>Ruangan Sedang Penuh</h3>
-          <p style={{ color: '#b91c1c' }}>
-            Maaf, ruangan ini sudah memiliki penyewa aktif hingga tanggal <strong>{new Date(ruangan.booked_until).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
-          </p>
-          <button onClick={() => navigate('/ruangan')} className="btn btn-outline" style={{ marginTop: '0.5rem', borderColor: '#ef4444', color: '#b91c1c' }}>
-            Cari Ruangan Lain
-          </button>
-        </div>
-      );
-    }
-
     // User biasa — form booking
     const totalHarga = hitungTotal();
 
     return (
       <form onSubmit={handleBooking} className="grid md:grid-cols-2" style={{ gap: '1.5rem' }}>
+        {ruangan.is_booked && (
+          <div style={{
+            gridColumn: '1 / -1',
+            padding: '1rem 1.25rem',
+            backgroundColor: '#fffbeb',
+            border: '1.5px solid #fef3c7',
+            borderRadius: 'var(--border-radius)',
+            color: '#b45309',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            marginBottom: '1rem',
+            fontSize: '0.9rem'
+          }}>
+            <ShieldAlert size={20} color="#d97706" />
+            <div style={{ textAlign: 'left' }}>
+              <strong>Informasi Ketersediaan:</strong> Ruangan ini sedang disewa hingga tanggal{' '}
+              <strong>{new Date(ruangan.booked_until).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
+              Namun, Anda tetap dapat memesannya untuk tanggal setelahnya.
+            </div>
+          </div>
+        )}
         {/* Nama Pemesan */}
         <div className="form-group">
           <label className="form-label">Nama Pemesan</label>

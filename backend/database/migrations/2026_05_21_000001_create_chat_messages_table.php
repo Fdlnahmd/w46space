@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('chat_messages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('session_id')->constrained('chat_sessions')->onDelete('cascade');
+            $table->foreignId('sender_id')->nullable()->constrained('users')->onDelete('set null');
             $table->enum('sender_type', ['user', 'bot', 'admin', 'system']);
             $table->text('content');
             $table->boolean('is_read_admin')->default(false);

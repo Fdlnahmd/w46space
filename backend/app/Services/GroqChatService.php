@@ -42,23 +42,53 @@ class GroqChatService
         }
 
         try {
-            // 2. Fetch all available rooms to inject as context
-            $rooms = Office::where('status', 'Tersedia')->get(['nama', 'kategori', 'kapasitas', 'harga', 'fasilitas', 'deskripsi', 'is_popular']);
+            // 2. Fetch all rooms to inject as context (Tersedia, Penuh, Maintenance) with bookings
+            $today = date('Y-m-d');
+            $rooms = Office::with(['bookings' => function($query) use ($today) {
+                $query->where('status', '!=', 'Dibatalkan')
+                      ->where('tanggal_akhir', '>=', $today);
+            }])->get(['id', 'nama', 'kategori', 'kapasitas', 'harga', 'fasilitas', 'deskripsi', 'is_popular', 'status']);
 
             $roomsContext = "";
             foreach ($rooms as $index => $room) {
                 $popularText = $room->is_popular ? " [Terpopuler]" : "";
+                
+                // Cari booking yang aktif hari ini
+                $currentBooking = $room->bookings->filter(function($b) use ($today) {
+                    return $b->tanggal_mulai <= $today && $b->tanggal_akhir >= $today;
+                })->first();
+                
+                $status = $room->status;
+                $availabilityInfo = "";
+                if ($currentBooking) {
+                    $status = 'Penuh';
+                    $availabilityInfo = sprintf(" (Sedang disewa, kontrak berakhir/bisa dipesan mulai tanggal: %s)", date('d-m-Y', strtotime($currentBooking->tanggal_akhir . ' +1 day')));
+                } else {
+                    // Cari booking terdekat di masa depan
+                    $futureBooking = $room->bookings->filter(function($b) use ($today) {
+                        return $b->tanggal_mulai > $today;
+                    })->sortBy('tanggal_mulai')->first();
+                    
+                    if ($futureBooking) {
+                        $availabilityInfo = sprintf(" (Tersedia sekarang, tapi sudah dipesan berikutnya pada %s s/d %s)", date('d-m-Y', strtotime($futureBooking->tanggal_mulai)), date('d-m-Y', strtotime($futureBooking->tanggal_akhir)));
+                    } else {
+                        $availabilityInfo = " (Tersedia sepenuhnya untuk dipesan kapan saja)";
+                    }
+                }
+
                 $facilities = is_array($room->fasilitas) ? implode(', ', $room->fasilitas) : $room->fasilitas;
                 // Limit facilities and description to keep prompt size small and prevent token rate limit errors
                 $facilities = strlen($facilities) > 50 ? substr($facilities, 0, 47) . '...' : $facilities;
                 $shortDesc = strlen($room->deskripsi) > 60 ? substr($room->deskripsi, 0, 57) . '...' : $room->deskripsi;
                 $roomsContext .= sprintf(
-                    "- %s%s (%s, Kapasitas: %d orang, Rp %s/hari) | Fasilitas: %s | Deskripsi: %s\n",
+                    "- %s%s (%s, Kapasitas: %d orang, Rp %s/hari, Status saat ini: %s%s) | Fasilitas: %s | Deskripsi: %s\n",
                     $room->nama,
                     $popularText,
                     $room->kategori,
                     $room->kapasitas,
                     number_format($room->harga, 0, ',', '.'),
+                    $status,
+                    $availabilityInfo,
                     $facilities,
                     $shortDesc
                 );
@@ -67,8 +97,9 @@ class GroqChatService
             // 3. Build system prompt
             $systemPrompt = "Kamu adalah asisten virtual pintar dan ramah dari 'Wisma 46 Space' — portal penyewaan ruang kerja premium (Office Suite, Meeting Room, Coworking Space) di gedung pencakar langit ikonik Wisma 46, Kota BNI Jakarta.\n\n"
                 . "TUGAS UTAMA KAMU:\n"
-                . "- Jawablah pertanyaan user seputar informasi ruangan, spesifikasi, harga, dan fasilitas.\n"
-                . "- JANGAN menawarkan bantuan untuk memproses reservasi, pemesanan, atau transaksi pembayaran secara langsung di dalam chat. Bot TIDAK memiliki akses untuk melakukan booking atau mengonfirmasi pembayaran.\n"
+                . "- Jawablah pertanyaan user seputar informasi ruangan, spesifikasi, harga, status ketersediaan (apakah 'Tersedia', 'Penuh', atau sedang 'Maintenance'), dan fasilitas.\n"
+                . "- JANGAN menawarkan bantuan untuk memproses reservasi, pemesanan, atau transaksi pembayaran secara langsung di dalam chat. Bot TIDAK memiliki akses untuk melakukan booking atau mengonfirmasi pembayaran. Namun, kamu BISA dan HARUS menginformasikannya secara rinci seputar ketersediaan ruangan (ruangan kosong, penuh, atau kapan ruangan yang penuh/sedang disewa tersebut akan berakhir kontraknya/bisa dipesan kembali) berdasarkan data status dan info ketersediaan ruangan yang tertera di bawah ini.\n"
+                . "- Jika user menanyakan kapan ruangan yang penuh bisa dipesan kembali, baca info tanggal berakhirnya kontrak/booking yang tertera di data ruangan di bawah, lalu sebutkan tanggal tersebut kepada user dengan ramah.\n"
                 . "- Jika user ingin menyewa atau memesan ruangan, instruksikan mereka untuk mengklik tombol 'Detail' pada ruangan yang diinginkan di website lalu mengisi formulir pemesanan secara mandiri.\n"
                 . "- Jika user menanyakan status pembayaran atau meminta bantuan reservasi khusus, arahkan mereka untuk meminta bantuan Admin Helpdesk langsung di chat ini dengan memicu pemindahan ke admin, atau menghubungi kami via WhatsApp.\n"
                 . "- Bersikaplah sangat profesional, premium, sopan, dan hangat.\n"
@@ -79,12 +110,12 @@ class GroqChatService
                 . "ATURAN PENULISAN RESPONS (CONCISE & PREMIUM):\n"
                 . "- JAWABLAH DENGAN SINGKAT, RAMAH, DAN JELAS. Hindari membuat tulisan yang terlalu panjang (wall-of-text) atau menyalin seluruh daftar ruangan.\n"
                 . "- Jika user menanyakan ruangan yang tersedia atau meminta rekomendasi, JANGAN daftarkan semua ruangan! Cukup pilih 2 atau maksimal 3 ruangan saja yang paling cocok dengan kriteria mereka.\n"
-                . "- Berikan detail yang sangat ringkas: Nama Ruangan, Kapasitas, Harga, dan 1 kalimat ringkasan saja.\n"
+                . "- Berikan detail yang sangat ringkas: Nama Ruangan, Kapasitas, Harga, Status Ketersediaan, dan 1 kalimat ringkasan saja.\n"
                 . "- Akhiri dengan menyarankan user melihat detail ruangan di website jika ingin melakukan pemesanan.\n\n"
                 . "ATURAN TRANSFER KE ADMIN (HUMAN):\n"
                 . "- Jika user menyatakan ingin berbicara dengan manusia, admin, CS, customer service, staff, orang, atau meminta bantuan pembayaran/konfirmasi manual, kamu HARUS menambahkan teks tag '[REQUEST_HUMAN]' di akhir atau di dalam respons kamu.\n"
                 . "- Jika user bertanya tentang detail teknis spesifik yang TIDAK ada di data ruangan di bawah ini, atau setelah 3x kamu merasa tidak bisa menjawab kepuasan mereka, tambahkan tag '[REQUEST_HUMAN]' dan sarankan dengan ramah untuk terhubung ke admin.\n\n"
-                . "DATA RUANGAN YANG TERSEDIA SAAT INI DI WISMA 46:\n"
+                . "DAFTAR RUANGAN SAAT INI DI WISMA 46 (BESERTA STATUSNYA):\n"
                 . $roomsContext
                 . "KONTAK DUMMY BANTUAN MANUAL:\n"
                 . "- WhatsApp: 081234567890\n"
@@ -107,9 +138,9 @@ class GroqChatService
             // Add the new user message
             $messages[] = ['role' => 'user', 'content' => $message];
 
-            // 5. API call with automatic model fallback on rate limit (429)
-            $modelsToTry = [$this->model, 'gemma2-9b-it', 'llama3-8b-8192', 'mixtral-8x7b-32768'];
-            $modelsToTry = array_values(array_unique($modelsToTry));
+            // 5. API call with automatic model fallback on failure
+            $modelsToTry = [$this->model, 'llama-3.3-70b-versatile', 'llama3-8b-8192', 'mixtral-8x7b-32768'];
+            $modelsToTry = array_values(array_filter(array_unique($modelsToTry)));
 
             $response = null;
             $success = false;
@@ -131,11 +162,7 @@ class GroqChatService
                         break;
                     }
 
-                    if ($response->status() !== 429) {
-                        break;
-                    }
-
-                    Log::warning("Groq API Model {$currentModel} Rate Limit (429) Hit. Trying next model...");
+                    Log::warning("Groq API Model {$currentModel} failed with status {$response->status()}: " . $response->body() . ". Trying next model...");
                 } catch (\Exception $e) {
                     Log::warning("Groq API Model {$currentModel} failed: " . $e->getMessage());
                 }

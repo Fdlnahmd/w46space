@@ -70,6 +70,7 @@ class AdminChatController extends Controller
             ->update(['is_read_admin' => true]);
 
         $messages = ChatMessage::where('session_id', $session->id)
+            ->with('sender')
             ->orderBy('created_at', 'asc')
             ->get();
 
@@ -123,6 +124,7 @@ class AdminChatController extends Controller
         $adminMessage = ChatMessage::create([
             'session_id' => $session->id,
             'sender_type' => 'admin',
+            'sender_id' => $request->user()->id,
             'content' => $request->content
         ]);
 
@@ -130,7 +132,7 @@ class AdminChatController extends Controller
             'last_message_at' => Carbon::now()
         ]);
 
-        return response()->json($adminMessage);
+        return response()->json($adminMessage->load('sender'));
     }
 
     /**

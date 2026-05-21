@@ -1,9 +1,30 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AdminChat = () => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const { user } = useAuth();
+  const role = user?.role || 'admin';
+
+  const getSenderLabel = (msg) => {
+    const isBot = msg.sender_type === 'bot';
+    const isAdminMsg = msg.sender_type === 'admin';
+    
+    if (isBot) return 'Wisma 46 Bot 🤖';
+    if (isAdminMsg) {
+      if (msg.sender) {
+        const senderRole = msg.sender.role === 'helpdesk' ? 'Helpdesk' : 'Admin';
+        if (user && msg.sender_id === user.id) {
+          return `Saya (${senderRole}) 🎧`;
+        }
+        return `${msg.sender.name} (${senderRole}) 🎧`;
+      }
+      return role === 'helpdesk' ? 'Saya (Helpdesk) 🎧' : 'Saya (Admin) 🎧';
+    }
+    return 'User 👤';
+  };
 
   const [sessions, setSessions] = useState([]);
   const [activeSession, setActiveSession] = useState(null);
@@ -571,7 +592,7 @@ const AdminChat = () => {
                         alignSelf: isUser ? 'flex-start' : 'flex-end',
                         fontWeight: 500
                       }}>
-                        {isAdminMsg ? 'Saya (Admin) 🎧' : isBot ? 'Wisma 46 Bot 🤖' : 'User 👤'} &nbsp;·&nbsp; {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {getSenderLabel(msg)} &nbsp;·&nbsp; {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   );

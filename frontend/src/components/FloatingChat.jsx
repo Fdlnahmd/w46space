@@ -30,11 +30,11 @@ const FloatingChat = () => {
       tooltip: 'Tanya AI Assistant',
       title: 'Virtual Assistant',
       subtitle: 'Wisma 46 Space AI · Online',
-      waitingAdmin: 'Menghubungkan ke Admin...',
-      humanMode: 'Terhubung dengan Admin Wisma 46',
+      waitingAdmin: 'Menghubungkan ke Customer Service...',
+      humanMode: 'Terhubung dengan Customer Service Wisma 46',
       inputPlaceholder: 'Ketik pesan Anda...',
       send: 'Kirim',
-      chatAdminBtn: '🙋 Hubungi Admin',
+      chatAdminBtn: '🙋 Hubungi Customer Service',
       waFallback: 'Atau Hubungi WhatsApp ↗',
       welcome: 'Selamat datang! Ada yang bisa saya bantu seputar Wisma 46 Space?',
       emptyPrompt1: '🏢 Info Ruangan',
@@ -45,11 +45,11 @@ const FloatingChat = () => {
       tooltip: 'Ask AI Assistant',
       title: 'Virtual Assistant',
       subtitle: 'Wisma 46 Space AI · Online',
-      waitingAdmin: 'Connecting to Admin...',
-      humanMode: 'Connected with Wisma 46 Admin',
+      waitingAdmin: 'Connecting to Customer Service...',
+      humanMode: 'Connected with Wisma 46 Customer Service',
       inputPlaceholder: 'Type your message...',
       send: 'Send',
-      chatAdminBtn: '🙋 Contact Admin',
+      chatAdminBtn: '🙋 Contact Customer Service',
       waFallback: 'Or Contact via WhatsApp ↗',
       welcome: 'Welcome! How can I help you regarding Wisma 46 Space?',
       emptyPrompt1: '🏢 Room Info',
@@ -453,7 +453,7 @@ const FloatingChat = () => {
                     <span style={{ fontSize: '1.4rem' }}>🎧</span>
                     <div>
                       <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800 }}>Wisma 46 CS Portal</h4>
-                      <p style={{ margin: 0, fontSize: '0.7rem', color: '#cbd5e1' }}>Live Chat Admin Console</p>
+                      <p style={{ margin: 0, fontSize: '0.7rem', color: '#cbd5e1' }}>Live Chat {user?.role === 'helpdesk' ? 'Helpdesk' : 'Admin'} Console</p>
                     </div>
                   </div>
                   <button
@@ -475,7 +475,7 @@ const FloatingChat = () => {
                     </h5>
                     <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
                       {waitingSessions.length > 0 
-                        ? 'Silakan buka dashboard admin untuk mengambil alih chat.' 
+                        ? `Silakan buka dashboard ${user?.role === 'helpdesk' ? 'helpdesk' : 'admin'} untuk mengambil alih chat.` 
                         : 'Belum ada pengguna baru yang membutuhkan eskalasi ke CS.'}
                     </p>
                   </div>
@@ -536,7 +536,7 @@ const FloatingChat = () => {
                       outline: 'none'
                     }}
                   >
-                    Buka Dashboard Chat Admin ↗
+                    Buka Dashboard Chat {user?.role === 'helpdesk' ? 'Helpdesk' : 'Admin'} ↗
                   </button>
                 </div>
               </div>
@@ -729,7 +729,7 @@ const FloatingChat = () => {
                             marginTop: '3px',
                             alignSelf: isUser ? 'flex-end' : 'flex-start',
                           }}>
-                            {msg.sender_type === 'bot' ? 'Wisma 46 Bot' : msg.sender_type === 'admin' ? 'Admin' : 'Anda'}
+                            {msg.sender_type === 'bot' ? 'Wisma 46 Bot' : msg.sender_type === 'admin' ? 'Customer Service' : 'Anda'}
                           </span>
                         </div>
                       );
