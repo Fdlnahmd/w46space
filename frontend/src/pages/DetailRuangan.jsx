@@ -257,8 +257,9 @@ const DetailRuangan = () => {
 
   const renderBookingSection = () => {
     // Admin & Helpdesk tidak bisa booking
-    if (user?.role === 'admin' || user?.role === 'helpdesk') {
-      const isHelpdesk = user?.role === 'helpdesk';
+    const userRole = user?.role?.toLowerCase();
+    if (userRole === 'admin' || userRole === 'helpdesk') {
+      const isHelpdesk = userRole === 'helpdesk';
       return (
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',

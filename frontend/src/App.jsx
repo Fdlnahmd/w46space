@@ -38,7 +38,7 @@ import AdminChat from './pages/admin/AdminChat';
 // Wrapper untuk halaman publik (dengan Navbar & Footer)
 const PublicLayout = ({ children }) => {
   const { user } = useAuth();
-  const isStaff = user && ['admin', 'helpdesk'].includes(user.role);
+  const isStaff = user && ['admin', 'helpdesk'].includes(user.role?.toLowerCase());
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -56,7 +56,7 @@ const PublicLayout = ({ children }) => {
 // Pengarah halaman indeks admin berdasarkan role
 const AdminIndex = () => {
   const { user } = useAuth();
-  if (user?.role === 'helpdesk') {
+  if (user?.role?.toLowerCase() === 'helpdesk') {
     return <Navigate to="/admin/chat" replace />;
   }
   return <AdminDashboard />;
