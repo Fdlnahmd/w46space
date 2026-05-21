@@ -165,6 +165,57 @@ graph TD
 
 ---
 
+## 🎧 Flowchart: Alur Kelola Helpdesk
+
+Alur kerja petugas support / Helpdesk dalam membalas chat dan memantau pemesanan ruangan.
+
+<details>
+
+```mermaid
+graph TD
+    Start([🏁 Mulai]) --> Login[🔑 Login Staff]
+    Login --> CheckRole{Apakah Role Helpdesk?}
+    
+    CheckRole -- Tidak (Admin) --> AdminFlow[Akses Full Dashboard & CRUD]
+    CheckRole -- Ya (Helpdesk) --> RedirectChat[💬 Redirect Langsung ke Dashboard Live Chat]
+    
+    RedirectChat --> HelpdeskOptions{Pilih Menu Operasional}
+    
+    HelpdeskOptions --> HandleChat[💬 Balas & Kelola Live Chat]
+    HelpdeskOptions --> HandleBookings[📅 Kelola Pemesanan]
+    HelpdeskOptions --> CheckRestricted{Akses Fitur Lain?}
+    
+    HandleChat --> UpdateChat[Update Status Percakapan / Selesai]
+    HandleBookings --> UpdateBookingStatus[Konfirmasi / Batalkan / Detail Pesanan]
+    
+    CheckRestricted --> CRUD_Rooms[🏢 CRUD Ruangan]
+    CheckRestricted --> CRUD_Coupons[🎟️ CRUD Kupon]
+    CheckRestricted --> Mod_Reviews[💬 Moderasi Ulasan]
+    CheckRestricted --> RoomBooking[📝 Form Pemesanan Ruangan]
+    
+    CRUD_Rooms & CRUD_Coupons & Mod_Reviews & RoomBooking --> Blocked[🚫 Akses Ditolak / Halaman Terkunci]
+    
+    UpdateChat & UpdateBookingStatus & Blocked --> End([🏁 Selesai])
+    
+    %% Styling
+    style Start fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
+    style End fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
+    style CheckRole fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
+    style HelpdeskOptions fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
+    style Blocked fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#991b1b
+    style AdminFlow fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#0f172a
+    
+    classDef op fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#0f172a
+    class HandleChat,HandleBookings,CheckRestricted,UpdateChat,UpdateBookingStatus op
+    
+    classDef locked fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,color:#94a3b8
+    class CRUD_Rooms,CRUD_Coupons,Mod_Reviews,RoomBooking locked
+```
+
+</details>
+
+---
+
 ## 🗺️ Peta Navigasi Halaman (Web Sitemap / Page Flowchart)
 
 Diagram ini menggambarkan peta navigasi situs web, dari Landing Page menuju berbagai sub-halaman pengguna dan panel dashboard admin.
