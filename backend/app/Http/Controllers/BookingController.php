@@ -41,6 +41,11 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
+        $user = Auth::user();
+        if (in_array(strtolower($user->role), ['admin', 'helpdesk'])) {
+            return response()->json(['message' => 'Akun Admin/Helpdesk tidak diperbolehkan melakukan pemesanan.'], 403);
+        }
+
         $validated = $request->validate([
             'id_ruangan'     => 'required|exists:offices,id',
             'parent_id'      => 'nullable|exists:bookings,id',

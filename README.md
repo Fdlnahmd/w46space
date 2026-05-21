@@ -25,13 +25,13 @@
 - **Manajemen Ruangan**: Tambah, edit, dan hapus data ruangan (CRUD) beserta gambar.
 - **Manajemen Pemesanan**: Kelola alur konfirmasi dan pembatalan pesanan secara efisien.
 - **Sistem Kupon**: Buat dan kelola kode promo dengan limit penggunaan dan tanggal kadaluarsa.
-- **Helpdesk & Live Chat**: Sistem obrolan admin terpadu yang membedakan peran *Helpdesk* dan *Admin* secara dinamis, menampilkan identitas pengirim asli beserta rolenya.
+- **Helpdesk & Live Chat**: Sistem obrolan admin terpadu yang membedakan peran _Helpdesk_ dan _Admin_ secara dinamis, menampilkan identitas pengirim asli beserta rolenya.
 - **Moderasi Ulasan**: Kontrol testimoni pengguna untuk menjaga kualitas platform.
 
 ### 📱 Keunggulan & Stabilisasi UX Modern
 
 - **Mobile Card-List Layout**: Menggantikan tabel horizontal tradisional pada resolusi ponsel dengan **Daftar Kartu Informasi** vertikal otomatis. Tidak perlu menggeser (swipe-X) layar lagi di perangkat ponsel!
-- **Bulletproof Redirection (Anti-Crash)**: Penanganan data `404 Not Found` yang tangguh pada detail pesanan. Menghindari crash atau loading tak terbatas (*"Memuat..."*) jika mengakses pesanan yang telah dihapus melalui tautan notifikasi lama.
+- **Bulletproof Redirection (Anti-Crash)**: Penanganan data `404 Not Found` yang tangguh pada detail pesanan. Menghindari crash atau loading tak terbatas (_"Memuat..."_) jika mengakses pesanan yang telah dihapus melalui tautan notifikasi lama.
 - **Sistem Notifikasi Cerdas & Modal Popup**: Admin dan pengguna akan menerima modal pemberitahuan informatif jika diarahkan kembali karena tautan pesanan usang.
 - **Aksi Tombol Konsisten**: Penggunaan standar tombol aksi outline lingkaran berukuran tetap (`36px` × `36px`) baik untuk opsi edit/detail (`.btn-outline`) maupun hapus (`.btn-outline-danger`) untuk menghindari asimetris layout.
 - **Navbar Terpadu**: Tombol Bell Notifikasi dan Theme Switcher berdimensi presisi (`42px` × `42px`) dengan perataan tengah ikon yang sempurna.
@@ -95,22 +95,22 @@ Project ini dilengkapi stack monitoring berbasis Docker untuk memantau data bisn
 
 ### Komponen Monitoring
 
-| Komponen                  | Fungsi                                                                 |
-| :------------------------ | :--------------------------------------------------------------------- |
+| Komponen                  | Fungsi                                                                    |
+| :------------------------ | :------------------------------------------------------------------------ |
 | **Grafana**               | Dashboard utama untuk membaca data MySQL, metrik Prometheus, dan log Loki |
-| **Prometheus**            | Menyimpan metrik time-series container                                 |
-| **Docker Stats Exporter** | Mengambil statistik container dari Docker socket                       |
-| **Loki**                  | Menyimpan dan mencari log aplikasi                                     |
-| **Promtail**              | Membaca `backend/storage/logs/*.log` dan mengirimkannya ke Loki         |
+| **Prometheus**            | Menyimpan metrik time-series container                                    |
+| **Docker Stats Exporter** | Mengambil statistik container dari Docker socket                          |
+| **Loki**                  | Menyimpan dan mencari log aplikasi                                        |
+| **Promtail**              | Membaca `backend/storage/logs/*.log` dan mengirimkannya ke Loki           |
 
 ### Akses Monitoring
 
-| Service                   | URL Default                              |
-| :------------------------ | :--------------------------------------- |
-| **Grafana**               | [http://localhost:3000](http://localhost:3000) |
-| **Prometheus**            | [http://localhost:9090](http://localhost:9090) |
+| Service                   | URL Default                                                    |
+| :------------------------ | :------------------------------------------------------------- |
+| **Grafana**               | [http://localhost:3000](http://localhost:3000)                 |
+| **Prometheus**            | [http://localhost:9090](http://localhost:9090)                 |
 | **Docker Stats Exporter** | [http://localhost:9104/metrics](http://localhost:9104/metrics) |
-| **Loki Ready Check**      | [http://localhost:3100/ready](http://localhost:3100/ready) |
+| **Loki Ready Check**      | [http://localhost:3100/ready](http://localhost:3100/ready)     |
 
 Login default Grafana mengikuti `.env`:
 
@@ -202,7 +202,7 @@ graph LR
         UC8("Beri Ulasan & Rating")
         UC14("Tanya AI Chatbot (Ketersediaan/Vacancy)")
         UC15("Booking Ruangan Penuh (Future Booking)")
-        
+
         UC9("Kelola Data Ruangan")
         UC10("Kelola Pemesanan & Status")
         UC11("Kelola Kupon Diskon")
@@ -239,11 +239,10 @@ graph LR
     style U fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
     style H fill:#f3e8ff,stroke:#a855f7,stroke-width:2px,color:#581c87
     style A fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
-    
+
     classDef usecase fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#0f172a
     class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17 usecase
 ```
-
 
 ### 🌊 Flowchart: Alur Pemesanan Ruangan
 
@@ -252,29 +251,29 @@ graph TD
     Start([🏁 Mulai]) --> Search[Cari Ruangan]
     Search --> Detail[Lihat Detail Ruangan & Addons]
     Detail --> CheckBooked{Ruangan Penuh?}
-    
+
     CheckBooked -- Ya --> FutureAlert[Tampilkan Notifikasi Ketersediaan & Auto-Set H+1 Kontrak Selesai]
     CheckBooked -- Tidak --> CheckLogin
     FutureAlert --> CheckLogin
-    
+
     CheckLogin{Sudah Login?} -- Tidak --> Login[Login / Register]
     Login --> Detail
-    
+
     CheckLogin -- Ya --> Select[Pilih Tanggal & Durasi]
     Select --> Addons[Pilih Fasilitas Tambahan]
     Addons --> Coupon[Masukkan Kode Kupon]
     Coupon --> Review[Cek Ringkasan Biaya]
-    
+
     Review --> Submit[Ajukan Pemesanan]
     Submit --> AdminConfirm{Konfirmasi Admin?}
-    
+
     AdminConfirm -- Ditolak --> Batal[❌ Status: Dibatalkan]
     AdminConfirm -- Diterima --> Confirm[✅ Status: Dikonfirmasi]
-    
+
     Confirm --> Invoice[📄 Cetak Invoice]
     Batal --> End([🏁 Selesai])
     Invoice --> End
-    
+
     %% Styling
     style Start fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
     style End fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
@@ -283,7 +282,7 @@ graph TD
     style AdminConfirm fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     style Batal fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#991b1b
     style Confirm fill:#d1fae5,stroke:#10b981,stroke-width:2px,color:#065f46
-    
+
     classDef step fill:#dbeafe,stroke:#2563eb,stroke-width:1px,color:#1e3a8a
     class Search,Detail,Login,Select,Addons,Coupon,Review,Submit,Invoice,FutureAlert step
 ```
@@ -293,31 +292,30 @@ graph TD
 ```mermaid
 graph TD
     A[🔑 Login Admin] --> B{Pilih Menu Operasional}
-    
+
     B --> C[🏢 Kelola Ruangan]
     B --> D[📅 Kelola Pemesanan]
     B --> E[🎟️ Kelola Kupon]
     B --> F[💬 Moderasi Ulasan]
-    
+
     C --> C1[Tambah / Edit / Hapus Ruangan]
     D --> D1[Update Status & Persetujuan]
     E --> E1[Buat Kode Diskon Baru]
     F --> F1[Hapus Ulasan Negatif / Spam]
-    
+
     C1 & D1 & E1 & F1 --> G[📈 Update Dashboard Stats]
-    
+
     %% Styling
     style A fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     style B fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
     style G fill:#d1fae5,stroke:#10b981,stroke-width:2px,color:#065f46
-    
+
     classDef action fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#0f172a
     class C,D,E,F action
-    
+
     classDef detail fill:#ffffff,stroke:#cbd5e1,stroke-width:1px,color:#334155
     class C1,D1,E1,F1 detail
 ```
-
 
 ### 🗺️ Peta Navigasi Halaman (Web Sitemap)
 
@@ -325,10 +323,10 @@ graph TD
 graph TD
     %% Nodes
     Home["🏠 Landing Page (Home)"]
-    
+
     %% Auth
     Login["🔐 Login / Register"]
-    
+
     %% User Pages
     List["🏢 Daftar Ruangan"]
     Detail["ℹ️ Detail Ruangan"]
@@ -337,7 +335,7 @@ graph TD
     Profile["👤 Profil & Keamanan"]
     History["📅 Pesanan Saya (Riwayat)"]
     Chat["💬 Floating Chat (Tanya AI/Human)"]
-    
+
     %% Admin & Helpdesk Pages
     Dash["📊 Dashboard Admin Stats"]
     AdminRooms["🏢 Kelola Ruangan (CRUD)"]
@@ -345,58 +343,53 @@ graph TD
     AdminCoupons["🎟️ Kelola Kupon (CRUD)"]
     AdminReviews["💬 Moderasi Ulasan (Delete)"]
     AdminChat["💬 Dashboard Live Chat (Helpdesk/Admin)"]
-    
+
     %% Navigation flows
     Home -->|Pilih Ruangan| List
     List -->|Lihat Detail| Detail
     Detail -->|Booking Ruangan| LoginCheck{Sudah Login?}
-    
+
     LoginCheck -->|Ya| Book
     LoginCheck -->|Tidak| Login
     Login -->|Auto Redirect| Book
-    
+
     Book -->|Konfirmasi Bayar| Invoice
-    
+
     %% User Nav
     Home -->|Navigasi Menu| Profile
     Home -->|Navigasi Menu| History
     Home -->|Buka Chat| Chat
     History -->|Lihat Invoice| Invoice
-    
+
     %% Admin & Helpdesk Nav
     Login -->|Role Admin| Dash
     Login -->|Role Helpdesk| AdminChat
-    
+
     Dash -->|Sidebar Menu| AdminRooms
     Dash -->|Sidebar Menu| AdminBookings
     Dash -->|Sidebar Menu| AdminCoupons
     Dash -->|Sidebar Menu| AdminReviews
     Dash -->|Sidebar Menu| AdminChat
-    
+
     AdminChat -->|Sidebar Menu| AdminBookings
     AdminBookings -->|Sidebar Menu| AdminChat
-    
+
     %% Styling
     style Home fill:#f8fafc,stroke:#475569,stroke-width:2px,color:#0f172a
     style Login fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#991b1b
     style LoginCheck fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
-    
+
     classDef userPage fill:#dbeafe,stroke:#2563eb,stroke-width:1px,color:#1e3a8a
     class List,Detail,Book,Invoice,Profile,History,Chat userPage
-    
+
     classDef adminPage fill:#d1fae5,stroke:#10b981,stroke-width:1px,color:#065f46
     class Dash,AdminRooms,AdminBookings,AdminCoupons,AdminReviews,AdminChat adminPage
 ```
-
 
 Detail lebih lanjut dan kode Mermaid interaktif dapat dilihat pada dokumentasi internal:
 👉 [diagram_arsitektur.md](docs/diagram_arsitektur.md)
 
 ---
-
-## 📄 Lisensi
-
-Proyek ini dilisensikan di bawah [MIT License](LICENSE).
 
 ---
 

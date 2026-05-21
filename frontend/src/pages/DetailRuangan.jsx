@@ -256,8 +256,9 @@ const DetailRuangan = () => {
   );
 
   const renderBookingSection = () => {
-    // Admin tidak bisa booking
-    if (user?.role === 'admin') {
+    // Admin & Helpdesk tidak bisa booking
+    if (user?.role === 'admin' || user?.role === 'helpdesk') {
+      const isHelpdesk = user?.role === 'helpdesk';
       return (
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
@@ -266,12 +267,12 @@ const DetailRuangan = () => {
           borderRadius: 'var(--border-radius)'
         }}>
           <ShieldAlert size={48} color="var(--color-warning)" />
-          <h3 style={{ color: '#92400e' }}>Akses Terbatas untuk Admin</h3>
+          <h3 style={{ color: '#92400e' }}>Akses Terbatas untuk {isHelpdesk ? 'Helpdesk' : 'Admin'}</h3>
           <p style={{ color: '#78350f' }}>
-            Akun Admin hanya memiliki akses ke CRUD (kelola data). Pemesanan ruangan dilakukan oleh pengguna terdaftar.
+            Akun {isHelpdesk ? 'Helpdesk' : 'Admin'} hanya memiliki akses ke panel operasional. Pemesanan ruangan dilakukan oleh pengguna terdaftar.
           </p>
           <Link to="/admin" className="btn btn-outline" style={{ marginTop: '0.5rem' }}>
-            Pergi ke Panel Admin
+            Pergi ke Panel {isHelpdesk ? 'Helpdesk' : 'Admin'}
           </Link>
         </div>
       );
