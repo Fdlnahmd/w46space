@@ -86,14 +86,6 @@ Hitung error di time range dashboard:
 sum(count_over_time({app="office-rent", job="laravel"} |~ "(?i)(error|exception|critical)" [$__range]))
 ```
 
-## Latihan Lanjutan
-
-- Tambah panel revenue per kategori ruangan.
-- Tambah panel booking yang dibatalkan per minggu.
-- Tambah variable dashboard untuk filter status booking.
-- Tambah alert Grafana saat backend/container MySQL down.
-- Tambah alert saat log Laravel mengandung `ERROR` lebih dari 5 kali dalam 10 menit.
-
 ## Online Lewat Cloudflare Tunnel
 
 Project ini sudah punya service `cloudflared`, jadi Grafana bisa diakses lewat subdomain tanpa membuka port publik server.
@@ -135,3 +127,27 @@ docker-compose up -d
 ```
 
 Untuk keamanan, jangan pakai password default `admin/admin` saat Grafana dibuka ke internet. Ganti `GRAFANA_ADMIN_PASSWORD` di `.env`, lalu restart container Grafana.
+
+## Query & Alerting Baru
+
+### 1. Monitor Status Uptime/Downtime Container
+
+Menggunakan metrik status kontainer:
+
+```promql
+sum by (service) (office_rent_container_up)
+```
+
+Metrik ini menampilkan nilai `1` jika container sedang berjalan (*running*), dan `0` jika mati (*stopped/exited*). 
+
+Di dashboard **Office Rent Observability**, metrik ini divisualisasikan menggunakan panel **State Timeline** (`Container Status History (Uptime/Downtime)`) di mana nilai `1` dipetakan ke label **Up** (Hijau) dan `0` ke label **Down** (Merah).
+
+### 2. Aturan Alerting Otomatis (Provisioned Alerts)
+
+Aturan alert didefinisikan pada file `grafana/provisioning/alerting/office-rent-alerts.yaml` dan mencakup:
+
+* **Backend Container Down** (`alert-backend-down`): Memicu alert jika kontainer backend mati (`up < 1`) selama 2 menit.
+* **Frontend Container Down** (`alert-frontend-down`): Memicu alert jika kontainer frontend mati (`up < 1`) selama 2 menit.
+* **MySQL Container Down** (`alert-mysql-down`): Memicu alert jika database mati (`up < 1`) selama 2 menit.
+
+Setiap alert yang terpicu akan dikirimkan otomatis melalui **Contact Points** yang diatur pada `contact-points.yaml` (secara default dikirim melalui email ke `admin@w46space.nexvol.xyz` dan mendukung Webhook eksternal seperti Discord/Telegram).

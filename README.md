@@ -12,17 +12,20 @@
 - **Ruangan Populer**: Akses cepat ke ruangan-ruangan terbaik yang paling banyak diminati.
 - **Booking System & Addons**: Pesan ruangan dengan opsi fasilitas tambahan (WiFi, Kopi, dll) dengan penanganan state kosong yang informatif.
 - **Promo & Kupon**: Gunakan kode diskon (persentase/nominal) untuk harga lebih hemat.
+- **Pemesanan Masa Depan (Future Booking)**: Jika ruangan saat ini penuh, sistem akan menampilkan warning alert informatif dan menyarankan pemesanan otomatis pada **H+1 setelah masa sewa saat ini berakhir**.
+- **AI Chatbot Assistant**: Tanyakan ketersediaan ruang, kapan kontrak ruang penuh akan berakhir, atau eskalasi pesan ke admin/human secara real-time.
 - **Riwayat & Invoice**: Pantau status pesanan dan unduh invoice resmi dalam format PDF.
 - **Perpanjang Kontrak**: Fitur sekali klik untuk memperpanjang masa sewa ruangan.
 - **Ulasan & Rating**: Berikan testimoni dan bintang setelah pesanan dikonfirmasi.
-- **Profil & Keamanan**: Kelola data diri dan fitur lupa password via SMTP dengan tombol kembali ke Landing Page yang ramah mobile.
+- **Profil & Keamanan**: Kelola data diri dan lupa password via SMTP dengan tombol kembali ke Landing Page yang ramah mobile.
 
-### 🔐 Untuk Admin
+### 🔐 Untuk Admin & Staff
 
 - **Robust Dashboard**: Statistik pendapatan, jumlah pesanan, dan ruangan secara real-time.
 - **Manajemen Ruangan**: Tambah, edit, dan hapus data ruangan (CRUD) beserta gambar.
 - **Manajemen Pemesanan**: Kelola alur konfirmasi dan pembatalan pesanan secara efisien.
 - **Sistem Kupon**: Buat dan kelola kode promo dengan limit penggunaan dan tanggal kadaluarsa.
+- **Helpdesk & Live Chat**: Sistem obrolan admin terpadu yang membedakan peran *Helpdesk* dan *Admin* secara dinamis, menampilkan identitas pengirim asli beserta rolenya.
 - **Moderasi Ulasan**: Kontrol testimoni pengguna untuk menjaga kualitas platform.
 
 ### 📱 Keunggulan & Stabilisasi UX Modern
@@ -133,7 +136,8 @@ LOKI_PORT=3100
 ### Dashboard Grafana
 
 - **Office Rent Overview**: metrik bisnis dari MySQL, seperti revenue, booking aktif, booking pending, user terdaftar, ruangan populer, dan booking terbaru.
-- **Office Rent Observability**: metrik teknis seperti status container, CPU, memory, network I/O, log Laravel, dan jumlah error/exception.
+- **Office Rent Observability**: metrik teknis seperti status container (`up`/`down` real-time), CPU, memory, network I/O, log Laravel, dan jumlah error/exception. Dilengkapi dengan **Container Status History** untuk melacak timeline aktif/mati container.
+- **Active Alerting (Notifikasi Mandiri)**: Konfigurasi terintegrasi untuk mendeteksi matinya container Frontend, Backend, dan MySQL via metric `office_rent_container_up < 1` yang otomatis mengirim email ke `admin@w46space.nexvol.xyz` (dapat dihubungkan ke Webhook Discord/Telegram).
 
 ### Alur Data Monitoring
 
@@ -183,6 +187,7 @@ Platform ini dilengkapi dengan pemetaan arsitektur interaktif langsung menggunak
 graph LR
     subgraph Aktor
         U["👤 User (Penyewa)"]
+        H["🎧 Helpdesk"]
         A["🔑 Admin"]
     end
 
@@ -195,12 +200,16 @@ graph LR
         UC6("Cetak Invoice")
         UC7("Perpanjang Kontrak")
         UC8("Beri Ulasan & Rating")
+        UC14("Tanya AI Chatbot (Ketersediaan/Vacancy)")
+        UC15("Booking Ruangan Penuh (Future Booking)")
         
         UC9("Kelola Data Ruangan")
         UC10("Kelola Pemesanan & Status")
         UC11("Kelola Kupon Diskon")
         UC12("Pantau Statistik Dashboard")
         UC13("Moderasi Ulasan")
+        UC16("Chatting Helpdesk/Admin Terpadu")
+        UC17("Terima Alert Container Down via Email")
     end
 
     U --> UC1
@@ -211,6 +220,11 @@ graph LR
     U --> UC6
     U --> UC7
     U --> UC8
+    U --> UC14
+    U --> UC15
+
+    H --> UC1
+    H --> UC16
 
     A --> UC1
     A --> UC9
@@ -218,20 +232,18 @@ graph LR
     A --> UC11
     A --> UC12
     A --> UC13
+    A --> UC16
+    A --> UC17
 
     %% Styling
     style U fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
+    style H fill:#f3e8ff,stroke:#a855f7,stroke-width:2px,color:#581c87
     style A fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     
     classDef usecase fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#0f172a
-    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13 usecase
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17 usecase
 ```
 
-<details>
-<summary>🖼️ Lihat Gambar Static (Fallback)</summary>
-
-![Use Case Diagram](docs/Use%20Case%20Diagram.png)
-</details>
 
 ### 🌊 Flowchart: Alur Pemesanan Ruangan
 
@@ -239,9 +251,13 @@ graph LR
 graph TD
     Start([🏁 Mulai]) --> Search[Cari Ruangan]
     Search --> Detail[Lihat Detail Ruangan & Addons]
-    Detail --> CheckLogin{Sudah Login?}
+    Detail --> CheckBooked{Ruangan Penuh?}
     
-    CheckLogin -- Tidak --> Login[Login / Register]
+    CheckBooked -- Ya --> FutureAlert[Tampilkan Notifikasi Ketersediaan & Auto-Set H+1 Kontrak Selesai]
+    CheckBooked -- Tidak --> CheckLogin
+    FutureAlert --> CheckLogin
+    
+    CheckLogin{Sudah Login?} -- Tidak --> Login[Login / Register]
     Login --> Detail
     
     CheckLogin -- Ya --> Select[Pilih Tanggal & Durasi]
@@ -263,19 +279,14 @@ graph TD
     style Start fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
     style End fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
     style CheckLogin fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
+    style CheckBooked fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     style AdminConfirm fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     style Batal fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#991b1b
     style Confirm fill:#d1fae5,stroke:#10b981,stroke-width:2px,color:#065f46
     
     classDef step fill:#dbeafe,stroke:#2563eb,stroke-width:1px,color:#1e3a8a
-    class Search,Detail,Login,Select,Addons,Coupon,Review,Submit,Invoice step
+    class Search,Detail,Login,Select,Addons,Coupon,Review,Submit,Invoice,FutureAlert step
 ```
-
-<details>
-<summary>🖼️ Lihat Gambar Static (Fallback)</summary>
-
-![Alur Pemesanan Ruangan](docs/Flowchart%20Pemesanan%20Ruangan.png)
-</details>
 
 ### 📊 Flowchart: Alur Kelola Admin
 
@@ -307,11 +318,6 @@ graph TD
     class C1,D1,E1,F1 detail
 ```
 
-<details>
-<summary>🖼️ Lihat Gambar Static (Fallback)</summary>
-
-![Alur Kelola Admin](docs/Flowchart%20Kelola%20Admin.png)
-</details>
 
 ### 🗺️ Peta Navigasi Halaman (Web Sitemap)
 
@@ -330,13 +336,15 @@ graph TD
     Invoice["📄 Detail Pesanan & Invoice"]
     Profile["👤 Profil & Keamanan"]
     History["📅 Pesanan Saya (Riwayat)"]
+    Chat["💬 Floating Chat (Tanya AI/Human)"]
     
-    %% Admin Pages
+    %% Admin & Helpdesk Pages
     Dash["📊 Dashboard Admin Stats"]
     AdminRooms["🏢 Kelola Ruangan (CRUD)"]
     AdminBookings["📅 Kelola Pemesanan (Status)"]
     AdminCoupons["🎟️ Kelola Kupon (CRUD)"]
     AdminReviews["💬 Moderasi Ulasan (Delete)"]
+    AdminChat["💬 Dashboard Live Chat (Helpdesk/Admin)"]
     
     %% Navigation flows
     Home -->|Pilih Ruangan| List
@@ -352,14 +360,21 @@ graph TD
     %% User Nav
     Home -->|Navigasi Menu| Profile
     Home -->|Navigasi Menu| History
+    Home -->|Buka Chat| Chat
     History -->|Lihat Invoice| Invoice
     
-    %% Admin Nav
+    %% Admin & Helpdesk Nav
     Login -->|Role Admin| Dash
+    Login -->|Role Helpdesk| AdminChat
+    
     Dash -->|Sidebar Menu| AdminRooms
     Dash -->|Sidebar Menu| AdminBookings
     Dash -->|Sidebar Menu| AdminCoupons
     Dash -->|Sidebar Menu| AdminReviews
+    Dash -->|Sidebar Menu| AdminChat
+    
+    AdminChat -->|Sidebar Menu| AdminBookings
+    AdminBookings -->|Sidebar Menu| AdminChat
     
     %% Styling
     style Home fill:#f8fafc,stroke:#475569,stroke-width:2px,color:#0f172a
@@ -367,17 +382,12 @@ graph TD
     style LoginCheck fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     
     classDef userPage fill:#dbeafe,stroke:#2563eb,stroke-width:1px,color:#1e3a8a
-    class List,Detail,Book,Invoice,Profile,History userPage
+    class List,Detail,Book,Invoice,Profile,History,Chat userPage
     
     classDef adminPage fill:#d1fae5,stroke:#10b981,stroke-width:1px,color:#065f46
-    class Dash,AdminRooms,AdminBookings,AdminCoupons,AdminReviews adminPage
+    class Dash,AdminRooms,AdminBookings,AdminCoupons,AdminReviews,AdminChat adminPage
 ```
 
-<details>
-<summary>🖼️ Lihat Gambar Static (Fallback)</summary>
-
-![Peta Navigasi Halaman](docs/Flowchart%20Web%20Sewa%20Ruang.png)
-</details>
 
 Detail lebih lanjut dan kode Mermaid interaktif dapat dilihat pada dokumentasi internal:
 👉 [diagram_arsitektur.md](docs/diagram_arsitektur.md)

@@ -8,15 +8,13 @@ Dokumen ini menjelaskan alur kerja dan arsitektur dari platform **Sewa Ruang**.
 
 Diagram ini menjelaskan interaksi antara aktor (User & Admin) dengan sistem.
 
-![Use Case Diagram](Use%20Case%20Diagram.png)
-
 <details>
-<summary>💻 Lihat Kode Mermaid (Use Case Diagram)</summary>
 
 ```mermaid
 graph LR
     subgraph Aktor
         U["👤 User (Penyewa)"]
+        H["🎧 Helpdesk"]
         A["🔑 Admin"]
     end
 
@@ -29,12 +27,16 @@ graph LR
         UC6("Cetak Invoice")
         UC7("Perpanjang Kontrak")
         UC8("Beri Ulasan & Rating")
+        UC14("Tanya AI Chatbot (Ketersediaan/Vacancy)")
+        UC15("Booking Ruangan Penuh (Future Booking)")
         
         UC9("Kelola Data Ruangan")
         UC10("Kelola Pemesanan & Status")
         UC11("Kelola Kupon Diskon")
         UC12("Pantau Statistik Dashboard")
         UC13("Moderasi Ulasan")
+        UC16("Chatting Helpdesk/Admin Terpadu")
+        UC17("Terima Alert Container Down via Email")
     end
 
     U --> UC1
@@ -45,6 +47,11 @@ graph LR
     U --> UC6
     U --> UC7
     U --> UC8
+    U --> UC14
+    U --> UC15
+
+    H --> UC1
+    H --> UC16
 
     A --> UC1
     A --> UC9
@@ -52,13 +59,16 @@ graph LR
     A --> UC11
     A --> UC12
     A --> UC13
+    A --> UC16
+    A --> UC17
 
     %% Styling
     style U fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
+    style H fill:#f3e8ff,stroke:#a855f7,stroke-width:2px,color:#581c87
     style A fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     
     classDef usecase fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#0f172a
-    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13 usecase
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17 usecase
 ```
 
 </details>
@@ -69,18 +79,19 @@ graph LR
 
 Alur dari pencarian ruangan hingga pembayaran dan konfirmasi.
 
-![Alur Pemesanan Ruangan](Flowchart%20Pemesanan%20Ruangan.png)
-
 <details>
-<summary>💻 Lihat Kode Mermaid (Flowchart Pemesanan Ruangan)</summary>
 
 ```mermaid
 graph TD
     Start([🏁 Mulai]) --> Search[Cari Ruangan]
     Search --> Detail[Lihat Detail Ruangan & Addons]
-    Detail --> CheckLogin{Sudah Login?}
+    Detail --> CheckBooked{Ruangan Penuh?}
     
-    CheckLogin -- Tidak --> Login[Login / Register]
+    CheckBooked -- Ya --> FutureAlert[Tampilkan Notifikasi Ketersediaan & Auto-Set H+1 Kontrak Selesai]
+    CheckBooked -- Tidak --> CheckLogin
+    FutureAlert --> CheckLogin
+    
+    CheckLogin{Sudah Login?} -- Tidak --> Login[Login / Register]
     Login --> Detail
     
     CheckLogin -- Ya --> Select[Pilih Tanggal & Durasi]
@@ -102,12 +113,13 @@ graph TD
     style Start fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
     style End fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
     style CheckLogin fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
+    style CheckBooked fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     style AdminConfirm fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     style Batal fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#991b1b
     style Confirm fill:#d1fae5,stroke:#10b981,stroke-width:2px,color:#065f46
     
     classDef step fill:#dbeafe,stroke:#2563eb,stroke-width:1px,color:#1e3a8a
-    class Search,Detail,Login,Select,Addons,Coupon,Review,Submit,Invoice step
+    class Search,Detail,Login,Select,Addons,Coupon,Review,Submit,Invoice,FutureAlert step
 ```
 
 </details>
@@ -118,10 +130,8 @@ graph TD
 
 Alur admin dalam mengelola operasional platform.
 
-![Alur Kelola Admin](Flowchart%20Kelola%20Admin.png)
 
 <details>
-<summary>💻 Lihat Kode Mermaid (Flowchart Kelola Admin)</summary>
 
 ```mermaid
 graph TD
@@ -159,10 +169,8 @@ graph TD
 
 Diagram ini menggambarkan peta navigasi situs web, dari Landing Page menuju berbagai sub-halaman pengguna dan panel dashboard admin.
 
-![Peta Navigasi Halaman](Flowchart%20Web%20Sewa%20Ruang.png)
 
 <details>
-<summary>💻 Lihat Kode Mermaid (Peta Navigasi Halaman)</summary>
 
 ```mermaid
 graph TD
@@ -179,13 +187,15 @@ graph TD
     Invoice["📄 Detail Pesanan & Invoice"]
     Profile["👤 Profil & Keamanan"]
     History["📅 Pesanan Saya (Riwayat)"]
+    Chat["💬 Floating Chat (Tanya AI/Human)"]
     
-    %% Admin Pages
+    %% Admin & Helpdesk Pages
     Dash["📊 Dashboard Admin Stats"]
     AdminRooms["🏢 Kelola Ruangan (CRUD)"]
     AdminBookings["📅 Kelola Pemesanan (Status)"]
     AdminCoupons["🎟️ Kelola Kupon (CRUD)"]
     AdminReviews["💬 Moderasi Ulasan (Delete)"]
+    AdminChat["💬 Dashboard Live Chat (Helpdesk/Admin)"]
     
     %% Navigation flows
     Home -->|Pilih Ruangan| List
@@ -201,14 +211,21 @@ graph TD
     %% User Nav
     Home -->|Navigasi Menu| Profile
     Home -->|Navigasi Menu| History
+    Home -->|Buka Chat| Chat
     History -->|Lihat Invoice| Invoice
     
-    %% Admin Nav
+    %% Admin & Helpdesk Nav
     Login -->|Role Admin| Dash
+    Login -->|Role Helpdesk| AdminChat
+    
     Dash -->|Sidebar Menu| AdminRooms
     Dash -->|Sidebar Menu| AdminBookings
     Dash -->|Sidebar Menu| AdminCoupons
     Dash -->|Sidebar Menu| AdminReviews
+    Dash -->|Sidebar Menu| AdminChat
+    
+    AdminChat -->|Sidebar Menu| AdminBookings
+    AdminBookings -->|Sidebar Menu| AdminChat
     
     %% Styling
     style Home fill:#f8fafc,stroke:#475569,stroke-width:2px,color:#0f172a
@@ -216,10 +233,10 @@ graph TD
     style LoginCheck fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     
     classDef userPage fill:#dbeafe,stroke:#2563eb,stroke-width:1px,color:#1e3a8a
-    class List,Detail,Book,Invoice,Profile,History userPage
+    class List,Detail,Book,Invoice,Profile,History,Chat userPage
     
     classDef adminPage fill:#d1fae5,stroke:#10b981,stroke-width:1px,color:#065f46
-    class Dash,AdminRooms,AdminBookings,AdminCoupons,AdminReviews adminPage
+    class Dash,AdminRooms,AdminBookings,AdminCoupons,AdminReviews,AdminChat adminPage
 ```
 
 </details>
@@ -229,8 +246,9 @@ graph TD
 ## 3. Penjelasan Singkat
 
 ### Aktor Utama:
-1.  **User (Penyewa)**: Fokus pada pencarian ruangan kerja yang sesuai kebutuhan dan melakukan transaksi pemesanan secara mandiri.
-2.  **Admin**: Bertugas menjaga ketersediaan data ruangan, memantau statistik di dashboard, dan mengelola status pemesanan yang masuk.
+1.  **User (Penyewa)**: Fokus pada pencarian ruangan kerja yang sesuai kebutuhan, melakukan transaksi pemesanan secara mandiri (termasuk pemesanan di masa depan untuk ruangan yang sedang penuh), serta berkonsultasi via Live Chat/AI Chatbot.
+2.  **Helpdesk**: Bertugas khusus sebagai customer support untuk membalas pesan obrolan (live chat) dari penyewa secara real-time.
+3.  **Admin**: Bertugas penuh menjaga ketersediaan data ruangan (CRUD), memantau statistik dashboard, mengelola pemesanan, moderasi ulasan, membalas chat, serta memantau alerting container jika terjadi downtime.
 
 ### Alur Utama (Booking):
-Sistem memastikan pengguna sudah terautentikasi sebelum melakukan pemesanan. Proses validasi dilakukan di sisi backend untuk memastikan data (seperti tanggal dan durasi) sudah benar sebelum disimpan ke database.
+Sistem memastikan pengguna sudah terautentikasi sebelum melakukan pemesanan. Jika ruangan sedang disewa, sistem akan menampilkan notifikasi informatif berisi tanggal akhir sewa saat ini dan menyarankan tanggal mulai baru pada H+1 sewa selesai. Proses validasi bentrokan tanggal dilakukan di backend secara real-time untuk menjamin integritas transaksi sewa.
