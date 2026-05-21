@@ -1,11 +1,14 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AdminLayout from './components/AdminLayout';
+import FloatingWhatsApp from './components/FloatingWhatsApp';
+import FloatingChat from './components/FloatingChat';
 
 // Public Pages
 import Home from './pages/Home';
@@ -30,22 +33,40 @@ import FormPemesanan from './pages/admin/FormPemesanan';
 import DetailPemesananAdmin from './pages/admin/DetailPemesananAdmin';
 import AdminReviews from './pages/admin/Reviews';
 import KelolaKupon from './pages/admin/KelolaKupon';
+import AdminChat from './pages/admin/AdminChat';
 
 // Wrapper untuk halaman publik (dengan Navbar & Footer)
-const PublicLayout = ({ children }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-    <Navbar />
-    <main style={{ flex: 1 }}>
-      {children}
-    </main>
-    <Footer />
-  </div>
-);
+const PublicLayout = ({ children }) => {
+  const { user } = useAuth();
+  const isStaff = user && ['admin', 'helpdesk'].includes(user.role);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Navbar />
+      <main style={{ flex: 1 }}>
+        {children}
+      </main>
+      <Footer />
+      {!isStaff && <FloatingWhatsApp />}
+      <FloatingChat />
+    </div>
+  );
+};
+
+// Pengarah halaman indeks admin berdasarkan role
+const AdminIndex = () => {
+  const { user } = useAuth();
+  if (user?.role === 'helpdesk') {
+    return <Navigate to="/admin/chat" replace />;
+  }
+  return <AdminDashboard />;
+};
 
 function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
+        <LanguageProvider>
         <Router>
         <Routes>
           {/* Auth Routes (tanpa Navbar/Footer) */}
@@ -70,27 +91,33 @@ function App() {
             <Route path="/profile" element={<PublicLayout><Profile /></PublicLayout>} />
           </Route>
 
-          {/* Admin Routes — hanya bisa diakses admin */}
-          <Route path="/admin" element={<ProtectedRoute requiredRole="admin" />}>
+          {/* Admin Routes — bisa diakses admin dan helpdesk */}
+          <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin', 'helpdesk']} />}>
             <Route element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route index element={<AdminIndex />} />
+              <Route path="dashboard" element={<AdminIndex />} />
 
-              {/* CRUD Ruangan */}
-              <Route path="ruangan" element={<KelolaRuangan />} />
-              <Route path="ruangan/tambah" element={<FormRuangan />} />
-              <Route path="ruangan/edit/:id" element={<FormRuangan />} />
-
-              {/* CRUD Pemesanan */}
+              {/* CRUD Pemesanan (Akses Bersama) */}
               <Route path="pemesanan" element={<KelolaPemesanan />} />
               <Route path="pemesanan/:id" element={<DetailPemesananAdmin />} />
               <Route path="pemesanan/edit/:id" element={<FormPemesanan />} />
 
-              {/* Moderasi Ulasan */}
-              <Route path="ulasan" element={<AdminReviews />} />
+              {/* Live Chat (Akses Bersama) */}
+              <Route path="chat" element={<AdminChat />} />
 
-              {/* Kelola Kupon */}
-              <Route path="kupon" element={<KelolaKupon />} />
+              {/* Fitur Khusus Admin Utama */}
+              <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                {/* CRUD Ruangan */}
+                <Route path="ruangan" element={<KelolaRuangan />} />
+                <Route path="ruangan/tambah" element={<FormRuangan />} />
+                <Route path="ruangan/edit/:id" element={<FormRuangan />} />
+
+                {/* Moderasi Ulasan */}
+                <Route path="ulasan" element={<AdminReviews />} />
+
+                {/* Kelola Kupon */}
+                <Route path="kupon" element={<KelolaKupon />} />
+              </Route>
             </Route>
           </Route>
 
@@ -98,6 +125,7 @@ function App() {
           <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
         </Routes>
         </Router>
+        </LanguageProvider>
       </ThemeProvider>
     </AuthProvider>
   );

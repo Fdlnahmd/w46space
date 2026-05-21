@@ -485,7 +485,7 @@ const DetailRuangan = () => {
             )}
 
             <div className="summary-row total-row" style={{ borderTop: '1px solid var(--color-border)', marginTop: '0.75rem', paddingTop: '0.75rem' }}>
-              <span style={{ fontWeight: 600 }}>Total Pembayaran:</span>
+              <span style={{ fontWeight: 600 }}>Total Harga:</span>
               <span className="total-price-text">
                 Rp {Number(totalHarga ?? 0).toLocaleString('id-ID')}
               </span>

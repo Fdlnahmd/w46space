@@ -20,6 +20,11 @@ class InvoiceController extends Controller
             return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
         }
 
+        // Invoice hanya bisa didownload jika status pesanan Dikonfirmasi atau Selesai (sudah lunas)
+        if ($booking->status !== 'Dikonfirmasi' && $booking->status !== 'Selesai') {
+            return response()->json(['message' => 'Akses ditolak. Invoice hanya tersedia untuk pesanan yang sudah lunas/dikonfirmasi.'], 403);
+        }
+
         // Mencoba mendapatkan user dari session atau token (jika ada)
         /** @var \App\Models\User $user */
         $user = Auth::guard('sanctum')->user() ?: Auth::user();
@@ -41,6 +46,7 @@ class InvoiceController extends Controller
             ];
 
             $pdf = PDF::loadView('pdf.invoice', $data);
+            $pdf->setOption('isRemoteEnabled', true);
             return $pdf->download($data['invoice_no'] . '.pdf');
         } catch (\Exception $e) {
             return response()->json([

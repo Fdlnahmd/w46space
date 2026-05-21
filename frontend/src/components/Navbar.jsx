@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, Calendar, User, LogOut, ClipboardList, Menu, X, Star, Sun, Moon, Bell } from 'lucide-react';
+import { Building2, Calendar, User, LogOut, ClipboardList, Menu, X, Star, Sun, Moon, Bell, Headset } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/apiService';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { lang, toggleLang, t } = useLanguage();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -115,7 +117,10 @@ const Navbar = () => {
             flexShrink: 0, whiteSpace: 'nowrap'
           }}>
             <Building2 size={30} color="var(--color-primary)" />
-            <span style={{ letterSpacing: '-0.5px' }}>Sewa Ruang</span>
+            <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+              <span style={{ letterSpacing: '-0.5px', fontWeight: 700 }}>Wisma 46 Space</span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 400, color: 'var(--color-text-muted)', letterSpacing: '0.05em' }}>Kota BNI Jakarta</span>
+            </span>
           </Link>
 
           {/* Right Actions */}
@@ -131,6 +136,23 @@ const Navbar = () => {
               }}
             >
               {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+
+            {/* Language Toggle */}
+            <button
+              onClick={toggleLang}
+              style={{
+                background: 'none', border: '1.5px solid var(--color-border)', cursor: 'pointer',
+                color: 'var(--color-text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                height: '34px', borderRadius: '9999px', backgroundColor: 'var(--color-background)',
+                transition: 'all 0.2s ease', flexShrink: 0, padding: '0 0.75rem',
+                fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', gap: '0.3rem'
+              }}
+              title={lang === 'id' ? 'Switch to English' : 'Ganti ke Indonesia'}
+            >
+              <span style={{ opacity: lang === 'id' ? 1 : 0.4 }}>ID</span>
+              <span style={{ color: 'var(--color-border)' }}>|</span>
+              <span style={{ opacity: lang === 'en' ? 1 : 0.4 }}>EN</span>
             </button>
 
             {user && (
@@ -209,8 +231,8 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="nav-desktop" style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-            <Link to="/" style={{ color: 'var(--color-text-main)', fontWeight: 500, fontSize: '0.95rem' }}>Beranda</Link>
-            <Link to="/ruangan" style={{ color: 'var(--color-text-main)', fontWeight: 500, fontSize: '0.95rem' }}>Daftar Ruangan</Link>
+            <Link to="/" style={{ color: 'var(--color-text-main)', fontWeight: 500, fontSize: '0.95rem' }}>{t('nav_home')}</Link>
+            <Link to="/ruangan" style={{ color: 'var(--color-text-main)', fontWeight: 500, fontSize: '0.95rem' }}>{t('nav_rooms')}</Link>
             <Link to="/populer" 
               className="populer-link"
               style={{ 
@@ -218,18 +240,18 @@ const Navbar = () => {
                 display: 'flex', alignItems: 'center', gap: '0.3rem'
               }}
             >
-              Populer <Star size={16} fill="var(--color-warning)" />
+              {t('nav_popular')} <Star size={16} fill="var(--color-warning)" />
             </Link>
 
             {user ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderLeft: '1px solid var(--color-border)', paddingLeft: '1rem', marginLeft: '0.25rem' }}>
-                {user.role === 'admin' ? (
+                {['admin', 'helpdesk'].includes(user.role) ? (
                   <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-primary)', fontWeight: 600, fontSize: '0.9rem' }}>
-                    <Calendar size={18} /> Admin
+                    <Headset size={18} /> {user.role === 'helpdesk' ? 'Helpdesk' : t('nav_admin')}
                   </Link>
                 ) : (
                   <Link to="/pesanan-saya" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-text-main)', fontWeight: 500, fontSize: '0.9rem' }}>
-                    <ClipboardList size={18} /> Pesanan
+                    <ClipboardList size={18} /> {t('nav_my_orders')}
                   </Link>
                 )}
                 <Link to="/profile" style={{ 
@@ -246,8 +268,8 @@ const Navbar = () => {
               </div>
             ) : (
               <div style={{ display: 'flex', gap: '0.75rem', marginLeft: '0.5rem' }}>
-                <Link to="/login" className="btn btn-outline" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem' }}>Masuk</Link>
-                <Link to="/register" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem' }}>Daftar</Link>
+                <Link to="/login" className="btn btn-outline" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem' }}>{t('nav_login')}</Link>
+                <Link to="/register" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem' }}>{t('nav_register')}</Link>
               </div>
             )}
           </div>
@@ -285,13 +307,13 @@ const Navbar = () => {
           overflowY: 'auto',
           boxShadow: 'inset 0 10px 15px -3px rgba(0,0,0,0.1)'
         }}>
-          <Link to="/" onClick={closeMenu} style={{ fontSize: '1.1rem', fontWeight: 600 }}>Beranda</Link>
-          <Link to="/ruangan" onClick={closeMenu} style={{ fontSize: '1.1rem', fontWeight: 600 }}>Daftar Ruangan</Link>
+          <Link to="/" onClick={closeMenu} style={{ fontSize: '1.1rem', fontWeight: 600 }}>{t('nav_home')}</Link>
+          <Link to="/ruangan" onClick={closeMenu} style={{ fontSize: '1.1rem', fontWeight: 600 }}>{t('nav_rooms')}</Link>
           <Link to="/populer" onClick={closeMenu} className="populer-link" style={{ 
             fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-warning)',
             display: 'flex', alignItems: 'center', gap: '0.75rem' 
           }}>
-            Ruangan Populer <Star size={20} fill="var(--color-warning)" />
+            {t('nav_popular')} <Star size={20} fill="var(--color-warning)" />
           </Link>
 
           <button 
@@ -301,7 +323,17 @@ const Navbar = () => {
               background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-main)', padding: 0
             }}
           >
-            {theme === 'light' ? <><Moon size={20} /> Mode Gelap</> : <><Sun size={20} /> Mode Terang</>}
+            {theme === 'light' ? <><Moon size={20} /> {lang === 'id' ? 'Mode Gelap' : 'Dark Mode'}</> : <><Sun size={20} /> {lang === 'id' ? 'Mode Terang' : 'Light Mode'}</>}
+          </button>
+
+          <button 
+            onClick={toggleLang} 
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', fontWeight: 600,
+              background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-primary)', padding: 0
+            }}
+          >
+            🌐 {lang === 'id' ? 'Switch to English' : 'Ganti ke Indonesia'}
           </button>
           
           <div style={{ height: '1px', backgroundColor: 'var(--color-border)', margin: '0.5rem 0' }} />
@@ -310,25 +342,25 @@ const Navbar = () => {
             <>
               {user.role === 'user' && (
                 <Link to="/pesanan-saya" onClick={closeMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', fontWeight: 600 }}>
-                  <ClipboardList size={20} /> Pesanan Saya
+                  <ClipboardList size={20} /> {t('nav_my_orders')}
                 </Link>
               )}
-              {user.role === 'admin' && (
+              {['admin', 'helpdesk'].includes(user.role) && (
                 <Link to="/admin" onClick={closeMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', fontWeight: 600 }}>
-                  <Calendar size={20} /> Panel Admin
+                  <Headset size={20} /> {user.role === 'helpdesk' ? 'Helpdesk' : t('nav_admin')}
                 </Link>
               )}
               <Link to="/profile" onClick={closeMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', fontWeight: 600 }}>
-                <User size={20} /> Profil Saya
+                <User size={20} /> {t('nav_profile')}
               </Link>
               <button onClick={handleLogout} className="btn btn-danger" style={{ width: '100%', marginTop: 'auto', padding: '0.75rem' }}>
-                <LogOut size={18} /> Keluar
+                <LogOut size={18} /> {t('nav_logout')}
               </button>
             </>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <Link to="/login" onClick={closeMenu} className="btn btn-outline" style={{ width: '100%' }}>Masuk</Link>
-              <Link to="/register" onClick={closeMenu} className="btn btn-primary" style={{ width: '100%' }}>Daftar</Link>
+              <Link to="/login" onClick={closeMenu} className="btn btn-outline" style={{ width: '100%' }}>{t('nav_login')}</Link>
+              <Link to="/register" onClick={closeMenu} className="btn btn-primary" style={{ width: '100%' }}>{t('nav_register')}</Link>
             </div>
           )}
         </div>

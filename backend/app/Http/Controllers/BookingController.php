@@ -15,7 +15,7 @@ class BookingController extends Controller
         
         $query = Booking::with('office', 'user', 'addons')->orderBy('created_at', 'desc');
 
-        if (strtolower($user->role) !== 'admin') {
+        if (!in_array(strtolower($user->role), ['admin', 'helpdesk'])) {
             $query->where('user_id', $user->id);
         }
 
@@ -31,8 +31,8 @@ class BookingController extends Controller
             return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
         }
 
-        // Cek kepemilikan (Kecuali Admin)
-        if (strtolower($user->role) !== 'admin' && $booking->user_id !== $user->id) {
+        // Cek kepemilikan (Kecuali Admin & Helpdesk)
+        if (!in_array(strtolower($user->role), ['admin', 'helpdesk']) && $booking->user_id !== $user->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke pesanan ini'], 403);
         }
 
@@ -154,8 +154,8 @@ class BookingController extends Controller
             return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
         }
 
-        // Hanya admin yang bisa update detail pesanan lewat sini (biasanya status)
-        if (strtolower($user->role) !== 'admin' && $booking->user_id !== $user->id) {
+        // Hanya admin/helpdesk yang bisa update detail pesanan lewat sini (biasanya status)
+        if (!in_array(strtolower($user->role), ['admin', 'helpdesk']) && $booking->user_id !== $user->id) {
             return response()->json(['message' => 'Akses ditolak'], 403);
         }
 
@@ -284,8 +284,8 @@ class BookingController extends Controller
         $booking = Booking::find($id);
 
         if ($booking) {
-            // Cek kepemilikan sebelum hapus
-            if (strtolower($user->role) !== 'admin' && $booking->user_id !== $user->id) {
+            // Cek kepemilikan sebelum hapus (Kecuali Admin & Helpdesk)
+            if (!in_array(strtolower($user->role), ['admin', 'helpdesk']) && $booking->user_id !== $user->id) {
                 return response()->json(['message' => 'Akses ditolak'], 403);
             }
             $booking->delete();

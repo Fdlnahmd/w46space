@@ -8,7 +8,7 @@ contactPoints:
       - uid: office-rent-email
         type: email
         settings:
-          addresses: admin@sewaruang.nexvol.xyz
+          addresses: admin@w46space.nexvol.xyz
           subject: "[Office Rent Alert] {{ .GroupLabels.alertname }}"
           message: |
             🚨 *Grafana Alert - Office Rent*
@@ -24,7 +24,7 @@ contactPoints:
             Fired at   : {{ .StartsAt.Format "2006-01-02 15:04:05" }}
             {{ end }}
 
-            Buka Grafana: https://grafana.sewaruang.nexvol.xyz
+            Buka Grafana: https://grafana.w46space.nexvol.xyz
         disableResolveMessage: false
 
   # Contact point: Webhook (opsional - bisa diisi URL Discord/Telegram)

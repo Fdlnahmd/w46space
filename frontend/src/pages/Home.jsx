@@ -2,8 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getRuangan, getLatestReviews } from '../services/apiService';
 import { Users, ArrowRight, Star } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Home = () => {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
   const [ruangan, setRuangan] = useState([]);
   const [latestReviews, setLatestReviews] = useState([]);
 
@@ -22,41 +26,70 @@ const Home = () => {
     <div>
       {/* Hero Section */}
       <section style={{
-        background: 'linear-gradient(135deg, var(--color-primary) 0%, #1e3a8a 100%)',
+        background: theme === 'dark'
+          ? "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(10,30,80,0.72) 100%), url('https://www.wisma46.com/lib/images/banner/slide-website-30th.png') center center / cover no-repeat"
+          : "linear-gradient(to bottom, rgba(37,99,235,0.65) 0%, rgba(15,50,130,0.55) 100%), url('https://www.wisma46.com/lib/images/banner/slide-website-30th.png') center center / cover no-repeat",
         color: 'white',
-        padding: '6rem 0',
+        padding: '7rem 0',
         textAlign: 'center',
         position: 'relative',
         overflow: 'hidden'
       }}>
         <div className="container" style={{ position: 'relative', zIndex: 10 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            backgroundColor: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: '9999px', padding: '0.35rem 1rem', marginBottom: '1.5rem',
+            fontSize: '0.85rem', fontWeight: 500, backdropFilter: 'blur(8px)'
+          }}>
+            <span style={{ width: '8px', height: '8px', backgroundColor: '#4ade80', borderRadius: '50%', display: 'inline-block' }}></span>
+            {t('hero_badge')}
+          </div>
           <h1 style={{ fontSize: '3rem', fontWeight: 700, marginBottom: '1.5rem', lineHeight: 1.2 }}>
-            Temukan Ruang Kerja <br /> Impian Anda
+            {t('hero_title')}
           </h1>
           <p style={{ fontSize: '1.2rem', marginBottom: '2.5rem', opacity: 0.9, maxWidth: '600px', margin: '0 auto 2.5rem' }}>
-            Sewa Office, Meeting Room, atau Coworking Space dengan mudah, cepat, dan fleksibel.
+            {t('hero_subtitle')}
           </p>
-          <Link to="/ruangan" className="btn" style={{
-            backgroundColor: 'white',
-            color: 'var(--color-primary)',
-            padding: '1rem 2rem',
+          <Link to="/ruangan" className="btn btn-hero-cta" style={{
+            display: 'inline-block',
+            padding: '1rem 2.2rem',
             fontSize: '1.1rem',
+            fontWeight: '600',
             borderRadius: '9999px',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
+            textDecoration: 'none',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
           }}>
-            Cari Ruangan Sekarang
+            {t('hero_cta')}
           </Link>
         </div>
         
-        {/* Abstract Background Shapes */}
-        <div style={{ position: 'absolute', top: '-10%', left: '-5%', width: '300px', height: '300px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(40px)' }}></div>
-        <div style={{ position: 'absolute', bottom: '-20%', right: '5%', width: '400px', height: '400px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(60px)' }}></div>
+        {/* Photo credit */}
+        <div style={{ position: 'absolute', bottom: '0.75rem', right: '1rem', fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', zIndex: 5 }}>
+          📷 Photo: wisma46.com
+        </div>
 
         <style>{`
+          .btn-hero-cta {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+          }
+          .btn-hero-cta:hover {
+            background: #ffffff;
+            color: var(--color-primary, #2563eb);
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.3);
+          }
+          .btn-hero-cta:active {
+            transform: translateY(0);
+          }
           @media (max-width: 768px) {
             h1 { font-size: 2.25rem !important; }
             p { font-size: 1rem !important; }
-            section { padding: 4rem 0 !important; }
           }
         `}</style>
       </section>
@@ -65,15 +98,15 @@ const Home = () => {
       <section className="container" style={{ padding: '5rem var(--spacing-md)' }}>
         <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
           <div>
-            <h2 style={{ fontSize: '2rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>Ruangan Terbaru</h2>
-            <p style={{ color: 'var(--color-text-muted)' }}>Pilihan ruangan yang baru saja ditambahkan.</p>
+            <h2 style={{ fontSize: '2rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>{t('home_latest_title')}</h2>
+            <p style={{ color: 'var(--color-text-muted)' }}>{t('home_latest_subtitle')}</p>
           </div>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <Link to="/populer" className="btn btn-popular">
-                Ruangan Populer <Star size={18} fill="var(--color-warning)" />
+                {t('home_popular_btn')} <Star size={18} fill="var(--color-warning)" />
             </Link>
             <Link to="/ruangan" className="btn btn-primary">
-              Lihat Semua <ArrowRight size={18} />
+              {t('home_see_all')} <ArrowRight size={18} />
             </Link>
           </div>
         </div>
@@ -108,32 +141,32 @@ const Home = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{item.nama}</h3>
                   {item.is_booked ? (
-                    <span className="badge badge-danger">Penuh</span>
+                    <span className="badge badge-danger">{t('status_full')}</span>
                   ) : item.status === 'Maintenance' || item.status === 'Pemeliharaan' ? (
-                    <span className="badge badge-warning">Pemeliharaan</span>
+                    <span className="badge badge-warning">{t('status_maintenance')}</span>
                   ) : (
                     <span className={`badge ${item.status === 'Tersedia' ? 'badge-success' : 'badge-neutral'}`}>
-                      {item.status}
+                      {item.status === 'Tersedia' ? t('status_available') : item.status}
                     </span>
                   )}
                 </div>
                 
                 <div style={{ display: 'flex', gap: '1rem', color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Users size={16} /> Kapasitas: {item.kapasitas} orang
+                    <Users size={16} /> {t('capacity')}: {item.kapasitas} {t('people')}
                   </span>
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
                   <div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.1rem' }}>Mulai dari</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.1rem' }}>{t('start_from')}</p>
                     <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.1rem' }}>
                       Rp {(item.harga ?? 0).toLocaleString('id-ID')}
-                      <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>/hari</span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>{t('per_day')}</span>
                     </p>
                   </div>
                   <Link to={`/ruangan/${item.id}`} className="btn btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-                    Detail
+                    {t('detail')}
                   </Link>
                 </div>
               </div>
@@ -146,9 +179,9 @@ const Home = () => {
       <section style={{ backgroundColor: 'var(--color-background)', padding: '5rem 0' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <h2 style={{ fontSize: '2.25rem', marginBottom: '1rem' }}>Apa Kata Pelanggan Kami?</h2>
+            <h2 style={{ fontSize: '2.25rem', marginBottom: '1rem' }}>{t('home_reviews_title')}</h2>
             <p style={{ color: 'var(--color-text-muted)', maxWidth: '600px', margin: '0 auto' }}>
-              Dengarkan pengalaman langsung dari mereka yang telah menggunakan layanan sewa ruangan kami.
+              {t('home_reviews_subtitle')}
             </p>
           </div>
 
@@ -165,12 +198,12 @@ const Home = () => {
                 </p>
                 <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
                   <p style={{ fontWeight: 600, marginBottom: '0.1rem' }}>{r.user?.name}</p>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--color-primary)' }}>Penyewa {r.office?.nama}</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--color-primary)' }}>{t('home_tenant_of')} {r.office?.nama}</p>
                 </div>
               </div>
             )) : (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem' }}>
-                <p style={{ color: 'var(--color-text-muted)' }}>Belum ada ulasan yang ditampilkan.</p>
+                <p style={{ color: 'var(--color-text-muted)' }}>{t('home_no_reviews')}</p>
               </div>
             )}
           </div>

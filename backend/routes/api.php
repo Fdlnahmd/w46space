@@ -5,6 +5,8 @@ use App\Http\Controllers\OfficeController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\AdminChatController;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
@@ -52,10 +54,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/admin/coupons/{id}', [\App\Http\Controllers\CouponController::class, 'update']);
     Route::delete('/admin/coupons/{id}', [\App\Http\Controllers\CouponController::class, 'destroy']);
     Route::post('/coupons/check', [\App\Http\Controllers\CouponController::class, 'check']);
-    
+
     Route::get('/notifications', [\App\Http\Controllers\ExtraController::class, 'getNotifications']);
     Route::patch('/notifications/read-all', [\App\Http\Controllers\ExtraController::class, 'markAllAsRead']);
     Route::patch('/notifications/{id}/read', [\App\Http\Controllers\ExtraController::class, 'markAsRead']);
+
+    // Hybrid Chat Endpoints
+    Route::get('/chat/session', [ChatController::class, 'getSession']);
+    Route::get('/chat/messages', [ChatController::class, 'getMessages']);
+    Route::post('/chat/message', [ChatController::class, 'sendMessage']);
+    Route::post('/chat/request-human', [ChatController::class, 'requestHuman']);
+    Route::post('/chat/reset', [ChatController::class, 'resetSession']);
+
+    // Admin Chat Endpoints
+    Route::get('/admin/chat/sessions', [AdminChatController::class, 'getSessions']);
+    Route::get('/admin/chat/{id}/messages', [AdminChatController::class, 'getMessages']);
+    Route::post('/admin/chat/{id}/reply', [AdminChatController::class, 'sendMessage']);
+    Route::patch('/admin/chat/{id}/takeover', [AdminChatController::class, 'takeover']);
+    Route::post('/admin/chat/{id}/close', [AdminChatController::class, 'closeSession']);
 });
 
 // Review Public

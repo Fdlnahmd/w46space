@@ -1,4 +1,7 @@
+import { useLanguage } from '../contexts/LanguageContext';
+
 const Footer = () => {
+  const { t } = useLanguage();
   return (
     <footer style={{
       backgroundColor: 'var(--color-surface)',
@@ -10,15 +13,20 @@ const Footer = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '1rem',
+        gap: '0.75rem',
         textAlign: 'center'
       }}>
-        <h3 style={{ fontSize: '1.5rem', color: 'var(--color-primary)' }}>Sewa Ruang</h3>
-        <p style={{ color: 'var(--color-text-muted)', maxWidth: '400px' }}>
-          Platform penyewaan Office dan Meeting Room terbaik dan terpercaya untuk kebutuhan bisnis Anda.
+        <h3 style={{ fontSize: '1.5rem', color: 'var(--color-primary)', fontWeight: 700, marginBottom: '0.25rem' }}>
+          Wisma 46 Space
+        </h3>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', letterSpacing: '0.04em' }}>
+          {t('footer_address')}
         </p>
-        <div style={{ marginTop: '1rem', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-          &copy; {new Date().getFullYear()} Sewa Ruang. Hak Cipta Dilindungi.
+        <p style={{ color: 'var(--color-text-muted)', maxWidth: '460px', fontSize: '0.9rem' }}>
+          {t('footer_desc')}
+        </p>
+        <div style={{ marginTop: '1rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+          &copy; {new Date().getFullYear()} {t('footer_copyright')}
         </div>
       </div>
     </footer>
@@ -26,3 +34,4 @@ const Footer = () => {
 };
 
 export default Footer;
+
