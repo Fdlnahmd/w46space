@@ -1,4 +1,4 @@
-
+name: office-rent
 services:
   frontend:
     build:
