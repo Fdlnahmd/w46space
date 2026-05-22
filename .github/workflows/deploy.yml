@@ -4,21 +4,23 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: [self-hosted, linux]
 
     steps:
-      - name: Pull latest code
+      - name: Sync latest code
         run: |
           cd /home/fadlan/w46space
-          git pull origin main
+          git fetch origin main
+          git reset --hard origin/main
 
       - name: Rebuild and restart containers
         run: |
           cd /home/fadlan/w46space
-          docker compose -p office-rent up -d --build
+          docker compose -p office-rent up -d --build --remove-orphans
 
       - name: Check containers
         run: |
