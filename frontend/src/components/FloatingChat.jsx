@@ -1,11 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const FloatingChat = () => {
   const { lang } = useLanguage();
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const isAdmin = user && ['admin', 'helpdesk'].includes(user.role);
+
+  const getPillStyle = () => ({
+    backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+    border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
+    borderRadius: '16px',
+    padding: '0.35rem 0.7rem',
+    fontSize: '0.75rem',
+    color: isDark ? '#cbd5e1' : '#475569',
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.15s ease',
+    outline: 'none',
+  });
 
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -438,7 +454,13 @@ const FloatingChat = () => {
                 onClick={() => setIsOpen(false)}
                 style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
               />
-              <div className="floating-chat-admin-window">
+              <div 
+                className="floating-chat-admin-window"
+                style={{
+                  backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                  border: isDark ? '1px solid #1e293b' : '1px solid rgba(0,0,0,0.08)'
+                }}
+              >
                 {/* Header */}
                 <div style={{
                   background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
@@ -465,15 +487,15 @@ const FloatingChat = () => {
                 </div>
 
                 {/* Body */}
-                <div style={{ flex: 1, padding: '1.25rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ flex: 1, padding: '1.25rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', backgroundColor: isDark ? '#0f172a' : '#ffffff' }}>
                   <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
                     <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📢</div>
-                    <h5 style={{ margin: 0, fontSize: '1rem', color: '#1e293b', fontWeight: 700 }}>
+                    <h5 style={{ margin: 0, fontSize: '1rem', color: isDark ? '#ffffff' : '#1e293b', fontWeight: 700 }}>
                       {waitingSessions.length > 0 
                         ? `Ada ${waitingSessions.length} Chat Menunggu!` 
                         : 'Semua Chat Terjawab'}
                     </h5>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: isDark ? '#cbd5e1' : '#64748b' }}>
                       {waitingSessions.length > 0 
                         ? `Silakan buka dashboard ${user?.role === 'helpdesk' ? 'helpdesk' : 'admin'} untuk mengambil alih chat.` 
                         : 'Belum ada pengguna baru yang membutuhkan eskalasi ke CS.'}
@@ -481,23 +503,23 @@ const FloatingChat = () => {
                   </div>
 
                   {waitingSessions.length > 0 && (
-                    <div style={{ border: '1px solid #f1f5f9', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ border: isDark ? '1px solid #1e293b' : '1px solid #f1f5f9', borderRadius: '10px', overflow: 'hidden' }}>
                       {waitingSessions.slice(0, 3).map((s, idx) => (
                         <div key={s.id} style={{
                           padding: '0.65rem 0.75rem',
-                          backgroundColor: idx % 2 === 0 ? '#f8fafc' : '#ffffff',
-                          borderBottom: idx === waitingSessions.slice(0, 3).length - 1 ? 'none' : '1px solid #f1f5f9',
+                          backgroundColor: isDark ? (idx % 2 === 0 ? '#1e293b' : '#0f172a') : (idx % 2 === 0 ? '#f8fafc' : '#ffffff'),
+                          borderBottom: idx === waitingSessions.slice(0, 3).length - 1 ? 'none' : (isDark ? '1px solid #1e293b' : '1px solid #f1f5f9'),
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
                           fontSize: '0.8rem'
                         }}>
-                          <span style={{ fontWeight: 600, color: '#334155', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                          <span style={{ fontWeight: 600, color: isDark ? '#cbd5e1' : '#334155', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '180px' }}>
                             {s.user?.name || `User #${s.user_id}`}
                           </span>
                           <span style={{
-                            backgroundColor: s.mode === 'waiting' ? '#fee2e2' : '#f1f5f9',
-                            color: s.mode === 'waiting' ? '#ef4444' : '#475569',
+                            backgroundColor: s.mode === 'waiting' ? '#fee2e2' : (isDark ? '#334155' : '#f1f5f9'),
+                            color: s.mode === 'waiting' ? '#ef4444' : (isDark ? '#cbd5e1' : '#475569'),
                             fontSize: '0.65rem',
                             padding: '2px 6px',
                             borderRadius: '4px',
@@ -508,7 +530,7 @@ const FloatingChat = () => {
                         </div>
                       ))}
                       {waitingSessions.length > 3 && (
-                        <div style={{ padding: '4px', textAlign: 'center', fontSize: '0.7rem', color: '#94a3b8', backgroundColor: '#f8fafc' }}>
+                        <div style={{ padding: '4px', textAlign: 'center', fontSize: '0.7rem', color: isDark ? '#64748b' : '#94a3b8', backgroundColor: isDark ? '#1e293b' : '#f8fafc' }}>
                           + {waitingSessions.length - 3} chat lainnya
                         </div>
                       )}
@@ -602,7 +624,13 @@ const FloatingChat = () => {
                 style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
               />
 
-              <div className="floating-chat-window">
+              <div 
+                className="floating-chat-window"
+                style={{
+                  backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                  border: isDark ? '1px solid #1e293b' : '1px solid rgba(0,0,0,0.08)'
+                }}
+              >
                 {/* Header with Dark Navy & Gold Theme */}
                 <div style={{
                   background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
@@ -669,7 +697,7 @@ const FloatingChat = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0.85rem',
-                    backgroundColor: '#f8fafc',
+                    backgroundColor: isDark ? '#0f172a' : '#f8fafc',
                   }}
                 >
                   {messages.length === 0 ? (
@@ -684,7 +712,7 @@ const FloatingChat = () => {
 
                       if (isSystem) {
                         return (
-                          <div key={msg.id} style={{
+                           <div key={msg.id} style={{
                             alignSelf: 'center',
                             backgroundColor: '#fee2e2',
                             color: '#b91c1c',
@@ -712,14 +740,14 @@ const FloatingChat = () => {
                           }}
                         >
                           <div style={{
-                            backgroundColor: isUser ? '#0f172a' : msg.sender_type === 'admin' ? '#10b981' : '#ffffff',
-                            color: isUser ? '#ffffff' : '#1e293b',
+                            backgroundColor: isUser ? (isDark ? '#334155' : '#0f172a') : msg.sender_type === 'admin' ? '#10b981' : (isDark ? '#1e293b' : '#ffffff'),
+                            color: isUser ? '#ffffff' : (isDark ? '#cbd5e1' : '#1e293b'),
                             padding: '0.8rem 1rem',
                             borderRadius: isUser ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
                             fontSize: '0.88rem',
                             lineHeight: '1.5',
                             boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-                            border: isUser ? 'none' : '1px solid #e2e8f0',
+                            border: isUser ? 'none' : (isDark ? '1px solid #334155' : '1px solid #e2e8f0'),
                           }}>
                             {renderMessageContent(msg.content)}
                           </div>
@@ -736,7 +764,15 @@ const FloatingChat = () => {
                     })
                   )}
                   {isTyping && (
-                    <div style={{ alignSelf: 'flex-start', display: 'flex', gap: '4px', padding: '0.5rem 1rem', backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ 
+                      alignSelf: 'flex-start', 
+                      display: 'flex', 
+                      gap: '4px', 
+                      padding: '0.5rem 1rem', 
+                      backgroundColor: isDark ? '#1e293b' : '#ffffff', 
+                      borderRadius: '16px', 
+                      border: isDark ? '1px solid #334155' : '1px solid #e2e8f0' 
+                    }}>
                       <span className="typing-dot" style={{ width: '6px', height: '6px', backgroundColor: '#94a3b8', borderRadius: '50%', animation: 'typingDot 1.4s infinite' }} />
                       <span className="typing-dot" style={{ width: '6px', height: '6px', backgroundColor: '#94a3b8', borderRadius: '50%', animation: 'typingDot 1.4s infinite', animationDelay: '0.2s' }} />
                       <span className="typing-dot" style={{ width: '6px', height: '6px', backgroundColor: '#94a3b8', borderRadius: '50%', animation: 'typingDot 1.4s infinite', animationDelay: '0.4s' }} />
@@ -749,23 +785,28 @@ const FloatingChat = () => {
                 {session?.mode === 'bot' && (
                   <div style={{
                     padding: '0.5rem 0.75rem',
-                    backgroundColor: '#ffffff',
-                    borderTop: '1px solid #f1f5f9',
+                    backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                    borderTop: isDark ? '1px solid #334155' : '1px solid #f1f5f9',
                     display: 'flex',
                     flexWrap: 'wrap',
                     gap: '6px',
                     flexShrink: 0,
                   }}>
-                    <button onClick={() => handlePromptClick(t.emptyPrompt1.substring(2))} style={pillStyle}>
+                    <button onClick={() => handlePromptClick(t.emptyPrompt1.substring(2))} style={getPillStyle()}>
                       {t.emptyPrompt1}
                     </button>
-                    <button onClick={() => handlePromptClick(t.emptyPrompt2.substring(2))} style={pillStyle}>
+                    <button onClick={() => handlePromptClick(t.emptyPrompt2.substring(2))} style={getPillStyle()}>
                       {t.emptyPrompt2}
                     </button>
-                    <button onClick={() => handlePromptClick(t.emptyPrompt3.substring(2))} style={pillStyle}>
+                    <button onClick={() => handlePromptClick(t.emptyPrompt3.substring(2))} style={getPillStyle()}>
                       {t.emptyPrompt3}
                     </button>
-                    <button onClick={handleRequestHuman} style={{ ...pillStyle, backgroundColor: '#fef3c7', color: '#d97706', border: '1px solid #fde68a' }}>
+                    <button onClick={handleRequestHuman} style={{ 
+                      ...getPillStyle(), 
+                      backgroundColor: isDark ? '#d97706' : '#fef3c7', 
+                      color: isDark ? '#fef9c3' : '#d97706', 
+                      border: isDark ? '1px solid #ca8a04' : '1px solid #fde68a' 
+                    }}>
                       {t.chatAdminBtn}
                     </button>
                   </div>
@@ -774,8 +815,8 @@ const FloatingChat = () => {
                 {/* Chat Input Footer */}
                 <div style={{
                   padding: '0.75rem 1rem',
-                  backgroundColor: '#ffffff',
-                  borderTop: '1px solid #f1f5f9',
+                  backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                  borderTop: isDark ? '1px solid #334155' : '1px solid #f1f5f9',
                   display: 'flex',
                   gap: '0.5rem',
                   alignItems: 'center',
@@ -791,20 +832,21 @@ const FloatingChat = () => {
                     style={{
                       flex: 1,
                       padding: '0.65rem 0.9rem',
-                      border: '1px solid #cbd5e1',
+                      border: isDark ? '1px solid #475569' : '1px solid #cbd5e1',
                       borderRadius: '24px',
                       fontSize: '0.85rem',
                       outline: 'none',
-                      backgroundColor: isTyping ? '#f1f5f9' : '#ffffff'
+                      backgroundColor: isDark ? '#0f172a' : (isTyping ? '#f1f5f9' : '#ffffff'),
+                      color: isDark ? '#ffffff' : '#000000'
                     }}
                   />
                   <button
                     onClick={() => handleSend()}
                     disabled={!inputText.trim() || isTyping}
                     style={{
-                      backgroundColor: '#0f172a',
-                      color: 'white',
-                      border: '1px solid #eab308',
+                      backgroundColor: isDark ? '#eab308' : '#0f172a',
+                      color: isDark ? '#0f172a' : 'white',
+                      border: isDark ? 'none' : '1px solid #eab308',
                       padding: '0.65rem 1.2rem',
                       borderRadius: '24px',
                       fontWeight: 700,
@@ -822,8 +864,8 @@ const FloatingChat = () => {
                 {/* WhatsApp Direct Fallback Footer */}
                 <div style={{
                   padding: '0.5rem 1rem',
-                  backgroundColor: '#f8fafc',
-                  borderTop: '1px solid #f1f5f9',
+                  backgroundColor: isDark ? '#0f172a' : '#f8fafc',
+                  borderTop: isDark ? '1px solid #1e293b' : '1px solid #f1f5f9',
                   textAlign: 'center',
                   fontSize: '0.75rem',
                   flexShrink: 0,
@@ -1004,9 +1046,15 @@ const FloatingChat = () => {
           {/* Modal Container */}
           <div style={{
             position: 'relative',
-            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-            border: '1.5px solid rgba(234, 179, 8, 0.3)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45), 0 0 40px rgba(234, 179, 8, 0.1)',
+            background: isDark 
+              ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' 
+              : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            border: isDark 
+              ? '1.5px solid rgba(234, 179, 8, 0.3)' 
+              : '1.5px solid rgba(234, 179, 8, 0.25)',
+            boxShadow: isDark 
+              ? '0 25px 50px -12px rgba(0, 0, 0, 0.45), 0 0 40px rgba(234, 179, 8, 0.1)' 
+              : '0 25px 50px -12px rgba(0, 0, 0, 0.1), 0 0 40px rgba(234, 179, 8, 0.05)',
             borderRadius: '24px',
             width: '100%',
             maxWidth: '400px',
@@ -1037,7 +1085,7 @@ const FloatingChat = () => {
             <h3 style={{
               fontSize: '1.25rem',
               fontWeight: 800,
-              color: '#ffffff',
+              color: isDark ? '#ffffff' : '#0f172a',
               margin: '0 0 0.5rem 0',
               letterSpacing: '-0.025em'
             }}>
@@ -1046,7 +1094,7 @@ const FloatingChat = () => {
             <p style={{
               fontSize: '0.9rem',
               lineHeight: '1.6',
-              color: '#cbd5e1',
+              color: isDark ? '#cbd5e1' : '#475569',
               margin: '0 0 2rem 0'
             }}>
               {lang === 'en' 
@@ -1082,8 +1130,8 @@ const FloatingChat = () => {
                 onClick={() => setShowAuthModal(false)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#334155',
-                  color: '#ffffff',
+                  backgroundColor: isDark ? '#334155' : '#e2e8f0',
+                  color: isDark ? '#ffffff' : '#475569',
                   border: 'none',
                   padding: '0.85rem 1.5rem',
                   borderRadius: '14px',
@@ -1093,8 +1141,8 @@ const FloatingChat = () => {
                   transition: 'all 0.2s ease',
                   outline: 'none'
                 }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#475569'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#334155'}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = isDark ? '#475569' : '#cbd5e1'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = isDark ? '#334155' : '#e2e8f0'}
               >
                 {lang === 'en' ? 'Cancel' : 'Batal'}
               </button>
@@ -1121,9 +1169,15 @@ const FloatingChat = () => {
           {/* Modal Container */}
           <div style={{
             position: 'relative',
-            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-            border: '1.5px solid rgba(234, 179, 8, 0.3)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45), 0 0 40px rgba(234, 179, 8, 0.1)',
+            background: isDark 
+              ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' 
+              : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            border: isDark 
+              ? '1.5px solid rgba(234, 179, 8, 0.3)' 
+              : '1.5px solid rgba(234, 179, 8, 0.25)',
+            boxShadow: isDark 
+              ? '0 25px 50px -12px rgba(0, 0, 0, 0.45), 0 0 40px rgba(234, 179, 8, 0.1)' 
+              : '0 25px 50px -12px rgba(0, 0, 0, 0.1), 0 0 40px rgba(234, 179, 8, 0.05)',
             borderRadius: '24px',
             width: '100%',
             maxWidth: '400px',
@@ -1154,7 +1208,7 @@ const FloatingChat = () => {
             <h3 style={{
               fontSize: '1.25rem',
               fontWeight: 800,
-              color: '#ffffff',
+              color: isDark ? '#ffffff' : '#0f172a',
               margin: '0 0 0.5rem 0',
               letterSpacing: '-0.025em'
             }}>
@@ -1163,7 +1217,7 @@ const FloatingChat = () => {
             <p style={{
               fontSize: '0.9rem',
               lineHeight: '1.6',
-              color: '#cbd5e1',
+              color: isDark ? '#cbd5e1' : '#475569',
               margin: '0 0 2rem 0'
             }}>
               {lang === 'en' 
@@ -1178,8 +1232,8 @@ const FloatingChat = () => {
                 onClick={() => setShowResetConfirm(false)}
                 style={{
                   flex: 1,
-                  backgroundColor: '#334155',
-                  color: '#ffffff',
+                  backgroundColor: isDark ? '#334155' : '#e2e8f0',
+                  color: isDark ? '#ffffff' : '#475569',
                   border: 'none',
                   padding: '0.85rem 1.5rem',
                   borderRadius: '14px',
@@ -1189,8 +1243,8 @@ const FloatingChat = () => {
                   transition: 'all 0.2s ease',
                   outline: 'none'
                 }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#475569'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#334155'}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = isDark ? '#475569' : '#cbd5e1'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = isDark ? '#334155' : '#e2e8f0'}
               >
                 {lang === 'en' ? 'Cancel' : 'Batal'}
               </button>
@@ -1221,19 +1275,6 @@ const FloatingChat = () => {
       )}
     </>
   );
-};
-
-const pillStyle = {
-  backgroundColor: '#f1f5f9',
-  border: '1px solid #e2e8f0',
-  borderRadius: '16px',
-  padding: '0.35rem 0.7rem',
-  fontSize: '0.75rem',
-  color: '#475569',
-  cursor: 'pointer',
-  fontWeight: 600,
-  transition: 'all 0.15s ease',
-  outline: 'none',
 };
 
 export default FloatingChat;
