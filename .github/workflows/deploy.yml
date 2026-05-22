@@ -18,9 +18,9 @@ jobs:
       - name: Rebuild and restart containers
         run: |
           cd /home/fadlan/w46space
-          docker compose up -d --build
+          docker compose -p office-rent up -d --build
 
       - name: Check containers
         run: |
           cd /home/fadlan/w46space
-          docker compose ps
+          docker compose -p office-rent ps
