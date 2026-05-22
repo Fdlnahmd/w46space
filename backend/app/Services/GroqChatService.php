@@ -6,6 +6,8 @@ use App\Models\Office;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+use Carbon\Carbon;
+
 class GroqChatService
 {
     /**
@@ -42,8 +44,8 @@ class GroqChatService
         }
 
         try {
-            // 2. Fetch all rooms to inject as context (Tersedia, Penuh, Maintenance) with bookings
-            $today = date('Y-m-d');
+            $now = Carbon::now()->timezone('Asia/Jakarta');
+            $today = $now->format('Y-m-d');
             $rooms = Office::with(['bookings' => function($query) use ($today) {
                 $query->where('status', '!=', 'Dibatalkan')
                       ->where('tanggal_akhir', '>=', $today);
@@ -96,8 +98,11 @@ class GroqChatService
 
             // 3. Build system prompt
             $systemPrompt = "Kamu adalah asisten virtual pintar dan ramah dari 'Wisma 46 Space' — portal penyewaan ruang kerja premium (Office Suite, Meeting Room, Coworking Space) di gedung pencakar langit ikonik Wisma 46, Kota BNI Jakarta.\n\n"
+                . "HARI & WAKTU SAAT INI (WIB): " . $now->isoFormat('dddd, D MMMM YYYY, HH:mm') . " WIB.\n"
+                . "Penting: Gunakan informasi waktu saat ini di atas untuk menyesuaikan salam/sapaan Anda (misalnya: Selamat Pagi jika jam 05:00-11:00 WIB, Selamat Siang jika jam 11:00-15:00 WIB, Selamat Sore jika jam 15:00-18:00 WIB, atau Selamat Malam jika jam 18:00-05:00 WIB). Jangan pernah menyapa dengan 'Selamat Pagi' jika waktu saat ini sudah malam, sesuaikan dengan akurat!\n\n"
                 . "TUGAS UTAMA KAMU:\n"
                 . "- Jawablah pertanyaan user seputar informasi ruangan, spesifikasi, harga, status ketersediaan (apakah 'Tersedia', 'Penuh', atau sedang 'Maintenance'), dan fasilitas.\n"
+                . "- Jika user menanyakan apakah suatu ruangan penuh atau tidak, kamu HARUS memeriksa status ruangan di daftar ruangan di bawah. Jika statusnya 'Penuh' atau ada info 'Sedang disewa', katakan secara jelas bahwa ruangan tersebut PENUH (sedang disewa). Sebaliknya, jika statusnya 'Tersedia', katakan secara jelas bahwa ruangan tersebut KOSONG/TERSEDIA untuk dipesan. Jawablah langsung secara spesifik untuk ruangan yang ditanyakan, jangan diabaikan!\n"
                 . "- JANGAN menawarkan bantuan untuk memproses reservasi, pemesanan, atau transaksi pembayaran secara langsung di dalam chat. Bot TIDAK memiliki akses untuk melakukan booking atau mengonfirmasi pembayaran. Namun, kamu BISA dan HARUS menginformasikannya secara rinci seputar ketersediaan ruangan (ruangan kosong, penuh, atau kapan ruangan yang penuh/sedang disewa tersebut akan berakhir kontraknya/bisa dipesan kembali) berdasarkan data status dan info ketersediaan ruangan yang tertera di bawah ini.\n"
                 . "- Jika user menanyakan kapan ruangan yang penuh bisa dipesan kembali, baca info tanggal berakhirnya kontrak/booking yang tertera di data ruangan di bawah, lalu sebutkan tanggal tersebut kepada user dengan ramah.\n"
                 . "- Jika user ingin menyewa atau memesan ruangan, instruksikan mereka untuk mengklik tombol 'Detail' pada ruangan yang diinginkan di website lalu mengisi formulir pemesanan secara mandiri.\n"
