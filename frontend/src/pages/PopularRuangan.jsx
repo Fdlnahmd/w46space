@@ -72,7 +72,7 @@ const PopularRuangan = () => {
               {ruangan.map(item => (
                 <div key={item.id} className="card">
                   <div style={{ height: '200px', overflow: 'hidden', position: 'relative' }}>
-                    <img src={item.gambar} alt={item.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={item.gambar} alt={item.nama} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     <div style={{ 
                       position: 'absolute', top: '1rem', right: '1rem', 
                       backgroundColor: 'var(--color-warning)', color: 'white',

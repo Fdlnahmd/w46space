@@ -156,6 +156,7 @@ const PesananSaya = () => {
                       <img
                         src={item.office.gambar}
                         alt={item.office.nama}
+                        loading="lazy"
                         style={{ width: '100px', height: '80px', objectFit: 'cover', borderRadius: 'var(--border-radius)', flexShrink: 0 }}
                       />
                     )}
