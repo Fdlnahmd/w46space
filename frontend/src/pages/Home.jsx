@@ -131,7 +131,7 @@ const Home = () => {
           {ruangan.map(item => (
             <div key={item.id} className="card">
               <div style={{ height: '200px', overflow: 'hidden' }}>
-                <img src={item.gambar} alt={item.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={item.gambar} alt={item.nama} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ padding: '1.5rem' }}>
                 {item.kategori && (
