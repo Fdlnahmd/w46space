@@ -8,21 +8,22 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, linux]
+    runs-on: [self-hosted, linux, vps]
 
     steps:
       - name: Sync latest code
         run: |
-          cd /home/fadlan/w46space
+          cd /var/www/w46space
           git fetch origin main
           git reset --hard origin/main
 
-      - name: Rebuild and restart containers
+      - name: rebuild and restart containers
         run: |
-          cd /home/fadlan/w46space
-          docker compose -p office-rent up -d --build --remove-orphans
+          cd /var/www/w46space
+          docker compose -p office-rent up -d --build --remove-orphans \
+            backend frontend mysql grafana prometheus loki promtail cloudflared docker-stats-exporter
 
-      - name: Check containers
+      - name: check containers
         run: |
-          cd /home/fadlan/w46space
+          cd /var/www/w46space
           docker compose -p office-rent ps
