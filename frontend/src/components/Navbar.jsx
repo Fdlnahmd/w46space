@@ -181,7 +181,7 @@ const Navbar = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: 'auto', marginRight: '0.75rem' }}>
             <button 
               onClick={toggleTheme} 
-              className="theme-toggle"
+              className="theme-toggle nav-actions-desktop"
               style={{ 
                 background: 'none', border: 'none', cursor: 'pointer', 
                 color: 'var(--color-text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -195,6 +195,7 @@ const Navbar = () => {
             {/* Language Toggle */}
             <button
               onClick={toggleLang}
+              className="nav-actions-desktop"
               style={{
                 background: 'none', border: '1.5px solid var(--color-border)', cursor: 'pointer',
                 color: 'var(--color-text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -428,6 +429,7 @@ const Navbar = () => {
         @media (max-width: 991px) {
           .nav-desktop { display: none !important; }
           .nav-mobile-toggle { display: flex !important; }
+          .nav-actions-desktop { display: none !important; }
         }
         @media (min-width: 992px) {
           .nav-desktop { display: flex !important; }
