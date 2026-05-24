@@ -44,38 +44,21 @@
         }
 
         /* ── Header ─────────────────────────────── */
-        .header-container {
-            position: relative;
-            width: 100%;
-            background-color: #1e40af;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-        }
-
-        .header-bg-image {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            background: transparent;
+            background: #1e40af url('{{ $headerImage }}') no-repeat center center;
+            background-size: cover;
             margin: 0;
             padding: 0;
             border: none;
-            position: relative;
         }
 
         .header-left {
             padding: 35px 40px;
             color: #ffffff;
             vertical-align: top;
-            background-color: rgba(15, 50, 130, 0.78);
+            background-color: rgba(15, 50, 130, 0.65);
         }
 
         .header-right {
@@ -83,7 +66,7 @@
             color: #ffffff;
             text-align: right;
             vertical-align: top;
-            background-color: rgba(15, 50, 130, 0.78);
+            background-color: rgba(15, 50, 130, 0.65);
         }
 
         .brand-name {
@@ -326,29 +309,24 @@
         @endphp
 
         <!-- HEADER -->
-        <div class="header-container">
-            @if($headerImage)
-                <img class="header-bg-image" src="{{ $headerImage }}" />
-            @endif
-            <table class="header-table">
-                <tr>
-                    <td class="header-left">
-                        <div class="brand-name">Wisma 46 Space</div>
-                        <div class="brand-sub">Kota BNI Jakarta</div>
-                        <div class="brand-address">
-                            Jl. Jend. Sudirman Kav. 1, Jakarta 10220<br>
-                            info@wisma46space.com &nbsp;·&nbsp; (021) 0000-0000
-                        </div>
-                    </td>
-                    <td class="header-right">
-                        <div class="invoice-label">INVOICE</div>
-                        <div class="invoice-meta-text">No: <strong>{{ $invoice_no }}</strong></div>
-                        <div class="invoice-meta-text">{{ $lang === 'en' ? 'Date:' : 'Tanggal:' }} <strong>{{ $date }}</strong></div>
-                        <div class="status-badge">{{ $lang === 'en' ? 'PAID' : 'LUNAS' }}</div>
-                    </td>
-                </tr>
-            </table>
-        </div>
+        <table class="header-table">
+            <tr>
+                <td class="header-left">
+                    <div class="brand-name">Wisma 46 Space</div>
+                    <div class="brand-sub">Kota BNI Jakarta</div>
+                    <div class="brand-address">
+                        Jl. Jend. Sudirman Kav. 1, Jakarta 10220<br>
+                        info@wisma46space.com &nbsp;·&nbsp; (021) 0000-0000
+                    </div>
+                </td>
+                <td class="header-right">
+                    <div class="invoice-label">INVOICE</div>
+                    <div class="invoice-meta-text">No: <strong>{{ $invoice_no }}</strong></div>
+                    <div class="invoice-meta-text">{{ $lang === 'en' ? 'Date:' : 'Tanggal:' }} <strong>{{ $date }}</strong></div>
+                    <div class="status-badge">{{ $lang === 'en' ? 'PAID' : 'LUNAS' }}</div>
+                </td>
+            </tr>
+        </table>
 
         <!-- BODY -->
         <div class="body">
