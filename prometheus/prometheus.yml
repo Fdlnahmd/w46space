@@ -12,6 +12,8 @@ scrape_configs:
     static_configs:
       - targets:
           - docker-stats-exporter:9104
+        labels:
+          host: vps-w46space
 
   - job_name: grafana
     metrics_path: /metrics
