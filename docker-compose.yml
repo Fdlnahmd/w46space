@@ -179,7 +179,7 @@ services:
     ports:
       - "127.0.0.1:9100:9100"
     command:
-      - '--path.rootfs=/host'
+      - "--path.rootfs=/host"
     volumes:
       - /:/host:ro,rslave
 
