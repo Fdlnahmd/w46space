@@ -182,6 +182,8 @@ services:
       - "--path.rootfs=/host"
     volumes:
       - /:/host:ro,rslave
+    networks:
+      - office_rent_network
 
 networks:
   office_rent_network:
