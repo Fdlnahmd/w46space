@@ -17,13 +17,13 @@ jobs:
           git fetch origin main
           git reset --hard origin/main
 
-      - name: rebuild and restart containers
+      - name: Rebuild and restart containers
         run: |
-          cd /var/www/w46space
+           cd /var/www/w46space
           docker compose -p office-rent up -d --build --remove-orphans \
             backend frontend mysql grafana prometheus loki promtail cloudflared docker-stats-exporter
 
-      - name: check containers
+      - name: Check containers
         run: |
           cd /var/www/w46space
           docker compose -p office-rent ps
