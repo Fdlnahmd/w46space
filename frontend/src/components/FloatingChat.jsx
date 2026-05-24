@@ -864,6 +864,7 @@ const FloatingChat = () => {
                 {/* WhatsApp Direct Fallback Footer */}
                 <div style={{
                   padding: '0.5rem 1rem',
+                  paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))',
                   backgroundColor: isDark ? '#0f172a' : '#f8fafc',
                   borderTop: isDark ? '1px solid #1e293b' : '1px solid #f1f5f9',
                   textAlign: 'center',
@@ -1020,7 +1021,9 @@ const FloatingChat = () => {
             width: 100vw !important;
             max-width: 100vw !important;
             height: 100vh !important;
+            height: 100dvh !important;
             max-height: 100vh !important;
+            max-height: 100dvh !important;
             border-radius: 0 !important;
             z-index: 999999 !important;
           }

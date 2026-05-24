@@ -28,13 +28,13 @@ class InvoiceController extends Controller
         // Mencoba mendapatkan user dari session atau token (jika ada)
         /** @var \App\Models\User $user */
         $user = Auth::guard('sanctum')->user() ?: Auth::user();
-        
+
         $lang = $request->query('lang', 'id');
 
         try {
             $englishMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
             $indonesianMonths = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-            
+
             $formattedDate = date('d F Y');
             if ($lang === 'id') {
                 $formattedDate = str_replace($englishMonths, $indonesianMonths, $formattedDate);
@@ -47,8 +47,11 @@ class InvoiceController extends Controller
                 'lang' => $lang
             ];
 
-            $pdf = PDF::loadView('pdf.invoice', $data);
-            $pdf->setOption('isRemoteEnabled', true);
+            $pdf = PDF::setOptions([
+                'isRemoteEnabled' => false,
+                'isHtml5ParserEnabled' => true,
+            ])->loadView('pdf.invoice', $data);
+
             return $pdf->download($data['invoice_no'] . '.pdf');
         } catch (\Exception $e) {
             return response()->json([

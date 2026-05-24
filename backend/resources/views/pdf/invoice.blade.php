@@ -24,7 +24,8 @@
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            background: #1e40af url('https://www.wisma46.com/lib/images/banner/slide-website-30th.png') no-repeat center center;
+            background: #1e40af url("file://{{ public_path('images/invoice-header.png') }}") no-repeat center center;
+            background-size: cover;
             margin: 0;
             padding: 0;
             border: none;
