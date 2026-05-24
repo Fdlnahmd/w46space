@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: Office Rent Dashboards
+    orgId: 1
+    folder: Office Rent
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
