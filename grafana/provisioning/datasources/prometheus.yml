@@ -9,3 +9,9 @@ datasources:
     editable: true
     jsonData:
       timeInterval: 15s
+  - job_name: node-exporter
+    static_configs:
+      - targets:
+          - node-exporter:9100
+        labels:
+          instance: vps-w46space
