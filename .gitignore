@@ -35,3 +35,9 @@ mobile/
 
 
 actions-runner/
+
+
+#File backup sql and .bsk
+*.sql
+*.bak
+*.bak*
