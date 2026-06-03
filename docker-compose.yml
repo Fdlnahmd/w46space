@@ -168,6 +168,7 @@ services:
   mailhog:
     image: mailhog/mailhog
     container_name: office_rent_mailhog
+    restart: always
     ports:
       - "${MAILHOG_BIND_HOST:-127.0.0.1}:${MAILHOG_SMTP_PORT:-1025}:1025" # SMTP port
       - "${MAILHOG_BIND_HOST:-127.0.0.1}:${MAILHOG_WEB_PORT:-8025}:8025" # Web UI port
