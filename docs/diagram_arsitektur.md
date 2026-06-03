@@ -19,7 +19,9 @@ graph LR
     end
 
     subgraph "Wisma 46 Space System"
-        UC1("Registrasi & Login")
+        UC1("Registrasi & Login Email")
+        UC19("Login dengan Google")
+        UC20("Register dengan Google")
         UC2("Cari & Detail Ruangan")
         UC3("Pesan Ruangan & Addons")
         UC4("Gunakan Kupon Diskon")
@@ -29,7 +31,7 @@ graph LR
         UC8("Beri Ulasan & Rating")
         UC14("Tanya AI Chatbot (Ketersediaan/Vacancy)")
         UC15("Booking Ruangan Penuh (Future Booking)")
-        
+
         UC9("Kelola Data Ruangan")
         UC10("Kelola Pemesanan & Status")
         UC11("Kelola Kupon Diskon")
@@ -41,6 +43,8 @@ graph LR
     end
 
     U --> UC1
+    U --> UC19
+    U --> UC20
     U --> UC2
     U --> UC3
     U --> UC4
@@ -70,9 +74,12 @@ graph LR
     style U fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
     style H fill:#f3e8ff,stroke:#a855f7,stroke-width:2px,color:#581c87
     style A fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
-    
+
     classDef usecase fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#0f172a
-    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17,UC18 usecase
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17,UC18,UC19,UC20 usecase
+
+    classDef googleUC fill:#fce7f3,stroke:#db2777,stroke-width:1.5px,color:#831843
+    class UC19,UC20 googleUC
 ```
 
 </details>
@@ -87,43 +94,71 @@ Alur dari pencarian ruangan hingga pembayaran dan konfirmasi.
 
 ```mermaid
 graph TD
-    Start([🏁 Mulai]) --> Search[Cari Ruangan]
-    Search --> Detail[Lihat Detail Ruangan & Addons]
-    Detail --> CheckBooked{Ruangan Penuh?}
-    
-    CheckBooked -- Ya --> FutureAlert[Tampilkan Notifikasi Ketersediaan & Auto-Set H+1 Kontrak Selesai]
-    CheckBooked -- Tidak --> CheckLogin
-    FutureAlert --> CheckLogin
-    
-    CheckLogin{Sudah Login?} -- Tidak --> Login[Login / Register]
-    Login --> Detail
-    
-    CheckLogin -- Ya --> Select[Pilih Tanggal & Durasi]
+    Start([🏁 Mulai]) --> AuthChoice{Metode Autentikasi?}
+
+    AuthChoice -- Email & Password --> EmailForm[Isi Form Email & Password]
+    AuthChoice -- Google OAuth --> GooglePopup[Google Popup Pilih Akun]
+
+    EmailForm --> EmailLogin{Login atau Register?}
+    EmailLogin -- Login --> CheckCreds{Kredensial Valid?}
+    CheckCreds -- Tidak --> ErrLogin[❌ Tampilkan Pesan Error]
+    ErrLogin --> EmailForm
+    CheckCreds -- Ya --> Authenticated
+
+    EmailLogin -- Register --> CheckEmailExist{Email Sudah Ada?}
+    CheckEmailExist -- Ya --> ErrDuplicate[❌ Popup: Email sudah terdaftar]
+    CheckEmailExist -- Tidak --> CreateUser[Buat Akun Baru]
+    CreateUser --> Authenticated
+
+    GooglePopup --> GoogleVerify[Backend Verifikasi Token ke Google]
+    GoogleVerify --> GoogleFlow{Dari Halaman Mana?}
+
+    GoogleFlow -- Halaman Login --> CheckGoogleUser{Akun Google Ada di DB?}
+    CheckGoogleUser -- Ya --> Authenticated
+    CheckGoogleUser -- Tidak --> ErrNotFound[❌ Popup: Akun belum terdaftar]
+
+    GoogleFlow -- Halaman Register --> CheckGoogleExist{Email Google Sudah Ada?}
+    CheckGoogleExist -- Ya --> ErrAlreadyReg[❌ Popup: Email sudah terdaftar. Silakan login.]
+    CheckGoogleExist -- Tidak --> PreFillForm[Auto-isi Nama & Email dari Google]
+    PreFillForm --> InputPassword[User Isi Password]
+    InputPassword --> CreateUserGoogle[Buat Akun Baru + Simpan google_id]
+    CreateUserGoogle --> Authenticated
+
+    Authenticated([✅ Terautentikasi]) --> Select[Pilih Tanggal & Durasi]
     Select --> Addons[Pilih Fasilitas Tambahan]
     Addons --> Coupon[Masukkan Kode Kupon]
     Coupon --> Review[Cek Ringkasan Biaya]
-    
     Review --> Submit[Ajukan Pemesanan]
     Submit --> AdminConfirm{Konfirmasi Admin?}
-    
+
     AdminConfirm -- Ditolak --> Batal[❌ Status: Dibatalkan]
     AdminConfirm -- Diterima --> Confirm[✅ Status: Dikonfirmasi]
-    
+
     Confirm --> Invoice[📄 Cetak Invoice]
     Batal --> End([🏁 Selesai])
     Invoice --> End
-    
+
     %% Styling
     style Start fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
     style End fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
-    style CheckLogin fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
-    style CheckBooked fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
+    style Authenticated fill:#d1fae5,stroke:#10b981,stroke-width:2px,color:#065f46
+    style AuthChoice fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     style AdminConfirm fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
+    style CheckGoogleUser fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#831843
+    style CheckGoogleExist fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#831843
+    style GoogleFlow fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#831843
     style Batal fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#991b1b
+    style ErrLogin fill:#fee2e2,stroke:#ef4444,stroke-width:1px,color:#991b1b
+    style ErrDuplicate fill:#fee2e2,stroke:#ef4444,stroke-width:1px,color:#991b1b
+    style ErrNotFound fill:#fee2e2,stroke:#ef4444,stroke-width:1px,color:#991b1b
+    style ErrAlreadyReg fill:#fee2e2,stroke:#ef4444,stroke-width:1px,color:#991b1b
     style Confirm fill:#d1fae5,stroke:#10b981,stroke-width:2px,color:#065f46
-    
+
+    classDef googleStep fill:#fce7f3,stroke:#db2777,stroke-width:1px,color:#831843
+    class GooglePopup,GoogleVerify,PreFillForm,InputPassword,CreateUserGoogle,CheckGoogleUser,CheckGoogleExist googleStep
+
     classDef step fill:#dbeafe,stroke:#2563eb,stroke-width:1px,color:#1e3a8a
-    class Search,Detail,Login,Select,Addons,Coupon,Review,Submit,Invoice,FutureAlert step
+    class Select,Addons,Coupon,Review,Submit,Invoice,EmailForm,CreateUser step
 ```
 
 </details>
@@ -301,9 +336,14 @@ graph TD
 ## 3. Penjelasan Singkat
 
 ### Aktor Utama:
-1.  **User (Penyewa)**: Fokus pada pencarian ruangan kerja yang sesuai kebutuhan, melakukan transaksi pemesanan secara mandiri (termasuk pemesanan di masa depan untuk ruangan yang sedang penuh), serta berkonsultasi via Live Chat/AI Chatbot.
+1.  **User (Penyewa)**: Fokus pada pencarian ruangan kerja yang sesuai kebutuhan, melakukan transaksi pemesanan secara mandiri (termasuk pemesanan di masa depan untuk ruangan yang sedang penuh), berkonsultasi via Live Chat/AI Chatbot, serta login/register menggunakan email+password **atau akun Google**.
 2.  **Helpdesk**: Bertugas khusus sebagai customer support untuk membalas pesan obrolan (live chat) dari penyewa secara real-time.
 3.  **Admin**: Bertugas penuh menjaga ketersediaan data ruangan (CRUD), memantau statistik dashboard, mengelola pemesanan, moderasi ulasan, membalas chat, serta memantau alerting container jika terjadi downtime.
+
+### Alur Utama (Autentikasi):
+Sistem mendukung dua metode autentikasi:
+- **Email & Password**: Login dan Register biasa dengan validasi backend.
+- **Google OAuth (One Tap)**: Di halaman **Login**, jika akun ditemukan langsung terautentikasi. Di halaman **Register**, jika akun sudah ada maka muncul popup info; jika belum ada, nama & email auto-isi dari Google dan user diminta mengatur password baru.
 
 ### Alur Utama (Booking):
 Sistem memastikan pengguna sudah terautentikasi sebelum melakukan pemesanan. Jika ruangan sedang disewa, sistem akan menampilkan notifikasi informatif berisi tanggal akhir sewa saat ini dan menyarankan tanggal mulai baru pada H+1 sewa selesai. Proses validasi bentrokan tanggal dilakukan di backend secara real-time untuk menjamin integritas transaksi sewa.

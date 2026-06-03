@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Cache\RateLimiting\Limit;
 
 class AuthController extends Controller
@@ -15,16 +16,75 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string',
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email',
             'password' => 'required|string|min:6',
+            'google_id' => 'nullable|string',
+            'avatar' => 'nullable|string',
         ]);
+
+        // Cek apakah email sudah terdaftar
+        if (User::where('email', $request->email)->exists()) {
+            return response()->json(['message' => 'Email sudah terdaftar. Silakan login.'], 409);
+        }
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'user',
+            'google_id' => $request->google_id,
+            'avatar' => $request->avatar,
         ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+        ]);
+    }
+
+    /**
+     * Login menggunakan Google ID Token.
+     * Hanya untuk user yang sudah punya akun.
+     */
+    public function googleLogin(Request $request)
+    {
+        $request->validate([
+            'credential' => 'required|string',
+        ]);
+
+        // Verifikasi token ke Google
+        $googleClientId = env('GOOGLE_CLIENT_ID');
+        $response = Http::get('https://oauth2.googleapis.com/tokeninfo', [
+            'id_token' => $request->credential,
+        ]);
+
+        if ($response->failed() || $response->json('aud') !== $googleClientId) {
+            return response()->json(['message' => 'Token Google tidak valid.'], 401);
+        }
+
+        $googleData = $response->json();
+        $email = $googleData['email'] ?? null;
+
+        if (!$email) {
+            return response()->json(['message' => 'Tidak dapat mengambil email dari akun Google.'], 422);
+        }
+
+        // Cari user berdasarkan email
+        $user = User::where('email', $email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'Akun tidak ditemukan. Silakan daftar terlebih dahulu.'], 404);
+        }
+
+        // Update google_id dan avatar jika belum tersimpan
+        if (!$user->google_id) {
+            $user->update([
+                'google_id' => $googleData['sub'] ?? null,
+                'avatar' => $googleData['picture'] ?? null,
+            ]);
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

@@ -12,6 +12,10 @@ RUN npm install
 # Salin semua file project
 COPY . .
 
+# Terima build arg dari docker-compose
+ARG VITE_GOOGLE_CLIENT_ID
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+
 # Build aplikasi untuk production
 RUN npm run build
 

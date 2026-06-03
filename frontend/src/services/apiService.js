@@ -125,6 +125,14 @@ export const registerUser = async (data) => {
   };
 };
 
+export const googleLogin = async (credential) => {
+  const response = await api.post('/auth/google/login', { credential });
+  return {
+    ...response.data.user,
+    token: response.data.token
+  };
+};
+
 export const updateProfile = async (data) => {
   const response = await api.put('/profile', data);
   return response.data;

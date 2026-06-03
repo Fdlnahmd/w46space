@@ -18,6 +18,7 @@
 - **Perpanjang Kontrak**: Fitur sekali klik untuk memperpanjang masa sewa ruangan.
 - **Ulasan & Rating**: Berikan testimoni dan bintang setelah pesanan dikonfirmasi.
 - **Profil & Keamanan**: Kelola data diri dan lupa password via SMTP dengan tombol kembali ke Landing Page yang ramah mobile.
+- **Google OAuth (Login & Register)**: Masuk atau daftar akun menggunakan akun Google. Login Google langsung mengautentikasi user, sementara Register Google otomatis mengisi nama & email — user tetap diminta membuat password sendiri.
 
 ### 🔐 Untuk Admin & Staff
 
@@ -41,14 +42,15 @@
 
 ## 🛠️ Teknologi yang Digunakan
 
-| Komponen             | Teknologi                                  |
-| :------------------- | :----------------------------------------- |
-| **Frontend**         | React.js (Vite), Lucide Icons, Vanilla CSS |
-| **Backend**          | Laravel 11 (RESTful API)                   |
-| **Database**         | MySQL (with **Navicat** as GUI)            |
-| **Containerization** | Docker & Docker Compose                    |
-| **State Management** | React Context API                          |
-| **Monitoring**       | Grafana, Prometheus, Loki, Promtail        |
+| Komponen             | Teknologi                                        |
+| :------------------- | :----------------------------------------------- |
+| **Frontend**         | React.js (Vite), Lucide Icons, Vanilla CSS       |
+| **Backend**          | Laravel 11 (RESTful API)                         |
+| **Database**         | MySQL (with **Navicat** as GUI)                  |
+| **Containerization** | Docker & Docker Compose                          |
+| **State Management** | React Context API                                |
+| **Monitoring**       | Grafana, Prometheus, Loki, Promtail              |
+| **Authentication**   | Laravel Sanctum + Google OAuth 2.0 (One Tap)    |
 
 ---
 
@@ -193,7 +195,9 @@ graph LR
     end
 
     subgraph "Wisma 46 Space System"
-        UC1("Registrasi & Login")
+        UC1("Registrasi & Login Email")
+        UC19("Login dengan Google")
+        UC20("Register dengan Google")
         UC2("Cari & Detail Ruangan")
         UC3("Pesan Ruangan & Addons")
         UC4("Gunakan Kupon Diskon")
@@ -215,6 +219,8 @@ graph LR
     end
 
     U --> UC1
+    U --> UC19
+    U --> UC20
     U --> UC2
     U --> UC3
     U --> UC4
@@ -246,29 +252,57 @@ graph LR
     style A fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
 
     classDef usecase fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#0f172a
-    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17,UC18 usecase
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17,UC18,UC19,UC20 usecase
+
+    classDef googleUC fill:#fce7f3,stroke:#db2777,stroke-width:1.5px,color:#831843
+    class UC19,UC20 googleUC
 ```
 
 ### 🌊 Flowchart: Alur Pemesanan Ruangan
 
 ```mermaid
 graph TD
-    Start([🏁 Mulai]) --> Search[Cari Ruangan]
+    Start([🏁 Mulai]) --> AuthChoice{Metode Autentikasi?}
+
+    AuthChoice -- Email & Password --> EmailForm[Isi Form Email & Password]
+    AuthChoice -- Google OAuth --> GooglePopup[Google Popup Pilih Akun]
+
+    EmailForm --> EmailLogin{Login atau Register?}
+    EmailLogin -- Login --> CheckCreds{Kredensial Valid?}
+    CheckCreds -- Tidak --> ErrLogin[❌ Tampilkan Pesan Error]
+    ErrLogin --> EmailForm
+    CheckCreds -- Ya --> Authenticated
+
+    EmailLogin -- Register --> CheckEmailExist{Email Sudah Ada?}
+    CheckEmailExist -- Ya --> ErrDuplicate[❌ Popup: Email sudah terdaftar]
+    CheckEmailExist -- Tidak --> CreateUser[Buat Akun Baru]
+    CreateUser --> Authenticated
+
+    GooglePopup --> GoogleVerify[Backend Verifikasi Token ke Google]
+    GoogleVerify --> GoogleFlow{Dari Halaman Mana?}
+
+    GoogleFlow -- Halaman Login --> CheckGoogleUser{Akun Google Ada di DB?}
+    CheckGoogleUser -- Ya --> Authenticated
+    CheckGoogleUser -- Tidak --> ErrNotFound[❌ Popup: Akun belum terdaftar]
+
+    GoogleFlow -- Halaman Register --> CheckGoogleExist{Email Google Sudah Ada?}
+    CheckGoogleExist -- Ya --> ErrAlreadyReg[❌ Popup: Email sudah terdaftar. Silakan login.]
+    CheckGoogleExist -- Tidak --> PreFillForm[Auto-isi Nama & Email dari Google]
+    PreFillForm --> InputPassword[User Isi Password]
+    InputPassword --> CreateUserGoogle[Buat Akun Baru + Simpan google_id]
+    CreateUserGoogle --> Authenticated
+
+    Authenticated([✅ Terautentikasi]) --> Search[Cari Ruangan]
     Search --> Detail[Lihat Detail Ruangan & Addons]
     Detail --> CheckBooked{Ruangan Penuh?}
 
-    CheckBooked -- Ya --> FutureAlert[Tampilkan Notifikasi Ketersediaan & Auto-Set H+1 Kontrak Selesai]
-    CheckBooked -- Tidak --> CheckLogin
-    FutureAlert --> CheckLogin
+    CheckBooked -- Ya --> FutureAlert[Notifikasi Ketersediaan & Auto-Set H+1]
+    CheckBooked -- Tidak --> Select
+    FutureAlert --> Select
 
-    CheckLogin{Sudah Login?} -- Tidak --> Login[Login / Register]
-    Login --> Detail
-
-    CheckLogin -- Ya --> Select[Pilih Tanggal & Durasi]
-    Select --> Addons[Pilih Fasilitas Tambahan]
+    Select[Pilih Tanggal & Durasi] --> Addons[Pilih Fasilitas Tambahan]
     Addons --> Coupon[Masukkan Kode Kupon]
     Coupon --> Review[Cek Ringkasan Biaya]
-
     Review --> Submit[Ajukan Pemesanan]
     Submit --> AdminConfirm{Konfirmasi Admin?}
 
@@ -282,14 +316,25 @@ graph TD
     %% Styling
     style Start fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
     style End fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
-    style CheckLogin fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
+    style Authenticated fill:#d1fae5,stroke:#10b981,stroke-width:2px,color:#065f46
+    style AuthChoice fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     style CheckBooked fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     style AdminConfirm fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
+    style CheckGoogleUser fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#831843
+    style CheckGoogleExist fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#831843
+    style GoogleFlow fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#831843
     style Batal fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#991b1b
+    style ErrLogin fill:#fee2e2,stroke:#ef4444,stroke-width:1px,color:#991b1b
+    style ErrDuplicate fill:#fee2e2,stroke:#ef4444,stroke-width:1px,color:#991b1b
+    style ErrNotFound fill:#fee2e2,stroke:#ef4444,stroke-width:1px,color:#991b1b
+    style ErrAlreadyReg fill:#fee2e2,stroke:#ef4444,stroke-width:1px,color:#991b1b
     style Confirm fill:#d1fae5,stroke:#10b981,stroke-width:2px,color:#065f46
 
+    classDef googleStep fill:#fce7f3,stroke:#db2777,stroke-width:1px,color:#831843
+    class GooglePopup,GoogleVerify,PreFillForm,InputPassword,CreateUserGoogle,CheckGoogleUser,CheckGoogleExist googleStep
+
     classDef step fill:#dbeafe,stroke:#2563eb,stroke-width:1px,color:#1e3a8a
-    class Search,Detail,Login,Select,Addons,Coupon,Review,Submit,Invoice,FutureAlert step
+    class Search,Detail,Select,Addons,Coupon,Review,Submit,Invoice,FutureAlert,EmailForm,CreateUser step
 ```
 
 ### 📊 Flowchart: Alur Kelola Admin
@@ -439,7 +484,19 @@ Detail lebih lanjut dan kode Mermaid interaktif dapat dilihat pada dokumentasi i
 
 ---
 
+## ⚙️ Environment Variables
+
+Salin `.env.example` ke `.env` dan sesuaikan:
+
+```env
+# Google OAuth (diperlukan untuk fitur Login/Register Google)
+VITE_GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com   # untuk frontend build
+GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com         # untuk backend verifikasi
+```
+
+> [!IMPORTANT]
+> `VITE_GOOGLE_CLIENT_ID` di-inject saat proses build Docker frontend (bukan runtime). Pastikan sudah diisi sebelum `docker-compose build frontend`.
+
 ---
 
 _Dibuat dengan ❤️ oleh Fadlan Achmad Frizal_
-tes
