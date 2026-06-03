@@ -55,7 +55,7 @@ class AuthController extends Controller
         ]);
 
         // Verifikasi token ke Google
-        $googleClientId = env('GOOGLE_CLIENT_ID');
+        $googleClientId = config('services.google.client_id');
         $response = Http::get('https://oauth2.googleapis.com/tokeninfo', [
             'id_token' => $request->credential,
         ]);
