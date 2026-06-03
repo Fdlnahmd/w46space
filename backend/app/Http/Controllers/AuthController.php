@@ -61,6 +61,12 @@ class AuthController extends Controller
         ]);
 
         if ($response->failed() || $response->json('aud') !== $googleClientId) {
+            \Illuminate\Support\Facades\Log::error('Google Login Verification Failed', [
+                'configured_client_id' => $googleClientId,
+                'response_status' => $response->status(),
+                'response_body' => $response->json(),
+                'credential_provided' => substr($request->credential, 0, 20) . '...'
+            ]);
             return response()->json(['message' => 'Token Google tidak valid.'], 401);
         }
 
