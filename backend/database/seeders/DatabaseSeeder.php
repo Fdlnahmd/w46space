@@ -23,7 +23,15 @@ class DatabaseSeeder extends Seeder
             'role' => 'admin',
         ]);
 
-        // 2. Create Regular User
+        // 2. Create Helpdesk
+        User::create([
+            'name' => 'Helpdesk Support',
+            'email' => 'helpdesk@w46space.com',
+            'password' => Hash::make('password'),
+            'role' => 'helpdesk',
+        ]);
+
+        // 3. Create Regular User
         $user = User::create([
             'name' => 'Budi Santoso',
             'email' => 'budi@gmail.com',

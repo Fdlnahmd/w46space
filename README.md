@@ -34,7 +34,7 @@
 - **Dukungan Dua Bahasa (Bilingual - ID/EN)**: Seluruh antarmuka platform (Landing Page, Form Booking, Dashboard Admin/Helpdesk, grafik statistik, ulasan, kupon) hingga berkas cetak **Invoice PDF** dapat berganti bahasa secara dinamis secara instan.
 - **Mobile Card-List Layout**: Menggantikan tabel horizontal tradisional pada resolusi ponsel dengan **Daftar Kartu Informasi** vertikal otomatis. Tidak perlu menggeser (swipe-X) layar lagi di perangkat ponsel!
 - **Bulletproof Redirection (Anti-Crash)**: Penanganan data `404 Not Found` yang tangguh pada detail pesanan. Menghindari crash atau loading tak terbatas (_"Memuat..."_) jika mengakses pesanan yang telah dihapus melalui tautan notifikasi lama.
-- **Sistem Notifikasi Cerdas & Modal Popup**: Admin dan pengguna akan menerima modal pemberitahuan informatif jika diarahkan kembali karena tautan pesanan usang.
+- **Sistem Notifikasi Cerdas & Modal Popup**: Admin dan pengguna akan menerima modal pemberitahuan informatif jika diarahkan kembali karena tautan pesanan sudah tidak ada.
 - **Aksi Tombol Konsisten**: Penggunaan standar tombol aksi outline lingkaran berukuran tetap (`36px` × `36px`) baik untuk opsi edit/detail (`.btn-outline`) maupun hapus (`.btn-outline-danger`) untuk menghindari asimetris layout.
 - **Navbar Terpadu**: Tombol Bell Notifikasi dan Theme Switcher berdimensi presisi (`42px` × `42px`) dengan perataan tengah ikon yang sempurna.
 
@@ -42,15 +42,15 @@
 
 ## 🛠️ Teknologi yang Digunakan
 
-| Komponen             | Teknologi                                        |
-| :------------------- | :----------------------------------------------- |
-| **Frontend**         | React.js (Vite), Lucide Icons, Vanilla CSS       |
-| **Backend**          | Laravel 11 (RESTful API)                         |
-| **Database**         | MySQL (with **Navicat** as GUI)                  |
-| **Containerization** | Docker & Docker Compose                          |
-| **State Management** | React Context API                                |
-| **Monitoring**       | Grafana, Prometheus, Loki, Promtail              |
-| **Authentication**   | Laravel Sanctum + Google OAuth 2.0 (One Tap)    |
+| Komponen             | Teknologi                                    |
+| :------------------- | :------------------------------------------- |
+| **Frontend**         | React.js (Vite), Lucide Icons, Vanilla CSS   |
+| **Backend**          | Laravel 11 (RESTful API)                     |
+| **Database**         | MySQL (with **Navicat** as GUI)              |
+| **Containerization** | Docker & Docker Compose                      |
+| **State Management** | React Context API                            |
+| **Monitoring**       | Grafana, Prometheus, Loki, Promtail          |
+| **Authentication**   | Laravel Sanctum + Google OAuth 2.0 (One Tap) |
 
 ---
 
@@ -83,7 +83,6 @@ Pastikan Anda sudah menginstal **Docker Desktop**, **Docker Compose**, dan **WSL
 4.  **Akses Aplikasi**
     - **Frontend**: [http://localhost](http://localhost)
     - **Backend API**: [http://localhost:8000](http://localhost:8000)
-    - **Mobile Preview**: [http://localhost:8080](http://localhost:8080)
 
     Port dan host binding dapat diubah melalui file `.env`, misalnya `FRONTEND_BIND_HOST`, `FRONTEND_PORT`, `BACKEND_BIND_HOST`, `BACKEND_PORT`, dan `GRAFANA_PORT`.
 
@@ -173,10 +172,11 @@ Panduan lebih lengkap tersedia di [docs/grafana.md](docs/grafana.md).
 
 ## 🔑 Akun Demo (Default Seeder)
 
-| Role      | Email              | Password |
-| :-------- | :----------------- | :------- |
-| **Admin** | admin@w46space.com | password |
-| **User**  | budi@gmail.com     | password |
+| Role         | Email                 | Password |
+| :----------- | :-------------------- | :------- |
+| **Admin**    | admin@w46space.com    | password |
+| **Helpdesk** | helpdesk@w46space.com | password |
+| **User**     | budi@gmail.com        | password |
 
 ---
 

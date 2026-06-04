@@ -41,51 +41,64 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::put('/profile/password', [AuthController::class, 'changePassword']);
 
-    // Admin Analytics
-    Route::get('/admin/analytics', [AnalyticsController::class, 'getStats']);
-
-    // Ruangan (Admin only)
-    Route::post('/offices', [OfficeController::class, 'store']);
-    Route::put('/offices/{id}', [OfficeController::class, 'update']);
-    Route::delete('/offices/{id}', [OfficeController::class, 'destroy']);
-
-    // Pemesanan
+    // Pemesanan (User sendiri, admin & helpdesk)
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::put('/bookings/{id}', [BookingController::class, 'update']);
-    Route::patch('/bookings/{id}/status', [BookingController::class, 'updateStatus']);
-    Route::post('/bookings/{id}/addons', [BookingController::class, 'addAddons']);
-    Route::patch('/bookings/{id}/addons/confirm', [BookingController::class, 'confirmAddon']);
     Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
 
-    // Review
-    Route::post('/reviews', [\App\Http\Controllers\ReviewController::class, 'store']);
-    Route::get('/admin/reviews', [\App\Http\Controllers\ReviewController::class, 'all']);
-    Route::delete('/admin/reviews/{id}', [\App\Http\Controllers\ReviewController::class, 'destroy']);
-
-    // Coupons, Notifications
-    Route::get('/admin/coupons', [\App\Http\Controllers\CouponController::class, 'index']);
-    Route::post('/admin/coupons', [\App\Http\Controllers\CouponController::class, 'store']);
-    Route::put('/admin/coupons/{id}', [\App\Http\Controllers\CouponController::class, 'update']);
-    Route::delete('/admin/coupons/{id}', [\App\Http\Controllers\CouponController::class, 'destroy']);
+    // Coupon check (semua user login)
     Route::post('/coupons/check', [\App\Http\Controllers\CouponController::class, 'check']);
 
+    // Notifications (semua user login)
     Route::get('/notifications', [\App\Http\Controllers\ExtraController::class, 'getNotifications']);
     Route::patch('/notifications/read-all', [\App\Http\Controllers\ExtraController::class, 'markAllAsRead']);
     Route::patch('/notifications/{id}/read', [\App\Http\Controllers\ExtraController::class, 'markAsRead']);
 
-    // Hybrid Chat Endpoints
+    // Review (semua user login)
+    Route::post('/reviews', [\App\Http\Controllers\ReviewController::class, 'store']);
+
+    // Hybrid Chat (semua user login)
     Route::get('/chat/session', [ChatController::class, 'getSession']);
     Route::get('/chat/messages', [ChatController::class, 'getMessages']);
     Route::post('/chat/message', [ChatController::class, 'sendMessage']);
     Route::post('/chat/request-human', [ChatController::class, 'requestHuman']);
     Route::post('/chat/reset', [ChatController::class, 'resetSession']);
 
-    // Admin Chat Endpoints
-    Route::get('/admin/chat/sessions', [AdminChatController::class, 'getSessions']);
-    Route::get('/admin/chat/{id}/messages', [AdminChatController::class, 'getMessages']);
-    Route::post('/admin/chat/{id}/reply', [AdminChatController::class, 'sendMessage']);
-    Route::patch('/admin/chat/{id}/takeover', [AdminChatController::class, 'takeover']);
-    Route::post('/admin/chat/{id}/close', [AdminChatController::class, 'closeSession']);
+    // ─── Admin Only ────────────────────────────────────────────────────────────
+    Route::middleware('is_admin')->group(function () {
+        // Analytics
+        Route::get('/admin/analytics', [AnalyticsController::class, 'getStats']);
+
+        // Ruangan
+        Route::post('/offices', [OfficeController::class, 'store']);
+        Route::put('/offices/{id}', [OfficeController::class, 'update']);
+        Route::delete('/offices/{id}', [OfficeController::class, 'destroy']);
+
+        // Booking - status update & addon confirm
+        Route::patch('/bookings/{id}/status', [BookingController::class, 'updateStatus']);
+        Route::post('/bookings/{id}/addons', [BookingController::class, 'addAddons']);
+        Route::patch('/bookings/{id}/addons/confirm', [BookingController::class, 'confirmAddon']);
+
+        // Reviews
+        Route::get('/admin/reviews', [\App\Http\Controllers\ReviewController::class, 'all']);
+        Route::delete('/admin/reviews/{id}', [\App\Http\Controllers\ReviewController::class, 'destroy']);
+
+        // Coupons
+        Route::get('/admin/coupons', [\App\Http\Controllers\CouponController::class, 'index']);
+        Route::post('/admin/coupons', [\App\Http\Controllers\CouponController::class, 'store']);
+        Route::put('/admin/coupons/{id}', [\App\Http\Controllers\CouponController::class, 'update']);
+        Route::delete('/admin/coupons/{id}', [\App\Http\Controllers\CouponController::class, 'destroy']);
+    });
+
+    // ─── Admin atau Helpdesk ───────────────────────────────────────────────────
+    Route::middleware('is_admin_or_helpdesk')->group(function () {
+        Route::get('/admin/chat/sessions', [AdminChatController::class, 'getSessions']);
+        Route::get('/admin/chat/{id}/messages', [AdminChatController::class, 'getMessages']);
+        Route::post('/admin/chat/{id}/reply', [AdminChatController::class, 'sendMessage']);
+        Route::patch('/admin/chat/{id}/takeover', [AdminChatController::class, 'takeover']);
+        Route::post('/admin/chat/{id}/close', [AdminChatController::class, 'closeSession']);
+    });
 });
+
