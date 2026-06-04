@@ -52,6 +52,31 @@ sudo ufw status verbose
 
 *Semua port internal seperti database MySQL (3306), Grafana (3000), dan Prometheus (9090) akan diblokir oleh UFW jika diakses dari luar, tetapi tetap bisa saling berkomunikasi dengan aman di dalam Docker Network internal.*
 
+### 1.3 API Security (CORS & Rate Limiting)
+
+Selain pengamanan di level OS dan Docker, API Laravel juga dilindungi di level aplikasi.
+
+#### CORS (Cross-Origin Resource Sharing)
+Konfigurasi CORS membatasi domain mana saja yang diizinkan mengakses API. File konfigurasi berada di `backend/config/cors.php`.
+
+Hanya domain berikut yang diizinkan mengakses API:
+- Domain produksi: nilai `APP_URL` dari `.env` (contoh: `https://w46space.nexvol.xyz`)
+- `http://localhost` dan variasinya (untuk kebutuhan development lokal)
+
+> **Catatan:** Jika kamu menambahkan domain baru (misal subdomain admin), tambahkan ke array `allowed_origins` di `config/cors.php` lalu jalankan `php artisan config:cache`.
+
+#### Rate Limiting (Throttle Middleware)
+Setiap kelompok route API memiliki batas request per menit untuk mencegah serangan *brute force* dan *DDoS*:
+
+| Kelompok Route | Endpoint | Batas |
+|---|---|---|
+| Auth | `/register`, `/login`, `/auth/google/login` | **10 req/menit** |
+| Password Reset | `/forgot-password`, `/reset-password` | **5 req/menit** |
+| Public Read | `/offices`, `/reviews`, `/addons` | **60 req/menit** |
+| Protected (Login Required) | Semua route dengan `auth:sanctum` | **120 req/menit** |
+
+Jika request melebihi batas, Laravel akan mengembalikan response **HTTP 429 Too Many Requests**.
+
 ---
 
 ## 💾 Bagian 2: Strategi Backup Database Otomatis (Cron & S3/R2)
