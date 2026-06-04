@@ -9,18 +9,33 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AdminChatController;
 use Illuminate\Support\Facades\Route;
 
-// Public Routes
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/auth/google/login', [AuthController::class, 'googleLogin']);
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-Route::get('/offices', [OfficeController::class, 'index']);
-Route::get('/offices/{id}', [OfficeController::class, 'show']);
-Route::get('/addons', [\App\Http\Controllers\ExtraController::class, 'getAddons']);
+// Auth Routes (Rate limit ketat: 10 request/menit)
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/auth/google/login', [AuthController::class, 'googleLogin']);
+});
 
-// Protected Routes (Perlu Login)
-Route::middleware('auth:sanctum')->group(function () {
+// Forgot/Reset Password (Rate limit sangat ketat: 5 request/menit)
+Route::middleware('throttle:5,1')->group(function () {
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+});
+
+// Public Read Routes (Rate limit normal: 60 request/menit)
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/offices', [OfficeController::class, 'index']);
+    Route::get('/offices/{id}', [OfficeController::class, 'show']);
+    Route::get('/addons', [\App\Http\Controllers\ExtraController::class, 'getAddons']);
+    Route::get('/offices/{id}/reviews', [\App\Http\Controllers\ReviewController::class, 'index']);
+    Route::get('/reviews/latest', [\App\Http\Controllers\ReviewController::class, 'latest']);
+});
+
+// Invoice Public (With internal security check)
+Route::get('/bookings/{id}/invoice', [InvoiceController::class, 'download']);
+
+// Protected Routes (Perlu Login, Rate limit 120 request/menit)
+Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
@@ -74,10 +89,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/admin/chat/{id}/takeover', [AdminChatController::class, 'takeover']);
     Route::post('/admin/chat/{id}/close', [AdminChatController::class, 'closeSession']);
 });
-
-// Review Public
-Route::get('/offices/{id}/reviews', [\App\Http\Controllers\ReviewController::class, 'index']);
-Route::get('/reviews/latest', [\App\Http\Controllers\ReviewController::class, 'latest']);
-
-// Invoice Public (With internal security check)
-Route::get('/bookings/{id}/invoice', [InvoiceController::class, 'download']);
