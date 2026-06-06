@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getPemesananById, updateStatusPemesanan, confirmAddon, getInvoiceUrl } from '../../services/apiService';
+import { getPemesananById, updateStatusPemesanan, confirmAddon, downloadInvoicePdf } from '../../services/apiService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { 
   ArrowLeft, Building, Calendar, Clock, User, Briefcase, 
   CheckCircle, XCircle, Timer, AlertCircle, BadgeCheck, Hourglass,
-  Check, Plus, Coffee, Wifi, Printer, Edit
+  Check, Plus, Coffee, Wifi, Printer, Edit, CreditCard
 } from 'lucide-react';
 
 const statusConfig = {
@@ -158,7 +158,7 @@ const DetailPemesananAdmin = () => {
   };
 
   const handleDownloadInvoice = () => {
-    window.open(getInvoiceUrl(id, lang), '_blank');
+    downloadInvoicePdf(id, lang);
   };
 
   useEffect(() => {
@@ -359,6 +359,29 @@ const DetailPemesananAdmin = () => {
             <InfoRow icon={Clock}     label={lang === 'id' ? 'Jam Operasional' : 'Operational Hours'} value={pesanan.waktu_mulai && pesanan.waktu_selesai ? `${pesanan.waktu_mulai} – ${pesanan.waktu_selesai}` : '—'} />
             <InfoRow icon={Building}  label={lang === 'id' ? 'Ruangan' : 'Room'}         value={pesanan.office?.nama || '—'} />
             <InfoRow icon={AlertCircle} label={lang === 'id' ? 'Total Harga' : 'Total Price'}   value={`Rp ${Number(pesanan.total_harga || 0).toLocaleString('id-ID')}`} highlight />
+            
+            {/* Payment Details for Admin */}
+            <InfoRow 
+              icon={CreditCard} 
+              label={lang === 'id' ? 'Status Pembayaran' : 'Payment Status'} 
+              value={
+                String(pesanan.payment_status || 'Pending').toLowerCase() === 'paid' 
+                  ? (lang === 'id' ? 'Lunas / Berhasil' : 'Paid / Successful') 
+                  : String(pesanan.payment_status || 'Pending').toLowerCase() === 'failed'
+                  ? (lang === 'id' ? 'Gagal' : 'Failed')
+                  : String(pesanan.payment_status || 'Pending').toLowerCase() === 'expired'
+                  ? (lang === 'id' ? 'Kedaluwarsa' : 'Expired')
+                  : (lang === 'id' ? 'Menunggu Pembayaran' : 'Pending Payment')
+              }
+              highlight={String(pesanan.payment_status || 'Pending').toLowerCase() === 'paid'}
+            />
+            {String(pesanan.payment_status || 'Pending').toLowerCase() === 'paid' && (
+              <InfoRow 
+                icon={CheckCircle} 
+                label={lang === 'id' ? 'Metode & Waktu Bayar' : 'Payment Method & Time'} 
+                value={`${pesanan.midtrans_payment_type || 'Midtrans'} - ${pesanan.paid_at ? new Date(pesanan.paid_at).toLocaleString('id-ID') : '—'}`} 
+              />
+            )}
           </div>
         </div>
 

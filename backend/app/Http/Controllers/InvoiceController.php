@@ -25,9 +25,13 @@ class InvoiceController extends Controller
             return response()->json(['message' => 'Akses ditolak. Invoice hanya tersedia untuk pesanan yang sudah lunas/dikonfirmasi.'], 403);
         }
 
-        // Mencoba mendapatkan user dari session atau token (jika ada)
-        /** @var \App\Models\User $user */
+        /** @var \App\Models\User|null $user */
         $user = Auth::guard('sanctum')->user() ?: Auth::user();
+        $role = strtolower($user?->role ?? '');
+
+        if (!$user || (!in_array($role, ['admin', 'helpdesk']) && $booking->user_id !== $user->id)) {
+            return response()->json(['message' => 'Akses ditolak.'], 403);
+        }
 
         $lang = $request->query('lang', 'id');
 
@@ -52,7 +56,10 @@ class InvoiceController extends Controller
                 'isHtml5ParserEnabled' => true,
             ])->loadView('pdf.invoice', $data);
 
-            return $pdf->download($data['invoice_no'] . '.pdf');
+            return response($pdf->output(), 200, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $data['invoice_no'] . '.pdf"',
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal membuat PDF',

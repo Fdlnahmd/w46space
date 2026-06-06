@@ -1,4 +1,5 @@
 import { X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Modal = ({ 
   isOpen, 
@@ -8,12 +9,17 @@ const Modal = ({
   title, 
   message, 
   confirmText = 'Ya, Hapus',
+  cancelText,
   children, // Tambahkan children agar bisa render form kustom
   showIcon = true // Opsi untuk menyembunyikan ikon centang besar
 }) => {
+  const langContext = useLanguage();
+  const lang = langContext?.lang || 'id';
+
   if (!isOpen) return null;
 
   const isFormModal = !!children;
+  const resolvedCancelText = cancelText || (onConfirm ? (lang === 'id' ? 'Batal' : 'Cancel') : (lang === 'id' ? 'Tutup' : 'Close'));
 
   return (
     <div style={{
@@ -75,7 +81,7 @@ const Modal = ({
           onConfirm ? (
             <div style={{ display: 'flex', gap: '1rem' }}>
               <button onClick={onClose} className="btn btn-outline" style={{ flex: 1, padding: '0.75rem' }}>
-                Batal
+                {resolvedCancelText}
               </button>
               <button onClick={onConfirm} className="btn btn-danger" style={{ flex: 1, padding: '0.75rem' }}>
                 {confirmText}
@@ -83,7 +89,7 @@ const Modal = ({
             </div>
           ) : (
             <button onClick={onClose} className="btn btn-primary" style={{ width: '100%', padding: '0.75rem' }}>
-              Tutup
+              {resolvedCancelText}
             </button>
           )
         )}

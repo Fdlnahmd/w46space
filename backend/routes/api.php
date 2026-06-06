@@ -7,6 +7,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AdminChatController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 // Auth Routes (Rate limit ketat: 10 request/menit)
@@ -31,8 +32,8 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/reviews/latest', [\App\Http\Controllers\ReviewController::class, 'latest']);
 });
 
-// Invoice Public (With internal security check)
-Route::get('/bookings/{id}/invoice', [InvoiceController::class, 'download']);
+// Midtrans Webhook (PUBLIC — dipanggil oleh server Midtrans, tanpa auth)
+Route::post('/payment/webhook', [PaymentController::class, 'webhook']);
 
 // Protected Routes (Perlu Login, Rate limit 120 request/menit)
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
@@ -47,6 +48,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::put('/bookings/{id}', [BookingController::class, 'update']);
     Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
+    Route::get('/bookings/{id}/invoice', [InvoiceController::class, 'download']);
 
     // Coupon check (semua user login)
     Route::post('/coupons/check', [\App\Http\Controllers\CouponController::class, 'check']);
@@ -58,6 +60,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
 
     // Review (semua user login)
     Route::post('/reviews', [\App\Http\Controllers\ReviewController::class, 'store']);
+
+    // Payment — user klik "Bayar Sekarang"
+    Route::post('/bookings/{id}/pay', [PaymentController::class, 'createSnapToken']);
+    Route::post('/bookings/{id}/addons', [BookingController::class, 'addAddons']);
+    Route::patch('/bookings/{id}/status', [BookingController::class, 'updateStatus']);
 
     // Hybrid Chat (semua user login)
     Route::get('/chat/session', [ChatController::class, 'getSession']);
@@ -76,9 +83,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
         Route::put('/offices/{id}', [OfficeController::class, 'update']);
         Route::delete('/offices/{id}', [OfficeController::class, 'destroy']);
 
-        // Booking - status update & addon confirm
-        Route::patch('/bookings/{id}/status', [BookingController::class, 'updateStatus']);
-        Route::post('/bookings/{id}/addons', [BookingController::class, 'addAddons']);
+        // Booking - addon confirm
         Route::patch('/bookings/{id}/addons/confirm', [BookingController::class, 'confirmAddon']);
 
         // Reviews
@@ -101,4 +106,3 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
         Route::post('/admin/chat/{id}/close', [AdminChatController::class, 'closeSession']);
     });
 });
-

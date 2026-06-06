@@ -28,6 +28,10 @@ class Booking extends Model
         'coupon_id',
         'discount_amount',
         'total_addon_price',
+        'midtrans_order_id',
+        'midtrans_snap_token',
+        'midtrans_payment_type',
+        'paid_at',
     ];
 
     protected $casts = [
@@ -36,6 +40,7 @@ class Booking extends Model
         'total_harga' => 'float',
         'discount_amount' => 'float',
         'total_addon_price' => 'float',
+        'paid_at' => 'datetime',
     ];
 
     public function user()

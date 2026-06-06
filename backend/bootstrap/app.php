@@ -16,7 +16,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'is_admin'            => \App\Http\Middleware\IsAdmin::class,
             'is_admin_or_helpdesk' => \App\Http\Middleware\IsAdminOrHelpdesk::class,
         ]);
+
+        $middleware->redirectGuestsTo(function (\Illuminate\Http\Request $request) {
+            return $request->is('api/*') ? null : '/login';
+        });
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+        });
     })->create();

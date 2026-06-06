@@ -2,6 +2,34 @@ import api from './api';
 
 const API_URL = '/api';
 
+let midtransSnapPromise = null;
+
+export const ensureMidtransSnap = (clientKey, snapUrl = 'https://app.sandbox.midtrans.com/snap/snap.js') => {
+  if (window.snap?.pay) return Promise.resolve();
+
+  if (!clientKey) {
+    return Promise.reject(new Error('Midtrans client key is not configured.'));
+  }
+
+  if (midtransSnapPromise) return midtransSnapPromise;
+
+  midtransSnapPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.id = 'midtrans-snap-script';
+    script.src = snapUrl;
+    script.async = true;
+    script.setAttribute('data-client-key', clientKey);
+    script.onload = () => resolve();
+    script.onerror = () => {
+      midtransSnapPromise = null;
+      reject(new Error('Failed to load Midtrans Snap script.'));
+    };
+    document.body.appendChild(script);
+  });
+
+  return midtransSnapPromise;
+};
+
 /**
  * Service API untuk berinteraksi dengan Backend Laravel.
  */
@@ -79,10 +107,46 @@ export const confirmAddon = async (bookingId, addonId) => {
   return response.data;
 };
 
+export const createSnapToken = async (bookingId) => {
+  const response = await api.post(`/bookings/${bookingId}/pay`);
+  return response.data;
+};
+
+
 
 // --- INVOICE ---
 export const getInvoiceUrl = (id, lang = 'id') => {
   return `${API_URL}/bookings/${id}/invoice?lang=${lang}`;
+};
+
+export const downloadInvoicePdf = async (id, lang = 'id') => {
+  const fallbackFilename = `INV-${String(id).padStart(5, '0')}.pdf`;
+
+  try {
+    const response = await api.get(`/bookings/${id}/invoice?lang=${lang}`, {
+      responseType: 'blob',
+      headers: {
+        Accept: 'application/pdf',
+      },
+    });
+
+    const contentDisposition = response.headers['content-disposition'] || '';
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+    const filename = filenameMatch?.[1] || fallbackFilename;
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const objectUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = objectUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(objectUrl);
+  } catch (error) {
+    console.error('Gagal mengunduh invoice:', error);
+    alert(lang === 'id' ? 'Gagal mengunduh invoice.' : 'Failed to download invoice.');
+  }
 };
 
 // --- ANALYTICS ---

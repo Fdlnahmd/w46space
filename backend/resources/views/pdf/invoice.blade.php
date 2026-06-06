@@ -32,7 +32,7 @@
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             color: #1a202c;
-            line-height: 1.5;
+            line-height: 1.35;
             background: #ffffff;
             margin: 0;
             padding: 0;
@@ -55,14 +55,14 @@
         }
 
         .header-left {
-            padding: 35px 40px;
+            padding: 26px 36px;
             color: #ffffff;
             vertical-align: top;
             background-color: rgba(15, 50, 130, 0.65);
         }
 
         .header-right {
-            padding: 35px 40px;
+            padding: 26px 36px;
             color: #ffffff;
             text-align: right;
             vertical-align: top;
@@ -70,7 +70,7 @@
         }
 
         .brand-name {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: bold;
             color: #ffffff;
         }
@@ -86,12 +86,12 @@
         .brand-address {
             font-size: 11px;
             color: #cbd5e1;
-            margin-top: 12px;
+            margin-top: 4px;
             line-height: 1.6;
         }
 
         .invoice-label {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
             color: #ffffff;
             letter-spacing: 2px;
@@ -109,7 +109,7 @@
 
         .status-badge {
             display: inline-block;
-            margin-top: 12px;
+            margin-top: 4px;
             padding: 4px 14px;
             border: 2px solid #4ade80;
             color: #4ade80;
@@ -122,7 +122,7 @@
 
         .status-badge-pending {
             display: inline-block;
-            margin-top: 12px;
+            margin-top: 4px;
             padding: 4px 14px;
             border: 2px solid #fbbf24;
             color: #fbbf24;
@@ -135,7 +135,7 @@
 
         /* ── Body ───────────────────────────────── */
         .body {
-            padding: 40px;
+            padding: 26px 36px 22px;
         }
 
         .section-label {
@@ -144,7 +144,7 @@
             letter-spacing: 1px;
             text-transform: uppercase;
             color: #1e40af;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         /* Tenant Info Table */
@@ -153,12 +153,12 @@
             border-collapse: collapse;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            margin-bottom: 30px;
+            margin-bottom: 14px;
         }
 
         .tenant-cell {
             width: 33.33%;
-            padding: 16px 20px;
+            padding: 12px 16px;
             vertical-align: top;
         }
 
@@ -181,7 +181,7 @@
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 14px;
         }
 
         .items-table th {
@@ -191,7 +191,7 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #64748b;
-            padding: 12px 14px;
+            padding: 9px 12px;
             border-bottom: 2px solid #e2e8f0;
             text-align: left;
         }
@@ -201,7 +201,7 @@
         }
 
         .items-table td {
-            padding: 14px;
+            padding: 10px 12px;
             border-bottom: 1px solid #f1f5f9;
             font-size: 13px;
             color: #374151;
@@ -226,14 +226,14 @@
         .total-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
-            margin-bottom: 30px;
+            margin-top: 4px;
+            margin-bottom: 14px;
         }
 
         .total-box {
             background: #eff6ff;
             border: 1px solid #bfdbfe;
-            padding: 16px 20px;
+            padding: 12px 16px;
             text-align: right;
         }
 
@@ -256,7 +256,7 @@
         .payment-box {
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
-            padding: 16px 20px;
+            padding: 12px 16px;
             margin-top: 10px;
         }
 
@@ -283,7 +283,7 @@
         .footer {
             background: #f8fafc;
             border-top: 1px solid #e2e8f0;
-            padding: 24px 40px;
+            padding: 14px 36px;
             text-align: center;
         }
 
@@ -296,7 +296,7 @@
         .footer .contact {
             font-size: 11px;
             color: #64748b;
-            margin-top: 8px;
+            margin-top: 4px;
         }
     </style>
 </head>
@@ -398,7 +398,7 @@
                     @if($booking->discount_amount > 0)
                     <tr class="row-discount">
                         <td colspan="2">{{ $lang === 'en' ? 'Coupon Discount:' : 'Diskon Kupon:' }} <strong>{{ $booking->coupon->code ?? 'Kupon' }}</strong></td>
-                        <td class="text-right">− Rp {{ number_format($booking->discount_amount, 0, ',', '.') }}</td>
+                        <td class="text-right">- Rp {{ number_format($booking->discount_amount, 0, ',', '.') }}</td>
                     </tr>
                     @endif
                 </tbody>
@@ -418,8 +418,16 @@
             <!-- Payment Info -->
             <div class="payment-box">
                 <div class="pay-label">{{ $lang === 'en' ? 'Payment Information' : 'Informasi Pembayaran' }}</div>
-                <p>{{ $lang === 'en' ? 'Payment confirmation & inquiries:' : 'Konfirmasi pembayaran & pertanyaan:' }} <strong>WhatsApp 0812 3456 7890</strong> (Admin)</p>
-                <p>Email: <strong>info@wisma46space.com</strong></p>
+                @if($booking->midtrans_payment_type)
+                <p>{{ $lang === 'en' ? 'Payment Method:' : 'Metode Pembayaran:' }} <strong>{{ strtoupper($booking->midtrans_payment_type) }}</strong></p>
+                @endif
+                @if($booking->paid_at)
+                <p>{{ $lang === 'en' ? 'Payment Time:' : 'Waktu Pembayaran:' }} <strong>{{ $booking->paid_at->locale($lang === 'en' ? 'en' : 'id')->isoFormat('DD MMMM YYYY, HH:mm') }} WIB</strong></p>
+                @endif
+                <p style="margin-top: 4px; font-size: 11px; color: #4b5563;">
+                    {{ $lang === 'en' ? 'For payment inquiries, please contact:' : 'Untuk pertanyaan pembayaran, silakan hubungi:' }} 
+                    <strong>WhatsApp 0812 3456 7890</strong> (Admin) &nbsp;·&nbsp; <strong>info@wisma46space.com</strong>
+                </p>
             </div>
 
         </div>

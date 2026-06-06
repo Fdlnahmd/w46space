@@ -4,6 +4,7 @@ import { getRuangan } from '../services/apiService';
 import { Users, Star, ArrowLeft, AlertCircle, RefreshCw } from 'lucide-react';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { useLanguage } from '../contexts/LanguageContext';
+import LazyImage from '../components/LazyImage';
 
 const PopularRuangan = () => {
   const { t, lang } = useLanguage();
@@ -72,7 +73,7 @@ const PopularRuangan = () => {
               {ruangan.map(item => (
                 <div key={item.id} className="card">
                   <div style={{ height: '200px', overflow: 'hidden', position: 'relative' }}>
-                    <img src={item.gambar} alt={item.nama} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <LazyImage src={item.gambar} alt={item.nama} />
                     <div style={{ 
                       position: 'absolute', top: '1rem', right: '1rem', 
                       backgroundColor: 'var(--color-warning)', color: 'white',

@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getPemesananByUser, batalkanPemesanan, getInvoiceUrl } from '../services/apiService';
+import { getPemesananByUser, batalkanPemesanan, downloadInvoicePdf, createSnapToken, ensureMidtransSnap } from '../services/apiService';
 import { ClipboardList, XCircle, CheckCircle, Eye, Hourglass, BadgeCheck, AlertCircle, RefreshCw, Star, Printer } from 'lucide-react';
 import SkeletonLoader from '../components/SkeletonLoader';
 import Modal from '../components/Modal';
+import LazyImage from '../components/LazyImage';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const statusConfig = {
@@ -21,9 +22,16 @@ const PesananSaya = () => {
   const [pesananList, setPesananList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [errorModal, setErrorModal] = useState(() => ({
+  const [payingId, setPayingId] = useState(null);
+  const [modalState, setModalState] = useState(() => ({
     isOpen: !!location.state?.error,
-    message: location.state?.error || ''
+    title: t('booking_not_found') || 'Peringatan',
+    message: location.state?.error || '',
+    type: 'warning',
+    confirmText: lang === 'id' ? 'Ya' : 'Yes',
+    cancelText: lang === 'id' ? 'Batal' : 'Cancel',
+    onConfirm: null,
+    onClose: null
   }));
 
   useEffect(() => {
@@ -63,11 +71,120 @@ const PesananSaya = () => {
     };
   }, [loadData]);
 
+  const showCustomAlert = (title, message, type = 'success', onClose = null) => {
+    setModalState({
+      isOpen: true,
+      title,
+      message,
+      type,
+      confirmText: 'OK',
+      cancelText: lang === 'id' ? 'Tutup' : 'Close',
+      onConfirm: null,
+      onClose
+    });
+  };
+
   const handleBatalkan = (id) => {
-    if (!window.confirm(t('cancel_confirm'))) return;
-    batalkanPemesanan(id)
-      .then(() => { alert(t('cancel_success')); loadData(); })
-      .catch(err => alert(err.message));
+    setModalState({
+      isOpen: true,
+      title: lang === 'id' ? 'Batalkan Pemesanan' : 'Cancel Booking',
+      message: t('cancel_confirm'),
+      type: 'danger',
+      confirmText: lang === 'id' ? 'Ya, Batalkan' : 'Yes, Cancel',
+      cancelText: lang === 'id' ? 'Batal' : 'Cancel',
+      onConfirm: () => {
+        setModalState(prev => ({ ...prev, isOpen: false }));
+        batalkanPemesanan(id)
+          .then(() => { 
+            showCustomAlert(
+              lang === 'id' ? 'Berhasil' : 'Success', 
+              t('cancel_success'), 
+              'success'
+            ); 
+            loadData(); 
+          })
+          .catch(err => {
+            showCustomAlert(
+              lang === 'id' ? 'Gagal' : 'Failed', 
+              err.message, 
+              'danger'
+            );
+          });
+      }
+    });
+  };
+
+  const handlePayment = async (bookingId) => {
+    if (payingId) return;
+    setPayingId(bookingId);
+    try {
+      const response = await createSnapToken(bookingId);
+      const snapToken = response?.snap_token;
+      if (snapToken) {
+        await ensureMidtransSnap(response.client_key, response.snap_url);
+
+        if (!window.snap?.pay) {
+          showCustomAlert(
+            lang === 'id' ? 'Kesalahan Pembayaran' : 'Payment Error',
+            lang === 'id' ? 'Layanan pembayaran belum siap. Muat ulang halaman lalu coba lagi.' : 'Payment service is not ready. Reload the page and try again.',
+            'danger'
+          );
+          return;
+        }
+
+        window.snap.pay(snapToken, {
+          onSuccess: async function () {
+            showCustomAlert(
+              lang === 'id' ? 'Pembayaran Berhasil' : 'Payment Success',
+              lang === 'id' 
+                ? 'Pembayaran Anda berhasil diproses! Sistem akan memperbarui status pembayaran setelah notifikasi Midtrans diterima, lalu admin akan memproses pesanan Anda.' 
+                : 'Your payment has been successfully processed! The system will update your payment status after the Midtrans notification is received, then admin will process your booking.',
+              'success',
+              () => loadData(false)
+            );
+          },
+          onPending: function () {
+            showCustomAlert(
+              lang === 'id' ? 'Menunggu Pembayaran' : 'Awaiting Payment',
+              lang === 'id' ? 'Silakan selesaikan pembayaran Anda sesuai petunjuk Midtrans.' : 'Please complete your payment as instructed by Midtrans.',
+              'warning',
+              () => loadData(false)
+            );
+          },
+          onError: function () {
+            showCustomAlert(
+              lang === 'id' ? 'Pembayaran Gagal' : 'Payment Failed',
+              lang === 'id' ? 'Pembayaran Anda gagal diproses. Silakan coba lagi.' : 'Your payment failed. Please try again.',
+              'danger',
+              () => loadData(false)
+            );
+          },
+          onClose: function () {
+            showCustomAlert(
+              lang === 'id' ? 'Transaksi Dibatalkan' : 'Transaction Cancelled',
+              lang === 'id' ? 'Popup pembayaran telah ditutup.' : 'Payment popup was closed.',
+              'warning',
+              () => loadData(false)
+            );
+          }
+        });
+      } else {
+        showCustomAlert(
+          lang === 'id' ? 'Kesalahan Pembayaran' : 'Payment Error',
+          lang === 'id' ? 'Gagal mendapatkan token pembayaran.' : 'Failed to retrieve payment token.',
+          'danger'
+        );
+      }
+    } catch (err) {
+      console.error('Payment error:', err);
+      showCustomAlert(
+        lang === 'id' ? 'Kesalahan Sistem' : 'System Error',
+        lang === 'id' ? 'Gagal memulai pembayaran.' : 'Failed to initialize payment.',
+        'danger'
+      );
+    } finally {
+      setPayingId(null);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -75,14 +192,22 @@ const PesananSaya = () => {
     return dateString.split('T')[0];
   };
 
-  const renderStatus = (status, isUpcoming) => {
+  const renderStatus = (item, isUpcoming) => {
+    const status = item.status;
     const cfg = statusConfig[status] || statusConfig['Pending'];
     const Icon = cfg.Icon;
+    const isPaid = String(item.payment_status || '').toLowerCase() === 'paid';
+
     return (
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <span className={`badge ${cfg.class}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
           <Icon size={13} /> {t(cfg.labelKey)}
         </span>
+        {isPaid && (
+          <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', backgroundColor: '#059669', color: 'white', fontWeight: 600 }}>
+            ✓ {lang === 'id' ? 'Lunas' : 'Paid'}
+          </span>
+        )}
         {isUpcoming && (
           <span className="badge" style={{ 
             display: 'inline-flex', 
@@ -153,12 +278,9 @@ const PesananSaya = () => {
 
                     {/* Foto ruangan kecil */}
                     {item.office?.gambar && (
-                      <img
-                        src={item.office.gambar}
-                        alt={item.office.nama}
-                        loading="lazy"
-                        style={{ width: '100px', height: '80px', objectFit: 'cover', borderRadius: 'var(--border-radius)', flexShrink: 0 }}
-                      />
+                      <div style={{ width: '100px', height: '80px', borderRadius: 'var(--border-radius)', overflow: 'hidden', flexShrink: 0 }}>
+                        <LazyImage src={item.office.gambar} alt={item.office.nama} width={150} quality={60} />
+                      </div>
                     )}
 
                     <div style={{ flex: 1, minWidth: '200px' }}>
@@ -179,7 +301,7 @@ const PesananSaya = () => {
                             )}
                           </h3>
                         </div>
-                        {renderStatus(item.status, isUpcoming)}
+                        {renderStatus(item, isUpcoming)}
                       </div>
 
                       {/* Info singkat */}
@@ -227,7 +349,7 @@ const PesananSaya = () => {
                             <button 
                               onClick={(e) => {
                                 e.preventDefault();
-                                window.open(getInvoiceUrl(item.id, lang), '_blank');
+                                downloadInvoicePdf(item.id, lang);
                               }}
                               className="btn btn-outline-primary-custom"
                               style={{ 
@@ -265,8 +387,24 @@ const PesananSaya = () => {
                             </>
                           )}
 
-                          {/* Batalkan — hanya jika Pending */}
-                          {item.status === 'Pending' && (
+                          {/* Bayar Sekarang — jika Pending dan belum Lunas */}
+                          {item.status === 'Pending' && String(item.payment_status || '').toLowerCase() !== 'paid' && (
+                            <button
+                              onClick={() => handlePayment(item.id)}
+                              disabled={payingId === item.id}
+                              className="btn btn-success"
+                              style={{ 
+                                padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
+                                display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                backgroundColor: '#10b981', borderColor: '#10b981', color: 'white'
+                              }}
+                            >
+                              💳 {payingId === item.id ? '...' : (lang === 'id' ? 'Bayar Sekarang' : 'Pay Now')}
+                            </button>
+                          )}
+
+                          {/* Batalkan — hanya jika Pending dan belum Lunas */}
+                          {item.status === 'Pending' && String(item.payment_status || '').toLowerCase() !== 'paid' && (
                             <button
                               onClick={() => handleBatalkan(item.id)}
                               className="btn btn-danger"
@@ -357,11 +495,17 @@ const PesananSaya = () => {
       `}</style>
       
       <Modal 
-        isOpen={errorModal.isOpen} 
-        onClose={() => setErrorModal({ isOpen: false, message: '' })}
-        title={t('booking_not_found')}
-        message={errorModal.message}
-        type="warning"
+        isOpen={modalState.isOpen} 
+        onClose={() => {
+          if (modalState.onClose) modalState.onClose();
+          setModalState(prev => ({ ...prev, isOpen: false }));
+        }}
+        onConfirm={modalState.onConfirm}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        confirmText={modalState.confirmText}
+        cancelText={modalState.cancelText}
       />
       </div>
     </div>

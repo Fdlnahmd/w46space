@@ -36,6 +36,81 @@ class BookingController extends Controller
             return response()->json(['message' => 'Anda tidak memiliki akses ke pesanan ini'], 403);
         }
 
+        // Auto sync payment status with Midtrans if pending and has order ID
+        if ($booking->status === 'Pending' && $booking->payment_status !== 'paid' && $booking->midtrans_order_id) {
+            try {
+                \Midtrans\Config::$serverKey    = config('midtrans.server_key');
+                \Midtrans\Config::$isProduction = config('midtrans.is_production');
+                
+                $status = \Midtrans\Transaction::status($booking->midtrans_order_id);
+                $transactionStatus = $status->transaction_status ?? null;
+                $fraudStatus = $status->fraud_status ?? null;
+                $paymentType = $status->payment_type ?? null;
+
+                if ($transactionStatus) {
+                    $paymentStatus = match(true) {
+                        $transactionStatus === 'capture' && $fraudStatus === 'accept' => 'paid',
+                        $transactionStatus === 'settlement'                            => 'paid',
+                        $transactionStatus === 'pending'                               => 'pending',
+                        in_array($transactionStatus, ['deny', 'cancel', 'failure'])    => 'failed',
+                        $transactionStatus === 'expire'                                => 'expired',
+                        default                                                        => $booking->payment_status,
+                    };
+
+                    if ($paymentStatus !== $booking->payment_status) {
+                        $resolvedPaymentType = 'Unknown';
+                        if ($paymentType) {
+                            $resolvedPaymentType = ucwords(str_replace('_', ' ', $paymentType));
+                        }
+
+                        $updateData = [
+                            'payment_status' => $paymentStatus,
+                            'midtrans_payment_type' => $resolvedPaymentType,
+                        ];
+
+                        if ($paymentStatus === 'paid') {
+                            $updateData['paid_at'] = now();
+
+                            // Notifications
+                            \App\Models\Notification::create([
+                                'user_id' => $booking->user_id,
+                                'title'   => 'Pembayaran Berhasil ✅',
+                                'message' => "Pembayaran untuk pesanan #{$booking->id} telah dikonfirmasi. Menunggu konfirmasi admin.",
+                                'type'    => 'success',
+                                'link'    => "/pesanan-saya/{$booking->id}",
+                            ]);
+
+                            \App\Models\Notification::create([
+                                'user_id' => null,
+                                'title'   => 'Pembayaran Diterima 💰',
+                                'message' => "Pesanan #{$booking->id} dari {$booking->nama_pemesan} telah dibayar.",
+                                'type'    => 'success',
+                                'link'    => "/admin/pemesanan/{$booking->id}",
+                            ]);
+                        } elseif (in_array($paymentStatus, ['failed', 'expired'])) {
+                            $updateData['status'] = 'Dibatalkan';
+                            if ($booking->coupon_id) {
+                                \App\Models\Coupon::where('id', $booking->coupon_id)->decrement('used_count');
+                            }
+
+                            \App\Models\Notification::create([
+                                'user_id' => $booking->user_id,
+                                'title'   => 'Pembayaran Gagal ❌',
+                                'message' => "Pembayaran untuk pesanan #{$booking->id} " . ($paymentStatus === 'expired' ? 'kedaluwarsa' : 'gagal') . ". Silakan coba lagi.",
+                                'type'    => 'danger',
+                                'link'    => "/pesanan-saya/{$booking->id}",
+                            ]);
+                        }
+
+                        $booking->update($updateData);
+                        $booking->refresh();
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('Midtrans automatic sync failed for booking ' . $booking->id . ': ' . $e->getMessage());
+            }
+        }
+
         return response()->json($booking);
     }
 
@@ -194,25 +269,48 @@ class BookingController extends Controller
     public function updateStatus(Request $request, int $id)
     {
         $booking = Booking::with('office')->find($id);
-        if ($booking) {
-            $oldStatus = $booking->status;
-            $newStatus = $request->status;
-            $booking->update(['status' => $newStatus]);
-            
-            // Create notification for User
-            \App\Models\Notification::create([
-                'user_id' => $booking->user_id,
-                'title'   => "Status Pesanan #{$booking->id} Berubah",
-                'message' => "Pesanan Anda untuk {$booking->office->nama} sekarang berstatus: {$newStatus}.",
-                'type'    => $newStatus === 'Dikonfirmasi' ? 'success' : ($newStatus === 'Dibatalkan' ? 'danger' : 'info'),
-                'link'    => "/pesanan-saya/{$booking->id}"
-            ]);
-
-            // Invalidate office listing and analytics cache
-            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
-            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
-            \Illuminate\Support\Facades\Cache::flush();
+        if (!$booking) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan.'], 404);
         }
+
+        $user = $request->user();
+        $isAdmin = $user && strtolower($user->role) === 'admin';
+
+        // Check authorization: if not admin, user can only cancel their own booking
+        if (!$isAdmin) {
+            if ($booking->user_id !== $user->id) {
+                return response()->json(['message' => 'Akses ditolak.'], 403);
+            }
+            if ($request->status !== 'Dibatalkan') {
+                return response()->json(['message' => 'Hanya admin yang dapat menyetujui pesanan.'], 403);
+            }
+        }
+
+        $oldStatus = $booking->status;
+        $newStatus = $request->status;
+        
+        $updateData = ['status' => $newStatus];
+        
+        if ($newStatus === 'Dibatalkan' && $oldStatus !== 'Dibatalkan') {
+            if ($booking->coupon_id) {
+                \App\Models\Coupon::where('id', $booking->coupon_id)->decrement('used_count');
+            }
+        }
+
+        $booking->update($updateData);
+
+        // Create notification for User
+        \App\Models\Notification::create([
+            'user_id' => $booking->user_id,
+            'title'   => "Status Pesanan #{$booking->id} Berubah",
+            'message' => "Pesanan Anda untuk {$booking->office->nama} sekarang berstatus: {$newStatus}.",
+            'type'    => $newStatus === 'Dikonfirmasi' ? 'success' : ($newStatus === 'Dibatalkan' ? 'danger' : 'info'),
+            'link'    => "/pesanan-saya/{$booking->id}"
+        ]);
+
+        // Invalidate cache
+        \Illuminate\Support\Facades\Cache::flush();
+
         return response()->json($booking);
     }
 
@@ -220,6 +318,11 @@ class BookingController extends Controller
     {
         $booking = Booking::find($id);
         if (!$booking) return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
+
+        $user = Auth::user();
+        if (!in_array(strtolower($user->role), ['admin', 'helpdesk']) && $booking->user_id !== $user->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses ke pesanan ini'], 403);
+        }
 
         $validated = $request->validate([
             'addon_ids'   => 'required|array',

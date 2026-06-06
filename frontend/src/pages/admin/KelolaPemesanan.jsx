@@ -217,8 +217,29 @@ const KelolaPemesanan = () => {
                       </div>
                     )}
                   </td>
-                  <td style={{ padding: '1rem', fontWeight: 600, color: 'var(--color-primary)' }}>
-                    Rp {Number(item.total_harga).toLocaleString('id-ID')}
+                  <td style={{ padding: '1rem' }}>
+                    <div style={{ fontWeight: 600, color: 'var(--color-primary)' }}>
+                      Rp {Number(item.total_harga).toLocaleString('id-ID')}
+                    </div>
+                    <div style={{ marginTop: '4px' }}>
+                      {String(item.payment_status || 'Pending').toLowerCase() === 'paid' ? (
+                        <span style={{ 
+                          fontSize: '0.7rem', color: '#10b981', fontWeight: 600, 
+                          backgroundColor: 'rgba(16, 185, 129, 0.12)', padding: '2px 6px', 
+                          borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.2)' 
+                        }}>
+                          {lang === 'id' ? 'Lunas' : 'Paid'}
+                        </span>
+                      ) : (
+                        <span style={{ 
+                          fontSize: '0.7rem', color: '#f59e0b', fontWeight: 600, 
+                          backgroundColor: 'rgba(245, 158, 11, 0.12)', padding: '2px 6px', 
+                          borderRadius: '4px', border: '1px solid rgba(245, 158, 11, 0.2)' 
+                        }}>
+                          {lang === 'id' ? 'Belum Bayar' : 'Unpaid'}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td style={{ padding: '1rem' }}>
                     <select 
@@ -347,9 +368,21 @@ const KelolaPemesanan = () => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed var(--color-border)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
                   <span style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>{lang === 'id' ? 'Total Harga:' : 'Total Price:'}</span>
-                  <span style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '0.95rem' }}>
-                    Rp {Number(item.total_harga).toLocaleString('id-ID')}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '0.95rem' }}>
+                      Rp {Number(item.total_harga).toLocaleString('id-ID')}
+                    </span>
+                    <span style={{ 
+                      fontSize: '0.7rem', 
+                      color: String(item.payment_status || 'Pending').toLowerCase() === 'paid' ? '#10b981' : '#f59e0b', 
+                      fontWeight: 600, 
+                      marginTop: '2px' 
+                    }}>
+                      {String(item.payment_status || 'Pending').toLowerCase() === 'paid' 
+                        ? (lang === 'id' ? 'Lunas' : 'Paid') 
+                        : (lang === 'id' ? 'Belum Bayar' : 'Unpaid')}
+                    </span>
+                  </div>
                 </div>
               </div>
 

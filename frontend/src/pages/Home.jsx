@@ -4,6 +4,7 @@ import { getRuangan, getLatestReviews } from '../services/apiService';
 import { Users, ArrowRight, Star } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import LazyImage from '../components/LazyImage';
 
 const Home = () => {
   const { theme } = useTheme();
@@ -131,7 +132,7 @@ const Home = () => {
           {ruangan.map(item => (
             <div key={item.id} className="card">
               <div style={{ height: '200px', overflow: 'hidden' }}>
-                <img src={item.gambar} alt={item.nama} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <LazyImage src={item.gambar} alt={item.nama} />
               </div>
               <div style={{ padding: '1.5rem' }}>
                 {item.kategori && (

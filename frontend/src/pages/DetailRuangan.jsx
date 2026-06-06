@@ -22,6 +22,7 @@ const hitungTanggalAkhir = (tanggalMulai, durasiButlan) => {
 };
 
 import Modal from '../components/Modal';
+import LazyImage from '../components/LazyImage';
 import ReviewSection from '../components/ReviewSection';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -536,10 +537,9 @@ const DetailRuangan = () => {
           <div className="card" style={{ padding: '2rem' }}>
             <div className="grid md:grid-cols-2" style={{ gap: '2rem' }}>
               <div>
-                <img
-                  src={ruangan.gambar} alt={ruangan.nama}
-                  style={{ width: '100%', height: '400px', objectFit: 'cover', borderRadius: 'var(--border-radius-lg)' }}
-                />
+                <div style={{ width: '100%', height: '400px', borderRadius: 'var(--border-radius-lg)', overflow: 'hidden' }}>
+                  <LazyImage src={ruangan.gambar} alt={ruangan.nama} width={800} />
+                </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {ruangan.kategori && (

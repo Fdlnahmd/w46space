@@ -5,15 +5,19 @@ import {
   updateStatusPemesanan, 
   getAddons, 
   addAddonsToBooking,
-  getInvoiceUrl
+  downloadInvoicePdf,
+  createSnapToken,
+  ensureMidtransSnap
 } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import {
   ArrowLeft, Building, Calendar, Clock, User, Briefcase,
   CheckCircle, XCircle, Timer, AlertCircle, BadgeCheck, Hourglass, Check, X,
-  Plus, Coffee, Wifi, Monitor, Printer
+  Plus, Coffee, Wifi, Monitor, Printer, CreditCard
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import LazyImage from '../components/LazyImage';
+import Modal from '../components/Modal';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -97,6 +101,29 @@ const DetailPesanan = () => {
   const [showAddonModal, setShowAddonModal] = useState(false);
   // no addonStep state needed
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'success',
+    confirmText: lang === 'id' ? 'Ya' : 'Yes',
+    cancelText: lang === 'id' ? 'Batal' : 'Cancel',
+    onConfirm: null,
+    onClose: null
+  });
+
+  const showCustomAlert = (title, message, type = 'success', onClose = null) => {
+    setModalState({
+      isOpen: true,
+      title,
+      message,
+      type,
+      confirmText: 'OK',
+      cancelText: lang === 'id' ? 'Tutup' : 'Close',
+      onConfirm: null,
+      onClose
+    });
+  };
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -156,7 +183,7 @@ const DetailPesanan = () => {
 
 
   const handleDownloadInvoice = () => {
-    window.open(getInvoiceUrl(pesanan.id, lang), '_blank');
+    downloadInvoicePdf(pesanan.id, lang);
   };
 
   const toggleAddon = (id) => {
@@ -165,14 +192,112 @@ const DetailPesanan = () => {
     );
   };
 
-  const handleStatusUpdate = async (newStatus) => {
+  const handleStatusUpdate = (newStatus) => {
+    const isConfirm = newStatus === 'Dikonfirmasi';
+    setModalState({
+      isOpen: true,
+      title: isConfirm 
+        ? (lang === 'id' ? 'Konfirmasi Pesanan' : 'Confirm Booking') 
+        : (lang === 'id' ? 'Batalkan/Tolak Pesanan' : 'Cancel/Reject Booking'),
+      message: isConfirm 
+        ? (lang === 'id' ? 'Apakah Anda yakin ingin menyetujui dan mengonfirmasi pesanan ini?' : 'Are you sure you want to approve and confirm this booking?') 
+        : (lang === 'id' ? 'Apakah Anda yakin ingin membatalkan/menolak pesanan ini?' : 'Are you sure you want to cancel/reject this booking?'),
+      type: isConfirm ? 'success' : 'danger',
+      confirmText: isConfirm 
+        ? (lang === 'id' ? 'Ya, Konfirmasi' : 'Yes, Confirm') 
+        : (lang === 'id' ? 'Ya, Tolak' : 'Yes, Reject'),
+      cancelText: lang === 'id' ? 'Batal' : 'Cancel',
+      onConfirm: async () => {
+        setModalState(prev => ({ ...prev, isOpen: false }));
+        setProcessing(true);
+        try {
+          await updateStatusPemesanan(pesanan.id, newStatus);
+          showCustomAlert(
+            lang === 'id' ? 'Berhasil' : 'Success',
+            lang === 'id' ? 'Status pesanan berhasil diperbarui.' : 'Booking status updated successfully.',
+            'success'
+          );
+          fetchDetail();
+        } catch (error) {
+          console.error(error);
+          showCustomAlert(
+            lang === 'id' ? 'Gagal' : 'Failed',
+            lang === 'id' ? 'Gagal memperbarui status pesanan.' : 'Failed to update booking status.',
+            'danger'
+          );
+        } finally {
+          setProcessing(false);
+        }
+      }
+    });
+  };
+
+  const handlePayment = async () => {
     setProcessing(true);
     try {
-      await updateStatusPemesanan(pesanan.id, newStatus);
-      await fetchDetail();
+      const data = await createSnapToken(pesanan.id);
+      if (data && data.snap_token) {
+        await ensureMidtransSnap(data.client_key, data.snap_url);
+
+        if (!window.snap?.pay) {
+          showCustomAlert(
+            lang === 'id' ? 'Kesalahan Pembayaran' : 'Payment Error',
+            lang === 'id' ? 'Layanan pembayaran belum siap. Muat ulang halaman lalu coba lagi.' : 'Payment service is not ready. Reload the page and try again.',
+            'danger'
+          );
+          return;
+        }
+
+        window.snap.pay(data.snap_token, {
+          onSuccess: async function () {
+            showCustomAlert(
+              lang === 'id' ? 'Pembayaran Berhasil' : 'Payment Success',
+              lang === 'id' 
+                ? 'Pembayaran Anda berhasil diproses! Sistem akan memperbarui status pembayaran setelah notifikasi Midtrans diterima, lalu admin akan memproses pesanan Anda.' 
+                : 'Your payment has been successfully processed! The system will update your payment status after the Midtrans notification is received, then admin will process your booking.',
+              'success',
+              () => fetchDetail()
+            );
+          },
+          onPending: function () {
+            showCustomAlert(
+              lang === 'id' ? 'Menunggu Pembayaran' : 'Awaiting Payment',
+              lang === 'id' ? 'Silakan selesaikan pembayaran Anda sesuai petunjuk Midtrans.' : 'Please complete your payment as instructed by Midtrans.',
+              'warning',
+              () => fetchDetail()
+            );
+          },
+          onError: function () {
+            showCustomAlert(
+              lang === 'id' ? 'Pembayaran Gagal' : 'Payment Failed',
+              lang === 'id' ? 'Pembayaran Anda gagal diproses. Silakan coba lagi.' : 'Your payment failed. Please try again.',
+              'danger',
+              () => fetchDetail()
+            );
+          },
+          onClose: function () {
+            showCustomAlert(
+              lang === 'id' ? 'Transaksi Dibatalkan' : 'Transaction Cancelled',
+              lang === 'id' ? 'Popup pembayaran telah ditutup.' : 'Payment popup was closed.',
+              'warning',
+              () => fetchDetail()
+            );
+          }
+        });
+      } else {
+        showCustomAlert(
+          lang === 'id' ? 'Kesalahan Pembayaran' : 'Payment Error',
+          lang === 'id' ? 'Gagal mendapatkan token pembayaran.' : 'Failed to retrieve payment token.',
+          'danger'
+        );
+      }
     } catch (error) {
       console.error(error);
-      alert('Gagal memperbarui status');
+      showCustomAlert(
+        lang === 'id' ? 'Kesalahan Sistem' : 'System Error',
+        lang === 'id' ? 'Terjadi kesalahan sistem pembayaran.' : 'Payment system error occurred.',
+        'danger'
+      );
     } finally {
       setProcessing(false);
     }
@@ -202,6 +327,49 @@ const DetailPesanan = () => {
   const isUpcoming = statusWaktu?.type === 'upcoming';
   const isActive   = statusWaktu?.type === 'active';
   const isExpired  = statusWaktu?.type === 'expired';
+
+  const detailItems = [
+    { icon: User,      label: t('customer_name'),  value: pesanan.nama_pemesan },
+    { icon: Briefcase, label: t('company'),    value: pesanan.perusahaan || '—' },
+    { icon: Calendar,  label: lang === 'id' ? 'Tanggal Mulai' : 'Start Date', value: formatDate(pesanan.tanggal_mulai) },
+    { icon: Calendar,  label: lang === 'id' ? 'Tanggal Akhir' : 'End Date', value: formatDate(pesanan.tanggal_akhir) },
+    { icon: Timer,     label: t('duration'),value: pesanan.durasi ? `${pesanan.durasi} ${t('months')}` : '—' },
+    { icon: Clock,     label: lang === 'id' ? 'Jam Operasional' : 'Operational Hours', value: pesanan.waktu_mulai && pesanan.waktu_selesai ? `${pesanan.waktu_mulai} – ${pesanan.waktu_selesai}` : '—' },
+    { icon: Building,  label: t('booked_room'),       value: pesanan.office?.nama || '—' },
+  ];
+
+  const paymentStatusLower = String(pesanan.payment_status || 'Pending').toLowerCase();
+  const paymentStatusLabel = paymentStatusLower === 'paid' 
+    ? (lang === 'id' ? 'Lunas (Sudah Dibayar)' : 'Paid') 
+    : (paymentStatusLower === 'failed' 
+      ? (lang === 'id' ? 'Gagal' : 'Failed')
+      : (paymentStatusLower === 'expired'
+        ? (lang === 'id' ? 'Kedaluwarsa' : 'Expired')
+        : (lang === 'id' ? 'Belum Dibayar (Pending)' : 'Unpaid (Pending)')));
+
+  const paymentStatusColor = paymentStatusLower === 'paid' ? '#059669' : (paymentStatusLower === 'failed' || paymentStatusLower === 'expired' ? '#dc2626' : '#d97706');
+
+  detailItems.push({
+    icon: CheckCircle,
+    label: lang === 'id' ? 'Status Pembayaran' : 'Payment Status',
+    value: <span style={{ color: paymentStatusColor, fontWeight: 700 }}>{paymentStatusLabel}</span>
+  });
+
+  if (pesanan.midtrans_payment_type) {
+    detailItems.push({
+      icon: Briefcase,
+      label: lang === 'id' ? 'Metode Pembayaran' : 'Payment Method',
+      value: pesanan.midtrans_payment_type.toUpperCase()
+    });
+  }
+
+  if (pesanan.paid_at) {
+    detailItems.push({
+      icon: Clock,
+      label: lang === 'id' ? 'Waktu Pembayaran' : 'Paid At',
+      value: new Date(pesanan.paid_at).toLocaleString('id-ID')
+    });
+  }
 
   return (
     <div style={{ padding: '2rem 0', backgroundColor: 'var(--color-background)', minHeight: '100vh' }}>
@@ -257,6 +425,46 @@ const DetailPesanan = () => {
                   </div>
                 )}
 
+                {user?.role !== 'admin' && user?.role !== 'helpdesk' && pesanan.status === 'Pending' && paymentStatusLower !== 'paid' && (
+                  <button 
+                    onClick={handlePayment} 
+                    disabled={processing}
+                    className="btn btn-success" 
+                    style={{ 
+                      padding: '0.5rem 1rem', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.4rem', 
+                      fontSize: '0.85rem',
+                      backgroundColor: '#10b981',
+                      borderColor: '#10b981',
+                      color: 'white'
+                    }}
+                  >
+                    <CreditCard size={16} /> {processing ? '...' : (lang === 'id' ? 'Bayar Sekarang' : 'Pay Now')}
+                  </button>
+                )}
+
+                {user?.role !== 'admin' && user?.role !== 'helpdesk' && paymentStatusLower === 'paid' && pesanan.addons?.some(a => a.pivot?.status === 'pending') && (
+                  <button 
+                    onClick={handlePayment} 
+                    disabled={processing}
+                    className="btn btn-primary" 
+                    style={{ 
+                      padding: '0.5rem 1rem', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.4rem', 
+                      fontSize: '0.85rem',
+                      backgroundColor: 'var(--color-primary)',
+                      borderColor: 'var(--color-primary)',
+                      color: 'white'
+                    }}
+                  >
+                    <CreditCard size={16} /> {processing ? '...' : (lang === 'id' ? 'Bayar Fasilitas Tambahan' : 'Pay Additional Services')}
+                  </button>
+                )}
+
                 {(pesanan.status === 'Dikonfirmasi' || pesanan.status === 'Selesai') && (
                   <button 
                     onClick={handleDownloadInvoice} 
@@ -274,25 +482,14 @@ const DetailPesanan = () => {
 
             {/* Foto ruangan */}
             {pesanan.office?.gambar && (
-              <img
-                src={pesanan.office.gambar}
-                alt={pesanan.office.nama}
-                loading="lazy"
-                style={{ width: '100%', height: '220px', objectFit: 'cover', borderRadius: 'var(--border-radius-lg)', marginBottom: '1.5rem' }}
-              />
+              <div style={{ width: '100%', height: '220px', borderRadius: 'var(--border-radius-lg)', overflow: 'hidden', marginBottom: '1.5rem' }}>
+                <LazyImage src={pesanan.office.gambar} alt={pesanan.office.nama} width={600} />
+              </div>
             )}
 
             {/* Detail Grid */}
             <div className="grid md:grid-cols-2" style={{ gap: '1rem' }}>
-              {[
-                { icon: User,      label: t('customer_name'),  value: pesanan.nama_pemesan },
-                { icon: Briefcase, label: t('company'),    value: pesanan.perusahaan || '—' },
-                { icon: Calendar,  label: lang === 'id' ? 'Tanggal Mulai' : 'Start Date', value: formatDate(pesanan.tanggal_mulai) },
-                { icon: Calendar,  label: lang === 'id' ? 'Tanggal Akhir' : 'End Date', value: formatDate(pesanan.tanggal_akhir) },
-                { icon: Timer,     label: t('duration'),value: pesanan.durasi ? `${pesanan.durasi} ${t('months')}` : '—' },
-                { icon: Clock,     label: lang === 'id' ? 'Jam Operasional' : 'Operational Hours', value: pesanan.waktu_mulai && pesanan.waktu_selesai ? `${pesanan.waktu_mulai} – ${pesanan.waktu_selesai}` : '—' },
-                { icon: Building,  label: t('booked_room'),       value: pesanan.office?.nama || '—' },
-              ].map(({ icon: Icon, label, value }) => (
+              {detailItems.map(({ icon: Icon, label, value }) => (
                 <div key={label} style={{
                   display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
                   padding: '0.75rem', backgroundColor: 'var(--color-secondary)',
@@ -301,7 +498,7 @@ const DetailPesanan = () => {
                   <Icon size={18} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>
                     <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{label}</p>
-                    <p style={{ fontWeight: 600, fontSize: '0.95rem' }}>{value}</p>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{value}</div>
                   </div>
                 </div>
               ))}
@@ -442,7 +639,7 @@ const DetailPesanan = () => {
                         color: addon.pivot?.status === 'pending' ? 'var(--color-warning)' : 'var(--color-primary)'
                       }}>
                         {addon.pivot?.status === 'pending' ? <Hourglass size={14} /> : <CheckCircle size={14} />}
-                        {addon.nama} {addon.pivot?.status === 'pending' && ` (${lang === 'id' ? 'Menunggu' : 'Pending'})`}
+                        {addon.nama} (Rp {Number(addon.pivot?.price_at_booking || addon.harga).toLocaleString('id-ID')}){addon.pivot?.status === 'pending' && ` - ${lang === 'id' ? 'Menunggu Pembayaran' : 'Awaiting Payment'}`}
                       </span>
                     ))}
                   </div>
@@ -589,6 +786,20 @@ const DetailPesanan = () => {
           `}</style>
         </div>
       )}
+      {/* Modal Notification / Dialog */}
+      <Modal 
+        isOpen={modalState.isOpen} 
+        onClose={() => {
+          if (modalState.onClose) modalState.onClose();
+          setModalState(prev => ({ ...prev, isOpen: false }));
+        }}
+        onConfirm={modalState.onConfirm}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        confirmText={modalState.confirmText}
+        cancelText={modalState.cancelText}
+      />
     </div>
   );
 };
