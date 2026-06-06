@@ -27,122 +27,135 @@ class PaymentController extends Controller
      */
     public function createSnapToken(int $id)
     {
-        $user    = Auth::user();
-        $booking = Booking::with(['office', 'user', 'addons'])->find($id);
-
-        if (!$booking) {
-            return response()->json(['message' => 'Pesanan tidak ditemukan.'], 404);
-        }
-
-        // Hanya pemilik booking yang boleh bayar
-        if ($booking->user_id !== $user->id) {
-            return response()->json(['message' => 'Akses ditolak.'], 403);
-        }
-
-        // Hitung total harga addon yang masih pending
-        $pendingAddons = $booking->addons()->wherePivot('status', 'pending')->get();
-        $pendingAddonsPrice = 0;
-        foreach ($pendingAddons as $addon) {
-            $pendingAddonsPrice += (float)$addon->pivot->price_at_booking;
-        }
-
-        $isPayingAddons = false;
-        if ($booking->payment_status === 'paid') {
-            if ($pendingAddonsPrice <= 0) {
-                return response()->json(['message' => 'Pesanan ini sudah dibayar dan tidak ada fasilitas tambahan yang perlu dibayar.'], 422);
-            }
-            $isPayingAddons = true;
-        }
-
-        if ($isPayingAddons) {
-            // Buat order ID unik khusus untuk addon
-            $orderId = 'ADDONS-' . $booking->id . '-' . time();
-            
-            $params = [
-                'transaction_details' => [
-                    'order_id'     => $orderId,
-                    'gross_amount' => (int) $pendingAddonsPrice,
-                ],
-                'customer_details' => [
-                    'first_name' => $booking->nama_pemesan,
-                    'email'      => $booking->user->email,
-                ],
-                'item_details' => [],
-                'callbacks' => [
-                    'finish' => config('app.url'),
-                ],
-            ];
-
-            foreach ($pendingAddons as $addon) {
-                $params['item_details'][] = [
-                    'id'       => 'ADDON-' . $addon->id,
-                    'price'    => (int) $addon->pivot->price_at_booking,
-                    'quantity' => 1,
-                    'name'     => 'Fasilitas: ' . $addon->nama,
-                ];
-            }
-        } else {
-            // Jika token masih ada, return token yang sama (hindari order ID duplikat)
-            if ($booking->midtrans_snap_token && $booking->payment_status === 'pending') {
-                return response()->json([
-                    'snap_token' => $booking->midtrans_snap_token,
-                    'client_key' => config('midtrans.client_key'),
-                    'snap_url' => config('midtrans.snap_url'),
-                ]);
-            }
-
-            // Buat order ID unik
-            $orderId = 'BOOKING-' . $booking->id . '-' . time();
-
-            $params = [
-                'transaction_details' => [
-                    'order_id'     => $orderId,
-                    'gross_amount' => (int) $booking->total_harga,
-                ],
-                'customer_details' => [
-                    'first_name' => $booking->nama_pemesan,
-                    'email'      => $booking->user->email,
-                ],
-                'item_details' => [
-                    [
-                        'id'       => 'ROOM-' . $booking->office_id,
-                        'price'    => (int) ($booking->total_harga - $booking->total_addon_price + $booking->discount_amount),
-                        'quantity' => 1,
-                        'name'     => 'Sewa ' . $booking->office->nama . ' (' . $booking->durasi . ' Bulan)',
-                    ],
-                ],
-                'callbacks' => [
-                    'finish' => config('app.url'),
-                ],
-            ];
-
-            // Tambahkan addon ke item_details jika ada
-            if ($booking->total_addon_price > 0) {
-                $params['item_details'][] = [
-                    'id'       => 'ADDONS-' . $booking->id,
-                    'price'    => (int) $booking->total_addon_price,
-                    'quantity' => 1,
-                    'name'     => 'Fasilitas Tambahan',
-                ];
-            }
-
-            // Tambahkan diskon jika ada
-            if ($booking->discount_amount > 0) {
-                $params['item_details'][] = [
-                    'id'       => 'DISCOUNT-' . $booking->id,
-                    'price'    => -(int) $booking->discount_amount,
-                    'quantity' => 1,
-                    'name'     => 'Diskon Kupon',
-                ];
-            }
-        }
-
         try {
+            $user = Auth::user();
+            $booking = Booking::with(['office', 'user', 'addons'])->find($id);
+
+            if (!$user) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+
+            if (!$booking) {
+                return response()->json(['message' => 'Pesanan tidak ditemukan.'], 404);
+            }
+
+            if ($booking->user_id !== $user->id) {
+                return response()->json(['message' => 'Akses ditolak.'], 403);
+            }
+
+            if (!$booking->user || !$booking->user->email) {
+                Log::error('Midtrans createSnapToken invalid booking user', ['booking_id' => $booking->id]);
+                return response()->json(['message' => 'Data pengguna pesanan tidak lengkap.'], 422);
+            }
+
+            if (!$booking->office) {
+                Log::error('Midtrans createSnapToken invalid booking office', ['booking_id' => $booking->id]);
+                return response()->json(['message' => 'Data ruangan pesanan tidak lengkap.'], 422);
+            }
+
+            if (!config('midtrans.server_key') || !config('midtrans.client_key')) {
+                Log::error('Midtrans createSnapToken missing Midtrans keys', [
+                    'has_server_key' => (bool) config('midtrans.server_key'),
+                    'has_client_key' => (bool) config('midtrans.client_key'),
+                ]);
+                return response()->json(['message' => 'Konfigurasi pembayaran belum lengkap.'], 500);
+            }
+
+            $pendingAddons = $booking->addons()->wherePivot('status', 'pending')->get();
+            $pendingAddonsPrice = 0;
+            foreach ($pendingAddons as $addon) {
+                $pendingAddonsPrice += (float) $addon->pivot->price_at_booking;
+            }
+
+            $isPayingAddons = false;
+            if (strtolower((string) $booking->payment_status) === 'paid') {
+                if ($pendingAddonsPrice <= 0) {
+                    return response()->json(['message' => 'Pesanan ini sudah dibayar dan tidak ada fasilitas tambahan yang perlu dibayar.'], 422);
+                }
+                $isPayingAddons = true;
+            }
+
+            if ($isPayingAddons) {
+                $orderId = 'ADDONS-' . $booking->id . '-' . time();
+                $params = [
+                    'transaction_details' => [
+                        'order_id'     => $orderId,
+                        'gross_amount' => (int) $pendingAddonsPrice,
+                    ],
+                    'customer_details' => [
+                        'first_name' => $booking->nama_pemesan,
+                        'email'      => $booking->user->email,
+                    ],
+                    'item_details' => [],
+                    'callbacks' => [
+                        'finish' => config('app.url'),
+                    ],
+                ];
+
+                foreach ($pendingAddons as $addon) {
+                    $params['item_details'][] = [
+                        'id'       => 'ADDON-' . $addon->id,
+                        'price'    => (int) $addon->pivot->price_at_booking,
+                        'quantity' => 1,
+                        'name'     => 'Fasilitas: ' . $addon->nama,
+                    ];
+                }
+            } else {
+                if ($booking->midtrans_snap_token && strtolower((string) $booking->payment_status) === 'pending') {
+                    return response()->json([
+                        'snap_token' => $booking->midtrans_snap_token,
+                        'client_key' => config('midtrans.client_key'),
+                        'snap_url'   => config('midtrans.snap_url'),
+                    ]);
+                }
+
+                $orderId = 'BOOKING-' . $booking->id . '-' . time();
+                $roomPrice = (int) ($booking->total_harga - $booking->total_addon_price + $booking->discount_amount);
+
+                $params = [
+                    'transaction_details' => [
+                        'order_id'     => $orderId,
+                        'gross_amount' => (int) $booking->total_harga,
+                    ],
+                    'customer_details' => [
+                        'first_name' => $booking->nama_pemesan,
+                        'email'      => $booking->user->email,
+                    ],
+                    'item_details' => [
+                        [
+                            'id'       => 'ROOM-' . $booking->office_id,
+                            'price'    => $roomPrice,
+                            'quantity' => 1,
+                            'name'     => 'Sewa ' . $booking->office->nama . ' (' . $booking->durasi . ' Bulan)',
+                        ],
+                    ],
+                    'callbacks' => [
+                        'finish' => config('app.url'),
+                    ],
+                ];
+
+                if ($booking->total_addon_price > 0) {
+                    $params['item_details'][] = [
+                        'id'       => 'ADDONS-' . $booking->id,
+                        'price'    => (int) $booking->total_addon_price,
+                        'quantity' => 1,
+                        'name'     => 'Fasilitas Tambahan',
+                    ];
+                }
+
+                if ($booking->discount_amount > 0) {
+                    $params['item_details'][] = [
+                        'id'       => 'DISCOUNT-' . $booking->id,
+                        'price'    => -(int) $booking->discount_amount,
+                        'quantity' => 1,
+                        'name'     => 'Diskon Kupon',
+                    ];
+                }
+            }
+
             $snapToken = Snap::getSnapToken($params);
 
             if ($isPayingAddons) {
-                // Jangan ubah payment_status booking karena booking utama sudah paid
-                // Cukup simpan snap token untuk transaksi ini
                 $booking->update([
                     'midtrans_snap_token' => $snapToken,
                 ]);
@@ -157,10 +170,16 @@ class PaymentController extends Controller
             return response()->json([
                 'snap_token' => $snapToken,
                 'client_key' => config('midtrans.client_key'),
-                'snap_url' => config('midtrans.snap_url'),
+                'snap_url'   => config('midtrans.snap_url'),
             ]);
-        } catch (\Exception $e) {
-            Log::error('Midtrans createSnapToken error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Midtrans createSnapToken error', [
+                'booking_id' => $id,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
             return response()->json(['message' => 'Gagal membuat sesi pembayaran. Coba lagi nanti.'], 500);
         }
     }
