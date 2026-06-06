@@ -77,25 +77,33 @@ class AuthController extends Controller
             return response()->json(['message' => 'Tidak dapat mengambil email dari akun Google.'], 422);
         }
 
-        // Cari user berdasarkan email
-        $user = User::where('email', $email)->first();
+        // Cari user berdasarkan email atau google_id
+        $user = User::where('email', $email)
+                    ->orWhere('google_id', $googleData['sub'] ?? null)
+                    ->first();
 
         if (!$user) {
             return response()->json(['message' => 'Akun tidak ditemukan. Silakan daftar terlebih dahulu.'], 404);
         }
 
         // Update google_id dan avatar jika belum tersimpan
+        // Gunakan try-catch untuk menghindari error duplicate jika google_id sudah terdaftar di akun lain
         if (!$user->google_id) {
-            $user->update([
-                'google_id' => $googleData['sub'] ?? null,
-                'avatar' => $googleData['picture'] ?? null,
-            ]);
+            try {
+                $user->update([
+                    'google_id' => $googleData['sub'] ?? null,
+                    'avatar'    => $googleData['picture'] ?? null,
+                ]);
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                // google_id sudah terdaftar di akun lain, lewati saja — login tetap dilanjutkan
+                \Illuminate\Support\Facades\Log::warning('Google login: google_id duplicate skipped for user ' . $user->id);
+            }
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user'  => $user,
             'token' => $token,
         ]);
     }
