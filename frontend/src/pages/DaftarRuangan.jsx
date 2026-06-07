@@ -182,7 +182,7 @@ const DaftarRuangan = () => {
                         {item.kategori}
                       </span>
                     )}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <div className="room-card-title-row" style={{ marginBottom: '1rem' }}>
                       <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{item.nama}</h3>
                       {item.is_booked ? (
                         <span className="badge badge-danger">{t('status_full')}</span>
@@ -205,12 +205,12 @@ const DaftarRuangan = () => {
                       </span>
                       {item.is_booked && item.booked_until && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-danger)', fontWeight: 500 }}>
-                          <AlertCircle size={14} /> {t('status_available')}: {new Date(item.booked_until).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long' })}
+                          <AlertCircle size={14} /> {t('status_booked_until')}: {new Date(item.booked_until).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long' })}
                         </span>
                       )}
                     </div>
                     
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
+                    <div className="room-card-footer">
                       <div>
                         <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.1rem' }}>Rp {(item.harga ?? 0).toLocaleString('id-ID')}<span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>{t('per_day')}</span></p>
                       </div>

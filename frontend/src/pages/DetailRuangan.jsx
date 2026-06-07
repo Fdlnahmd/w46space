@@ -21,6 +21,31 @@ const hitungTanggalAkhir = (tanggalMulai, durasiButlan) => {
   return d.toISOString().split('T')[0];
 };
 
+const normalizeDate = (value) => {
+  if (!value) return null;
+  const raw = value instanceof Date ? value.toISOString() : String(value);
+  const dateOnly = raw.split('T')[0];
+  const [year, month, day] = dateOnly.split('-').map(Number);
+  if (!year || !month || !day) return null;
+  const d = new Date(year, month - 1, day);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const getDateRangeConflict = (tanggalMulai, tanggalAkhir, occupiedDates) => {
+  const selectedStart = normalizeDate(tanggalMulai);
+  const selectedEnd = normalizeDate(tanggalAkhir);
+
+  if (!selectedStart || !selectedEnd) return null;
+
+  return occupiedDates.find((range) => {
+    const bookedStart = normalizeDate(range.start);
+    const bookedEnd = normalizeDate(range.end);
+    if (!bookedStart || !bookedEnd) return false;
+    return selectedStart <= bookedEnd && selectedEnd >= bookedStart;
+  }) || null;
+};
+
 import Modal from '../components/Modal';
 import LazyImage from '../components/LazyImage';
 import ReviewSection from '../components/ReviewSection';
@@ -64,15 +89,15 @@ const DetailRuangan = () => {
       const data = await getRuanganById(id);
       if (data) {
         setRuangan(data);
-        if (data.bookings) {
-          const dates = data.bookings
-            .filter(b => b.status !== 'Dibatalkan')
-            .map(b => ({
-              start: new Date(b.tanggal_mulai),
-              end: new Date(b.tanggal_akhir)
-            }));
-          setOccupiedDates(dates);
-        }
+        const periods = data.booked_periods || data.bookings || [];
+        const dates = periods
+          .filter(b => b.status !== 'Dibatalkan')
+          .map(b => ({
+            start: b.start || b.tanggal_mulai,
+            end: b.end || b.tanggal_akhir,
+          }))
+          .filter(range => range.start && range.end);
+        setOccupiedDates(dates);
         if (data.is_booked && data.booked_until && !extendFromId) {
           const nextAvailDate = new Date(data.booked_until);
           nextAvailDate.setDate(nextAvailDate.getDate() + 1);
@@ -123,25 +148,36 @@ const DetailRuangan = () => {
     return () => clearInterval(interval);
   }, [id, navigate, extendFromId]);
 
-  // Fungsi untuk mengecek apakah tanggal tertentu sudah dipesan
-  const isDateOccupied = ({ date, view }) => {
-    if (view === 'month') {
-      // Normalisasi tanggal yang sedang dicek ke 00:00:00
-      const d = new Date(date);
-      d.setHours(0, 0, 0, 0);
+  const isDateInsideBookedPeriod = (date) => {
+    const d = normalizeDate(date);
+    if (!d) return false;
 
-      return occupiedDates.some(range => {
-        // Normalisasi range start & end ke 00:00:00
-        const start = new Date(range.start);
-        start.setHours(0, 0, 0, 0);
-        
-        const end = new Date(range.end);
-        end.setHours(0, 0, 0, 0);
-        
-        return d >= start && d <= end;
-      });
-    }
-    return false;
+    return occupiedDates.some(range => {
+      const start = normalizeDate(range.start);
+      const end = normalizeDate(range.end);
+      if (!start || !end) return false;
+      return d >= start && d <= end;
+    });
+  };
+
+  const isStartDateUnavailable = ({ date, view }) => {
+    if (view !== 'month') return false;
+    if (isDateInsideBookedPeriod(date)) return true;
+
+    const startDate = normalizeDate(date);
+    if (!startDate) return false;
+
+    const yyyy = startDate.getFullYear();
+    const mm = String(startDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(startDate.getDate()).padStart(2, '0');
+    const startString = `${yyyy}-${mm}-${dd}`;
+    const endString = hitungTanggalAkhir(startString, formData.durasi);
+
+    return !!getDateRangeConflict(startString, endString, occupiedDates);
+  };
+
+  const getCalendarTileClassName = ({ date, view }) => {
+    return isStartDateUnavailable({ date, view }) ? 'occupied-date' : null;
   };
 
   const handleApplyCoupon = async () => {
@@ -209,6 +245,22 @@ const DetailRuangan = () => {
       const tanggalAkhir = hitungTanggalAkhir(formData.tanggalMulai, formData.durasi);
       if (!tanggalAkhir) throw new Error(lang === 'id' ? 'Format tanggal tidak valid' : 'Invalid date format');
 
+      const conflict = getDateRangeConflict(formData.tanggalMulai, tanggalAkhir, occupiedDates);
+      if (conflict) {
+        const bookedStart = formatDateDisplay(conflict.start);
+        const bookedEnd = formatDateDisplay(conflict.end);
+        setModal({
+          isOpen: true,
+          type: 'warning',
+          title: lang === 'id' ? 'Periode Sudah Dibook' : 'Period Already Booked',
+          message: lang === 'id'
+            ? `Periode yang Anda pilih bentrok dengan booking ${bookedStart} sampai ${bookedEnd}. Silakan pilih tanggal setelah ${bookedEnd}.`
+            : `Your selected period overlaps with an existing booking from ${bookedStart} to ${bookedEnd}. Please choose a date after ${bookedEnd}.`
+        });
+        setLoading(false);
+        return;
+      }
+
       const dataKeBackend = {
         id_ruangan: parseInt(id),
         parent_id: extendFromId || null,
@@ -257,6 +309,17 @@ const DetailRuangan = () => {
       {lang === 'id' ? 'Memuat data ruangan...' : 'Loading room details...'}
     </div>
   );
+
+  const formatDateDisplay = (value) => {
+    const d = normalizeDate(value);
+    if (!d) return '—';
+    return d.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
+  const selectedTanggalAkhir = hitungTanggalAkhir(formData.tanggalMulai, formData.durasi);
+  const selectedDateConflict = selectedTanggalAkhir
+    ? getDateRangeConflict(formData.tanggalMulai, selectedTanggalAkhir, occupiedDates)
+    : null;
 
   const renderBookingSection = () => {
     // Admin & Helpdesk tidak bisa booking
@@ -326,9 +389,9 @@ const DetailRuangan = () => {
           }}>
             <ShieldAlert size={20} color="#d97706" />
             <div style={{ textAlign: 'left' }}>
-              <strong>{lang === 'id' ? 'Informasi Ketersediaan:' : 'Availability Info:'}</strong> {lang === 'id' ? 'Ruangan ini sedang disewa hingga tanggal' : 'This room is currently rented until'}{' '}
-              <strong>{new Date(ruangan.booked_until).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
-              {lang === 'id' ? 'Namun, Anda tetap dapat memesannya untuk tanggal setelahnya.' : 'However, you can still book it for dates after this period.'}
+              <strong>{t('availability_info')}</strong> {t('room_booked_until')}{' '}
+              <strong>{new Date(ruangan.booked_until).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.{' '}
+              {t('room_booked_after')}
             </div>
           </div>
         )}
@@ -367,11 +430,50 @@ const DetailRuangan = () => {
               setFormData({ ...formData, tanggalMulai: formattedDate });
             }}
             value={formData.tanggalMulai ? new Date(formData.tanggalMulai) : new Date()}
-            tileDisabled={isDateOccupied}
+            tileDisabled={isStartDateUnavailable}
+            tileClassName={getCalendarTileClassName}
             minDate={new Date()}
             className="custom-calendar"
           />
+
+          {occupiedDates.length > 0 && (
+            <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-muted)' }}>
+                {lang === 'id' ? 'Periode yang sudah dibook:' : 'Already booked periods:'}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {occupiedDates.slice(0, 4).map((range, idx) => (
+                  <span key={idx} className="badge badge-danger" style={{ whiteSpace: 'normal', lineHeight: 1.4 }}>
+                    {formatDateDisplay(range.start)} - {formatDateDisplay(range.end)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+
+        {selectedDateConflict && (
+          <div style={{
+            gridColumn: '1 / -1',
+            padding: '1rem 1.25rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+            border: '1px solid rgba(239, 68, 68, 0.28)',
+            borderRadius: 'var(--border-radius)',
+            color: 'var(--color-danger)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.75rem',
+            fontSize: '0.9rem'
+          }}>
+            <ShieldAlert size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div style={{ textAlign: 'left' }}>
+              <strong>{lang === 'id' ? 'Periode tidak tersedia.' : 'Period unavailable.'}</strong>{' '}
+              {lang === 'id'
+                ? `Pilihan ${formatDateDisplay(formData.tanggalMulai)} sampai ${formatDateDisplay(selectedTanggalAkhir)} bentrok dengan booking ${formatDateDisplay(selectedDateConflict.start)} sampai ${formatDateDisplay(selectedDateConflict.end)}.`
+                : `Your selection from ${formatDateDisplay(formData.tanggalMulai)} to ${formatDateDisplay(selectedTanggalAkhir)} overlaps with an existing booking from ${formatDateDisplay(selectedDateConflict.start)} to ${formatDateDisplay(selectedDateConflict.end)}.`}
+            </div>
+          </div>
+        )}
 
         {/* Fasilitas Tambahan (Addons) */}
         <div style={{ gridColumn: '1 / -1' }}>
@@ -424,7 +526,7 @@ const DetailRuangan = () => {
               />
             </div>
             {couponData ? (
-              <button type="button" onClick={() => { setCouponData(null); setCouponCode(''); }} className="btn btn-outline" style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}>
+              <button type="button" onClick={() => { setCouponData(null); setCouponCode(''); }} className="btn btn-outline-danger">
                 <X size={18} />
               </button>
             ) : (
@@ -516,9 +618,13 @@ const DetailRuangan = () => {
           <button
             type="submit" className="btn btn-primary"
             style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
-            disabled={ruangan.status !== 'Tersedia' || loading}
+            disabled={ruangan.status !== 'Tersedia' || loading || !!selectedDateConflict}
           >
-            {loading ? (lang === 'id' ? 'Mengajukan...' : 'Submitting...') : (ruangan.status === 'Tersedia' ? (lang === 'id' ? 'Ajukan Pemesanan' : 'Submit Booking') : (lang === 'id' ? 'Ruangan Tidak Tersedia' : 'Room Not Available'))}
+            {loading
+              ? (lang === 'id' ? 'Mengajukan...' : 'Submitting...')
+              : selectedDateConflict
+                ? (lang === 'id' ? 'Periode Sudah Dibook' : 'Period Already Booked')
+                : (ruangan.status === 'Tersedia' ? (lang === 'id' ? 'Ajukan Pemesanan' : 'Submit Booking') : (lang === 'id' ? 'Ruangan Tidak Tersedia' : 'Room Not Available'))}
           </button>
         </div>
       </form>
@@ -537,7 +643,7 @@ const DetailRuangan = () => {
           <div className="card" style={{ padding: '2rem' }}>
             <div className="grid md:grid-cols-2" style={{ gap: '2rem' }}>
               <div>
-                <div style={{ width: '100%', height: '400px', borderRadius: 'var(--border-radius-lg)', overflow: 'hidden' }}>
+                <div className="room-detail-image">
                   <LazyImage src={ruangan.gambar} alt={ruangan.nama} width={800} />
                 </div>
               </div>
@@ -596,7 +702,7 @@ const DetailRuangan = () => {
           </div>
 
           {/* Formulir / Info Booking */}
-        <div style={{ card: 'card', padding: '2rem' }}>
+          <div className="card" style={{ padding: '2rem' }}>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
               {lang === 'id' ? 'Formulir Pemesanan' : 'Booking Form'}
             </h2>
@@ -632,6 +738,20 @@ const DetailRuangan = () => {
           max-width: 100vw !important;
           overflow-x: hidden !important;
           padding: 1rem 0 !important;
+        }
+
+        .room-detail-image {
+          width: 100%;
+          aspect-ratio: 4 / 3;
+          border-radius: var(--border-radius-lg);
+          overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+          .room-detail-image {
+            height: 400px;
+            aspect-ratio: auto;
+          }
         }
 
         @media (max-width: 768px) {
@@ -675,7 +795,10 @@ const DetailRuangan = () => {
             max-width: 100% !important;
           }
 
-          img { height: 200px !important; }
+          .room-detail-image {
+            aspect-ratio: 16 / 10;
+          }
+
           h1 { font-size: 1.4rem !important; }
 
           .summary-row {

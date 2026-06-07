@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { ArrowLeft } from 'lucide-react';
 
 const AdminChat = () => {
   const { lang } = useLanguage();
@@ -39,7 +40,7 @@ const AdminChat = () => {
   const [modal, setModal] = useState({ open: false, title: '', message: '', type: 'confirm', onConfirm: null });
 
   const activeSessionRef = useRef(null);
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   const renderMessageContent = (content) => {
     if (!content) return null;
@@ -102,6 +103,18 @@ const AdminChat = () => {
       if (res.ok) {
         const data = await res.json();
         setSessions(data);
+        if (activeSessionRef.current) {
+          const stillActive = data.some(s => s.id === activeSessionRef.current.id);
+          if (!stillActive) {
+            setActiveSession(null);
+            activeSessionRef.current = null;
+            setMessages([]);
+            if (messagePoller.current) {
+              clearInterval(messagePoller.current);
+              messagePoller.current = null;
+            }
+          }
+        }
       }
     } catch (err) {
       console.error('Error loading chat sessions:', err);
@@ -190,10 +203,24 @@ const AdminChat = () => {
 
     if (activeSession) {
       messagePoller.current = setInterval(pollActiveSessionMessages, 3000);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 200);
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+      }, 200);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSession]);
+
+  // Auto scroll to bottom when messages list updates
+  useEffect(() => {
+    if (activeSession && messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+      }, 50);
+    }
+  }, [messages, activeSession]);
 
   // Takeover chat
   const handleTakeover = async () => {
@@ -316,7 +343,7 @@ const AdminChat = () => {
   };
 
   return (
-    <div style={{
+    <div className="admin-chat-container" style={{
       display: 'flex',
       height: 'calc(100vh - 120px)',
       backgroundColor: isDark ? '#1e293b' : '#ffffff',
@@ -327,7 +354,7 @@ const AdminChat = () => {
       boxShadow: isDark ? '0 20px 25px -5px rgba(0, 0, 0, 0.3)' : '0 10px 25px -5px rgba(0, 0, 0, 0.05)'
     }}>
       {/* Sessions list (Left Panel) */}
-      <div style={{
+      <div className="admin-chat-left-panel" style={{
         width: '320px',
         borderRight: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #e2e8f0',
         backgroundColor: isDark ? '#0f172a' : '#ffffff',
@@ -426,7 +453,7 @@ const AdminChat = () => {
       </div>
 
       {/* Message & Actions area (Right Panel) */}
-      <div style={{
+      <div className="admin-chat-right-panel" style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
@@ -435,40 +462,60 @@ const AdminChat = () => {
         {activeSession ? (
           <>
             {/* Active Session Header */}
-            <div style={{
-              padding: '1.25rem 1.5rem',
+            <div className="chat-header-container" style={{
+              padding: '1rem 1.25rem',
               backgroundColor: isDark ? '#0f172a' : '#ffffff',
               borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #e2e8f0',
               display: 'flex',
               justifyContent: 'space-between',
-              alignItems: 'center'
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem'
             }}>
-              <div>
-                <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.02em' }}>
-                  {activeSession.user?.name}
-                </h4>
-                <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: isDark ? '#cbd5e1' : '#475569', fontWeight: 500 }}>
-                  {activeSession.user?.email} &nbsp;·&nbsp; Status: <strong style={{ 
-                    color: activeSession.mode === 'waiting' ? '#ef4444' : activeSession.mode === 'human' ? '#15803d' : '#b45309',
-                    backgroundColor: activeSession.mode === 'waiting' ? '#fee2e2' : activeSession.mode === 'human' ? '#dcfce7' : '#fef9c3',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    fontSize: '0.7rem'
-                  }}>
-                    {activeSession.mode === 'waiting' 
-                      ? (lang === 'id' ? 'MENUNGGU CS' : 'WAITING CS') 
-                      : activeSession.mode === 'human' 
-                        ? (lang === 'id' ? 'LIVE CHAT CS' : 'LIVE CS CHAT') 
-                        : (lang === 'id' ? 'AI BOT AKTIF' : 'AI BOT ACTIVE')}
-                  </strong>
-                </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <button
+                  onClick={() => setActiveSession(null)}
+                  className="show-on-mobile-flex btn btn-outline"
+                  style={{
+                    padding: '0.5rem',
+                    minHeight: 'unset',
+                    height: '36px',
+                    width: '36px',
+                    display: 'none',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <ArrowLeft size={18} />
+                </button>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.02em', wordBreak: 'break-all' }}>
+                    {activeSession.user?.name}
+                  </h4>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: isDark ? '#cbd5e1' : '#475569', fontWeight: 500, wordBreak: 'break-all' }}>
+                    {activeSession.user?.email} &nbsp;·&nbsp; Status: <strong style={{ 
+                      color: activeSession.mode === 'waiting' ? '#ef4444' : activeSession.mode === 'human' ? '#15803d' : '#b45309',
+                      backgroundColor: activeSession.mode === 'waiting' ? '#fee2e2' : activeSession.mode === 'human' ? '#dcfce7' : '#fef9c3',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontSize: '0.7rem'
+                    }}>
+                      {activeSession.mode === 'waiting' 
+                        ? (lang === 'id' ? 'MENUNGGU CS' : 'WAITING CS') 
+                        : activeSession.mode === 'human' 
+                          ? (lang === 'id' ? 'LIVE CHAT CS' : 'LIVE CS CHAT') 
+                          : (lang === 'id' ? 'AI BOT AKTIF' : 'AI BOT ACTIVE')}
+                    </strong>
+                  </p>
+                </div>
               </div>
 
               {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 {(activeSession.mode === 'bot' || activeSession.mode === 'waiting') && (
                   <button
                     onClick={handleTakeover}
+                    className="chat-header-takeover-btn"
                     style={{
                       background: 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)',
                       color: '#0f172a',
@@ -497,7 +544,7 @@ const AdminChat = () => {
 
                 {activeSession.mode === 'human' && (
                   <>
-                    <span style={{
+                    <span className="chat-header-badge" style={{
                       display: 'flex', alignItems: 'center', gap: '6px',
                       backgroundColor: '#dcfce7', color: '#15803d',
                       fontSize: '0.8rem', fontWeight: 700, padding: '0.5rem 1rem',
@@ -507,6 +554,7 @@ const AdminChat = () => {
                     </span>
                     <button
                       onClick={handleCloseSession}
+                      className="chat-header-close-btn"
                       style={{
                         background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
                         color: '#ef4444',
@@ -529,14 +577,17 @@ const AdminChat = () => {
             </div>
 
             {/* Messages box */}
-            <div style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '1.5rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-            }}>
+            <div 
+              ref={messagesContainerRef}
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem',
+              }}
+            >
               {loading ? (
                 <div style={{ margin: 'auto', color: '#94a3b8', fontSize: '0.9rem', fontWeight: 600 }}>{lang === 'id' ? 'Memuat pesan...' : 'Loading messages...'}</div>
               ) : (
@@ -612,7 +663,6 @@ const AdminChat = () => {
                   );
                 })
               )}
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Input Footer */}
@@ -824,6 +874,46 @@ const AdminChat = () => {
           </div>
         </div>
       )}
+      <style>{`
+        @media (max-width: 768px) {
+          .admin-chat-container {
+            flex-direction: column !important;
+            height: calc(100vh - 140px) !important;
+            min-height: 0 !important;
+          }
+          .admin-chat-left-panel {
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 0 !important;
+            display: ${activeSession ? 'none' : 'flex'} !important;
+          }
+          .admin-chat-right-panel {
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 0 !important;
+            display: ${activeSession ? 'flex' : 'none'} !important;
+          }
+          .chat-header-container {
+            padding: 0.5rem 0.75rem !important;
+            gap: 0.5rem !important;
+          }
+          .chat-header-takeover-btn {
+            font-size: 0.75rem !important;
+            padding: 0.4rem 0.8rem !important;
+          }
+          .chat-header-badge {
+            font-size: 0.7rem !important;
+            padding: 0.3rem 0.6rem !important;
+          }
+          .chat-header-close-btn {
+            font-size: 0.75rem !important;
+            padding: 0.4rem 0.8rem !important;
+          }
+          .show-on-mobile-flex {
+            display: flex !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getPemesananById, updateStatusPemesanan, confirmAddon, downloadInvoicePdf } from '../../services/apiService';
 import { useLanguage } from '../../contexts/LanguageContext';
+import Modal from '../../components/Modal';
 import { 
   ArrowLeft, Building, Calendar, Clock, User, Briefcase, 
   CheckCircle, XCircle, Timer, AlertCircle, BadgeCheck, Hourglass,
@@ -107,6 +108,12 @@ const DetailPemesananAdmin = () => {
   const [sisa, setSisa] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [errorModal, setErrorModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'warning'
+  });
 
   const fetchDetail = useCallback(async () => {
     try {
@@ -138,7 +145,13 @@ const DetailPemesananAdmin = () => {
       await fetchDetail();
     } catch (error) {
       console.error(error);
-      alert(lang === 'id' ? 'Gagal mengupdate status' : 'Failed to update status');
+      const errMsg = error.response?.data?.message || (lang === 'id' ? 'Gagal mengupdate status' : 'Failed to update status');
+      setErrorModal({
+        isOpen: true,
+        title: lang === 'id' ? 'Gagal Mengubah Status' : 'Failed to Update Status',
+        message: errMsg,
+        type: 'warning'
+      });
     } finally {
       setProcessing(false);
     }
@@ -151,7 +164,13 @@ const DetailPemesananAdmin = () => {
       await fetchDetail();
     } catch (error) {
       console.error(error);
-      alert(lang === 'id' ? 'Gagal mengonfirmasi fasilitas' : 'Failed to confirm amenity');
+      const errMsg = error.response?.data?.message || (lang === 'id' ? 'Gagal mengonfirmasi fasilitas' : 'Failed to confirm amenity');
+      setErrorModal({
+        isOpen: true,
+        title: lang === 'id' ? 'Gagal Konfirmasi' : 'Confirmation Failed',
+        message: errMsg,
+        type: 'warning'
+      });
     } finally {
       setProcessing(false);
     }
@@ -189,6 +208,7 @@ const DetailPemesananAdmin = () => {
   const isUpcoming = statusWaktu?.type === 'upcoming';
   const isActive   = statusWaktu?.type === 'active';
   const isExpired  = statusWaktu?.type === 'expired';
+  const isPaid = String(pesanan.payment_status || '').toLowerCase() === 'paid';
 
   return (
     <div style={{ paddingBottom: '2rem' }}>
@@ -204,7 +224,7 @@ const DetailPemesananAdmin = () => {
           </div>
         </div>
         {/* Tombol Invoice (Jika Lunas) */}
-        {pesanan.payment_status === 'Paid' && (
+        {isPaid && (
           <button 
             onClick={handleDownloadInvoice}
             className="btn btn-outline"
@@ -241,25 +261,33 @@ const DetailPemesananAdmin = () => {
           {/* ACTIONS BASED ON STATUS */}
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             {/* Jika Status Pending (Baru Masuk) */}
-            {pesanan.status?.toLowerCase() === 'pending' && (
+            {pesanan.status?.toLowerCase() === 'pending' && isPaid && (
               <>
                 <button 
                   onClick={() => handleStatusUpdate('Dikonfirmasi')}
                   disabled={processing}
-                  className="btn btn-primary" 
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem' }}
+                  className="btn btn-primary"
                 >
                   <BadgeCheck size={18} /> {processing ? '...' : (lang === 'id' ? 'Terima Pesanan' : 'Accept Booking')}
                 </button>
                 <button 
                   onClick={() => handleStatusUpdate('Dibatalkan')}
                   disabled={processing}
-                  className="btn btn-outline" 
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem', borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
+                  className="btn btn-outline-danger"
                 >
                   <XCircle size={18} /> {processing ? '...' : (lang === 'id' ? 'Tolak Pesanan' : 'Reject Booking')}
                 </button>
               </>
+            )}
+
+            {pesanan.status?.toLowerCase() === 'pending' && !isPaid && (
+              <button
+                onClick={() => handleStatusUpdate('Dibatalkan')}
+                disabled={processing}
+                className="btn btn-outline-danger"
+              >
+                <XCircle size={18} /> {processing ? '...' : (lang === 'id' ? 'Tolak Pesanan' : 'Reject Booking')}
+              </button>
             )}
 
             {/* Jika Status Dikonfirmasi (Aktif) */}
@@ -268,16 +296,14 @@ const DetailPemesananAdmin = () => {
                 <button 
                   onClick={() => handleStatusUpdate('Selesai')}
                   disabled={processing}
-                  className="btn btn-primary" 
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem', backgroundColor: 'var(--color-success)', border: 'none' }}
+                  className="btn btn-success"
                 >
                   <CheckCircle size={18} /> {processing ? '...' : (lang === 'id' ? 'Selesaikan Pesanan' : 'Complete Booking')}
                 </button>
                 <button 
                   onClick={() => handleStatusUpdate('Dibatalkan')}
                   disabled={processing}
-                  className="btn btn-outline" 
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem', borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
+                  className="btn btn-outline-danger"
                 >
                   <XCircle size={18} /> {processing ? '...' : (lang === 'id' ? 'Batalkan Kontrak' : 'Cancel Contract')}
                 </button>
@@ -452,6 +478,13 @@ const DetailPemesananAdmin = () => {
           </div>
         )}
       </div>
+      <Modal 
+        isOpen={errorModal.isOpen} 
+        onClose={() => setErrorModal({ isOpen: false, message: '', title: '', type: 'warning' })}
+        title={errorModal.title || (lang === 'id' ? 'Peringatan' : 'Warning')}
+        message={errorModal.message}
+        type={errorModal.type || 'warning'}
+      />
     </div>
   );
 };

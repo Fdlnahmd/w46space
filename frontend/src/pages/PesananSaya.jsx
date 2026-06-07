@@ -84,6 +84,24 @@ const PesananSaya = () => {
     });
   };
 
+
+  const getPaymentErrorMessage = (error) => {
+    const message = error?.response?.data?.message || '';
+    const status = error?.response?.status;
+
+    if (status === 422 && message.includes('sudah dibayar')) {
+      return lang === 'id'
+        ? 'Pesanan ini sudah dibayar dan tidak ada fasilitas tambahan yang perlu dibayar.'
+        : 'This booking has already been paid and there are no additional services waiting for payment.';
+    }
+
+    if (status === 422 && message) {
+      return lang === 'id' ? message : 'Payment cannot be started for this booking.';
+    }
+
+    return lang === 'id' ? 'Gagal memulai pembayaran.' : 'Failed to initialize payment.';
+  };
+
   const handleBatalkan = (id) => {
     setModalState({
       isOpen: true,
@@ -95,18 +113,18 @@ const PesananSaya = () => {
       onConfirm: () => {
         setModalState(prev => ({ ...prev, isOpen: false }));
         batalkanPemesanan(id)
-          .then(() => { 
+          .then(() => {
             showCustomAlert(
-              lang === 'id' ? 'Berhasil' : 'Success', 
-              t('cancel_success'), 
+              lang === 'id' ? 'Berhasil' : 'Success',
+              t('cancel_success'),
               'success'
-            ); 
-            loadData(); 
+            );
+            loadData();
           })
           .catch(err => {
             showCustomAlert(
-              lang === 'id' ? 'Gagal' : 'Failed', 
-              err.message, 
+              lang === 'id' ? 'Gagal' : 'Failed',
+              err.message,
               'danger'
             );
           });
@@ -134,11 +152,12 @@ const PesananSaya = () => {
 
         window.snap.pay(snapToken, {
           onSuccess: async function () {
+            await loadData(false);
             showCustomAlert(
               lang === 'id' ? 'Pembayaran Berhasil' : 'Payment Success',
-              lang === 'id' 
-                ? 'Pembayaran Anda berhasil diproses! Sistem akan memperbarui status pembayaran setelah notifikasi Midtrans diterima, lalu admin akan memproses pesanan Anda.' 
-                : 'Your payment has been successfully processed! The system will update your payment status after the Midtrans notification is received, then admin will process your booking.',
+              lang === 'id'
+                ? 'Pembayaran Anda berhasil diproses! Sistem akan memperbarui status pembayaran setelah notifikasi Midtrans diterima dan pesanan akan otomatis dikonfirmasi.'
+                : 'Your payment has been successfully processed! The system will update your payment status after the Midtrans notification is received and confirm your booking automatically.',
               'success',
               () => loadData(false)
             );
@@ -177,10 +196,15 @@ const PesananSaya = () => {
       }
     } catch (err) {
       console.error('Payment error:', err);
+      if (err?.response?.status === 422) {
+        await loadData(false);
+      }
       showCustomAlert(
-        lang === 'id' ? 'Kesalahan Sistem' : 'System Error',
-        lang === 'id' ? 'Gagal memulai pembayaran.' : 'Failed to initialize payment.',
-        'danger'
+        err?.response?.status === 422
+          ? (lang === 'id' ? 'Pembayaran Tidak Diperlukan' : 'Payment Not Required')
+          : (lang === 'id' ? 'Kesalahan Sistem' : 'System Error'),
+        getPaymentErrorMessage(err),
+        err?.response?.status === 422 ? 'warning' : 'danger'
       );
     } finally {
       setPayingId(null);
@@ -209,13 +233,13 @@ const PesananSaya = () => {
           </span>
         )}
         {isUpcoming && (
-          <span className="badge" style={{ 
-            display: 'inline-flex', 
-            alignItems: 'center', 
-            gap: '0.35rem', 
-            backgroundColor: 'rgba(59, 130, 246, 0.12)', 
-            color: '#3b82f6', 
-            border: '1px solid rgba(59, 130, 246, 0.3)' 
+          <span className="badge" style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            backgroundColor: 'rgba(59, 130, 246, 0.12)',
+            color: '#3b82f6',
+            border: '1px solid rgba(59, 130, 246, 0.3)'
           }}>
             🕒 {lang === 'id' ? 'Belum Berjalan' : 'Not Started'}
           </span>
@@ -291,8 +315,8 @@ const PesananSaya = () => {
                           <h3 style={{ fontSize: '1.15rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             {item.office?.nama || t('room_not_found')}
                             {item.parent_id && (
-                              <span style={{ 
-                                fontSize: '0.65rem', backgroundColor: 'var(--color-secondary)', 
+                              <span style={{
+                                fontSize: '0.65rem', backgroundColor: 'var(--color-secondary)',
                                 color: 'var(--color-primary)', padding: '2px 8px', borderRadius: '12px',
                                 border: '1px solid var(--color-primary)'
                               }}>
@@ -339,23 +363,18 @@ const PesananSaya = () => {
                           {/* Tombol utama: Lihat Detail Pesanan */}
                           <Link
                             to={`/pesanan-saya/${item.id}`}
-                            className="btn btn-primary"
-                            style={{ padding: '0.45rem 0.85rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                            className="btn btn-primary btn-sm"
                           >
                             <Eye size={15} /> {t('detail')}
                           </Link>
 
                           {(item.status === 'Dikonfirmasi' || item.status === 'Selesai') && (
-                            <button 
+                            <button
                               onClick={(e) => {
                                 e.preventDefault();
                                 downloadInvoicePdf(item.id, lang);
                               }}
-                              className="btn btn-outline-primary-custom"
-                              style={{ 
-                                padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
-                                display: 'flex', alignItems: 'center', gap: '0.35rem'
-                              }}
+                              className="btn btn-outline btn-sm"
                             >
                               <Printer size={15} /> Invoice
                             </button>
@@ -366,21 +385,13 @@ const PesananSaya = () => {
                             <>
                               <Link
                                   to={`/ruangan/${item.office_id}#reviews`}
-                                className="btn btn-outline-warning-custom"
-                                style={{ 
-                                  padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
-                                  display: 'flex', alignItems: 'center', gap: '0.35rem'
-                                }}
+                                className="btn btn-outline-warning btn-sm"
                               >
                                 <Star size={15} /> {t('write_review')}
                               </Link>
                               <Link
                                 to={`/ruangan/${item.office_id}?extend_from=${item.id}`}
-                                className="btn btn-outline-primary-custom"
-                                style={{ 
-                                  padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
-                                  display: 'flex', alignItems: 'center', gap: '0.35rem'
-                                }}
+                                className="btn btn-outline btn-sm"
                               >
                                 <RefreshCw size={15} /> {t('extend')}
                               </Link>
@@ -392,12 +403,7 @@ const PesananSaya = () => {
                             <button
                               onClick={() => handlePayment(item.id)}
                               disabled={payingId === item.id}
-                              className="btn btn-success"
-                              style={{ 
-                                padding: '0.45rem 0.85rem', fontSize: '0.9rem', 
-                                display: 'flex', alignItems: 'center', gap: '0.35rem',
-                                backgroundColor: '#10b981', borderColor: '#10b981', color: 'white'
-                              }}
+                              className="btn btn-success btn-sm"
                             >
                               💳 {payingId === item.id ? '...' : (lang === 'id' ? 'Bayar Sekarang' : 'Pay Now')}
                             </button>
@@ -407,8 +413,7 @@ const PesananSaya = () => {
                           {item.status === 'Pending' && String(item.payment_status || '').toLowerCase() !== 'paid' && (
                             <button
                               onClick={() => handleBatalkan(item.id)}
-                              className="btn btn-danger"
-                              style={{ padding: '0.45rem 0.85rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                              className="btn btn-danger btn-sm"
                             >
                               <XCircle size={15} /> {t('cancel_booking')}
                             </button>
@@ -439,7 +444,7 @@ const PesananSaya = () => {
           flex-wrap: wrap !important;
           justify-content: flex-end !important;
         }
-        .order-actions-group .btn, 
+        .order-actions-group .btn,
         .order-actions-group a.btn {
           white-space: nowrap !important;
         }
@@ -472,30 +477,10 @@ const PesananSaya = () => {
             grid-column: span 1 !important;
           }
         }
-        .btn-outline-primary-custom {
-          background-color: transparent !important;
-          border: 1px solid var(--color-primary) !important;
-          color: var(--color-primary) !important;
-          transition: var(--transition) !important;
-        }
-        .btn-outline-primary-custom:hover {
-          background-color: var(--color-primary) !important;
-          color: white !important;
-        }
-        .btn-outline-warning-custom {
-          background-color: transparent !important;
-          border: 1px solid var(--color-warning) !important;
-          color: var(--color-warning) !important;
-          transition: var(--transition) !important;
-        }
-        .btn-outline-warning-custom:hover {
-          background-color: var(--color-warning) !important;
-          color: white !important;
-        }
       `}</style>
-      
-      <Modal 
-        isOpen={modalState.isOpen} 
+
+      <Modal
+        isOpen={modalState.isOpen}
         onClose={() => {
           if (modalState.onClose) modalState.onClose();
           setModalState(prev => ({ ...prev, isOpen: false }));

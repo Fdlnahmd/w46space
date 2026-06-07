@@ -227,7 +227,7 @@ const AdminReviews = () => {
           backgroundColor: 'rgba(15, 23, 42, 0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
           backdropFilter: 'blur(8px)'
         }}>
-          <div className="card" style={{ width: '90%', maxWidth: '400px', padding: '2.5rem', textAlign: 'center', borderRadius: '24px', border: 'none' }}>
+          <div className="card" style={{ width: '90%', maxWidth: '400px', padding: '2rem', textAlign: 'center', border: '1px solid var(--color-border)' }}>
             <div style={{ 
               backgroundColor: '#fff1f2', color: '#e11d48', width: '70px', height: '70px', 
               borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' 
@@ -241,8 +241,8 @@ const AdminReviews = () => {
                 : 'This review will be permanently deleted from the system and cannot be recovered.'}
             </p>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <button onClick={() => setModal({ isOpen: false, id: null })} className="btn btn-outline" style={{ flex: 1, padding: '0.85rem', borderRadius: '12px' }}>{lang === 'id' ? 'Batal' : 'Cancel'}</button>
-              <button onClick={handleDelete} className="btn btn-danger" style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', backgroundColor: '#e11d48' }}>{lang === 'id' ? 'Hapus Sekarang' : 'Delete Now'}</button>
+              <button onClick={() => setModal({ isOpen: false, id: null })} className="btn btn-outline" style={{ flex: 1 }}>{lang === 'id' ? 'Batal' : 'Cancel'}</button>
+              <button onClick={handleDelete} className="btn btn-danger" style={{ flex: 1 }}>{lang === 'id' ? 'Hapus Sekarang' : 'Delete Now'}</button>
             </div>
           </div>
         </div>

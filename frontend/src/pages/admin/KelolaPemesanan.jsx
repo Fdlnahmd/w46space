@@ -43,7 +43,9 @@ const KelolaPemesanan = () => {
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
   const [errorModal, setErrorModal] = useState(() => ({
     isOpen: !!location.state?.error,
-    message: location.state?.error || ''
+    title: lang === 'id' ? 'Pesanan Tidak Ditemukan' : 'Booking Not Found',
+    message: location.state?.error || '',
+    type: 'warning'
   }));
   const [loading, setLoading] = useState(false);
 
@@ -88,7 +90,18 @@ const KelolaPemesanan = () => {
   };
 
   const handleStatusChange = (id, newStatus) => {
-    updateStatusPemesanan(id, newStatus).then(() => loadData(pagination.current_page));
+    updateStatusPemesanan(id, newStatus)
+      .then(() => loadData(pagination.current_page))
+      .catch((err) => {
+        const errMsg = err.response?.data?.message || (lang === 'id' ? 'Gagal mengubah status.' : 'Failed to update status.');
+        setErrorModal({
+          isOpen: true,
+          title: lang === 'id' ? 'Gagal Mengubah Status' : 'Failed to Update Status',
+          message: errMsg,
+          type: 'warning'
+        });
+        loadData(pagination.current_page);
+      });
   };
 
   // Logika Filter (Hanya bisa filter data yang ada di halaman ini)
@@ -109,8 +122,8 @@ const KelolaPemesanan = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '250px' }}>
+      <div className="card admin-filter-bar">
+        <div className="admin-filter-search">
           <Search size={18} color="var(--color-text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
           <input 
             type="text" 
@@ -122,7 +135,7 @@ const KelolaPemesanan = () => {
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="admin-filter-group">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
             <Filter size={18} /> {lang === 'id' ? 'Filter Status:' : 'Filter Status:'}
           </div>
@@ -410,7 +423,7 @@ const KelolaPemesanan = () => {
       </div>
 
       {/* Pagination Controls */}
-      <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+      <div className="pagination-controls">
         <button 
           className="btn btn-outline" 
           disabled={pagination.current_page === 1 || loading}
@@ -443,10 +456,10 @@ const KelolaPemesanan = () => {
 
       <Modal 
         isOpen={errorModal.isOpen} 
-        onClose={() => setErrorModal({ isOpen: false, message: '' })}
-        title={lang === 'id' ? 'Pesanan Tidak Ditemukan' : 'Booking Not Found'}
+        onClose={() => setErrorModal({ isOpen: false, message: '', title: '', type: 'warning' })}
+        title={errorModal.title || (lang === 'id' ? 'Peringatan' : 'Warning')}
         message={errorModal.message}
-        type="warning"
+        type={errorModal.type || 'warning'}
       />
     </div>
   );

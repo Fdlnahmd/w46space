@@ -3,11 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\Coupon;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Midtrans\Config as MidtransConfig;
+use Midtrans\Transaction as MidtransTransaction;
 
 class BookingController extends Controller
 {
+    private function invalidateBookingCaches(?Booking $booking = null): void
+    {
+        $today = date('Y-m-d');
+        \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
+        \Illuminate\Support\Facades\Cache::forget('offices_list_' . $today);
+
+        if ($booking && $booking->office_id) {
+            \Illuminate\Support\Facades\Cache::forget("office_detail_{$booking->office_id}_{$today}_basic");
+            \Illuminate\Support\Facades\Cache::forget("office_booked_periods_{$booking->office_id}_{$today}");
+        }
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -19,7 +36,12 @@ class BookingController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        return response()->json($query->paginate($perPage));
+        $bookings = $query->paginate($perPage);
+        $bookings->getCollection()->transform(function (Booking $booking) {
+            return $this->syncMidtransPaymentStatus($booking)->loadMissing('office', 'user', 'addons');
+        });
+
+        return response()->json($bookings);
     }
 
     public function show(int $id)
@@ -36,83 +58,151 @@ class BookingController extends Controller
             return response()->json(['message' => 'Anda tidak memiliki akses ke pesanan ini'], 403);
         }
 
-        // Auto sync payment status with Midtrans if pending and has order ID
-        if ($booking->status === 'Pending' && $booking->payment_status !== 'paid' && $booking->midtrans_order_id) {
-            try {
-                \Midtrans\Config::$serverKey    = config('midtrans.server_key');
-                \Midtrans\Config::$isProduction = config('midtrans.is_production');
-                
-                $status = \Midtrans\Transaction::status($booking->midtrans_order_id);
-                $transactionStatus = $status->transaction_status ?? null;
-                $fraudStatus = $status->fraud_status ?? null;
-                $paymentType = $status->payment_type ?? null;
-
-                if ($transactionStatus) {
-                    $paymentStatus = match(true) {
-                        $transactionStatus === 'capture' && $fraudStatus === 'accept' => 'paid',
-                        $transactionStatus === 'settlement'                            => 'paid',
-                        $transactionStatus === 'pending'                               => 'pending',
-                        in_array($transactionStatus, ['deny', 'cancel', 'failure'])    => 'failed',
-                        $transactionStatus === 'expire'                                => 'expired',
-                        default                                                        => $booking->payment_status,
-                    };
-
-                    if ($paymentStatus !== $booking->payment_status) {
-                        $resolvedPaymentType = 'Unknown';
-                        if ($paymentType) {
-                            $resolvedPaymentType = ucwords(str_replace('_', ' ', $paymentType));
-                        }
-
-                        $updateData = [
-                            'payment_status' => $paymentStatus,
-                            'midtrans_payment_type' => $resolvedPaymentType,
-                        ];
-
-                        if ($paymentStatus === 'paid') {
-                            $updateData['paid_at'] = now();
-
-                            // Notifications
-                            \App\Models\Notification::create([
-                                'user_id' => $booking->user_id,
-                                'title'   => 'Pembayaran Berhasil ✅',
-                                'message' => "Pembayaran untuk pesanan #{$booking->id} telah dikonfirmasi. Menunggu konfirmasi admin.",
-                                'type'    => 'success',
-                                'link'    => "/pesanan-saya/{$booking->id}",
-                            ]);
-
-                            \App\Models\Notification::create([
-                                'user_id' => null,
-                                'title'   => 'Pembayaran Diterima 💰',
-                                'message' => "Pesanan #{$booking->id} dari {$booking->nama_pemesan} telah dibayar.",
-                                'type'    => 'success',
-                                'link'    => "/admin/pemesanan/{$booking->id}",
-                            ]);
-                        } elseif (in_array($paymentStatus, ['failed', 'expired'])) {
-                            $updateData['status'] = 'Dibatalkan';
-                            if ($booking->coupon_id) {
-                                \App\Models\Coupon::where('id', $booking->coupon_id)->decrement('used_count');
-                            }
-
-                            \App\Models\Notification::create([
-                                'user_id' => $booking->user_id,
-                                'title'   => 'Pembayaran Gagal ❌',
-                                'message' => "Pembayaran untuk pesanan #{$booking->id} " . ($paymentStatus === 'expired' ? 'kedaluwarsa' : 'gagal') . ". Silakan coba lagi.",
-                                'type'    => 'danger',
-                                'link'    => "/pesanan-saya/{$booking->id}",
-                            ]);
-                        }
-
-                        $booking->update($updateData);
-                        $booking->refresh();
-                    }
-                }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning('Midtrans automatic sync failed for booking ' . $booking->id . ': ' . $e->getMessage());
-            }
-        }
+        $booking = $this->syncMidtransPaymentStatus($booking);
 
         return response()->json($booking);
     }
+
+    private function syncMidtransPaymentStatus(Booking $booking): Booking
+    {
+        $orderId = (string) $booking->midtrans_order_id;
+        $isAddonOrder = str_starts_with($orderId, 'ADDONS-');
+        $hasPendingAddons = $booking->addons()->wherePivot('status', 'pending')->exists();
+
+        if (!$isAddonOrder && strtolower((string) $booking->payment_status) === 'paid' && $booking->status === 'Pending') {
+            $booking->update(['status' => 'Dikonfirmasi']);
+            $this->invalidateBookingCaches($booking);
+            return $booking->refresh();
+        }
+
+        if (
+            !$orderId ||
+            (!$isAddonOrder && $booking->status !== 'Pending') ||
+            (!$isAddonOrder && strtolower((string) $booking->payment_status) === 'paid') ||
+            ($isAddonOrder && !$hasPendingAddons)
+        ) {
+            return $booking;
+        }
+
+        try {
+            MidtransConfig::$serverKey    = config('midtrans.server_key');
+            MidtransConfig::$isProduction = config('midtrans.is_production');
+            MidtransConfig::$isSanitized  = true;
+            MidtransConfig::$is3ds        = true;
+
+            $status = MidtransTransaction::status($orderId);
+            $transactionStatus = $status->transaction_status ?? null;
+            $fraudStatus = $status->fraud_status ?? null;
+            $paymentType = $status->payment_type ?? null;
+
+            if (!$transactionStatus) {
+                return $booking;
+            }
+
+            $paymentStatus = match (true) {
+                $transactionStatus === 'capture' && $fraudStatus === 'accept' => 'paid',
+                $transactionStatus === 'settlement'                            => 'paid',
+                $transactionStatus === 'pending'                               => 'pending',
+                in_array($transactionStatus, ['deny', 'cancel', 'failure'])    => 'failed',
+                $transactionStatus === 'expire'                                => 'expired',
+                default                                                        => $booking->payment_status,
+            };
+
+            $resolvedPaymentType = $paymentType ? ucwords(str_replace('_', ' ', $paymentType)) : 'Unknown';
+
+            if ($isAddonOrder) {
+                if ($paymentStatus !== 'paid') {
+                    return $booking;
+                }
+
+                $pendingAddons = $booking->addons()->wherePivot('status', 'pending')->get();
+                if ($pendingAddons->isEmpty()) {
+                    return $booking;
+                }
+
+                $addonNames = [];
+                foreach ($pendingAddons as $addon) {
+                    $booking->addons()->updateExistingPivot($addon->id, ['status' => 'confirmed']);
+                    $price = $addon->pivot->price_at_booking;
+                    $booking->increment('total_harga', $price);
+                    $booking->increment('total_addon_price', $price);
+                    $addonNames[] = $addon->nama;
+                }
+
+                $addonsList = implode(', ', $addonNames);
+                $booking->update(['midtrans_payment_type' => $resolvedPaymentType]);
+
+                Notification::create([
+                    'user_id' => $booking->user_id,
+                    'title'   => 'Pembayaran Fasilitas Berhasil ✅',
+                    'message' => "Pembayaran untuk fasilitas tambahan ({$addonsList}) pada pesanan #{$booking->id} telah berhasil.",
+                    'type'    => 'success',
+                    'link'    => "/pesanan-saya/{$booking->id}",
+                ]);
+
+                Notification::create([
+                    'user_id' => null,
+                    'title'   => 'Pembayaran Fasilitas Diterima 💰',
+                    'message' => "Pembayaran fasilitas tambahan untuk pesanan #{$booking->id} dari {$booking->nama_pemesan} telah diterima via {$resolvedPaymentType}.",
+                    'type'    => 'success',
+                    'link'    => "/admin/pemesanan/{$booking->id}",
+                ]);
+
+                return $booking->refresh();
+            }
+
+            if ($paymentStatus === $booking->payment_status) {
+                return $booking;
+            }
+
+            $updateData = [
+                'payment_status' => $paymentStatus,
+                'midtrans_payment_type' => $resolvedPaymentType,
+            ];
+
+            if ($paymentStatus === 'paid') {
+                $updateData['paid_at'] = now();
+                $updateData['status'] = 'Dikonfirmasi';
+
+                Notification::create([
+                    'user_id' => $booking->user_id,
+                    'title'   => 'Pembayaran Berhasil ✅',
+                    'message' => "Pembayaran untuk pesanan #{$booking->id} telah dikonfirmasi dan pesanan otomatis aktif.",
+                    'type'    => 'success',
+                    'link'    => "/pesanan-saya/{$booking->id}",
+                ]);
+
+                Notification::create([
+                    'user_id' => null,
+                    'title'   => 'Pembayaran Diterima 💰',
+                    'message' => "Pesanan #{$booking->id} dari {$booking->nama_pemesan} telah dibayar.",
+                    'type'    => 'success',
+                    'link'    => "/admin/pemesanan/{$booking->id}",
+                ]);
+            } elseif (in_array($paymentStatus, ['failed', 'expired'])) {
+                $updateData['status'] = 'Dibatalkan';
+                if ($booking->coupon_id) {
+                    Coupon::where('id', $booking->coupon_id)->where('used_count', '>', 0)->decrement('used_count');
+                }
+
+                Notification::create([
+                    'user_id' => $booking->user_id,
+                    'title'   => 'Pembayaran Gagal ❌',
+                    'message' => "Pembayaran untuk pesanan #{$booking->id} " . ($paymentStatus === 'expired' ? 'kedaluwarsa' : 'gagal') . ". Silakan coba lagi.",
+                    'type'    => 'danger',
+                    'link'    => "/pesanan-saya/{$booking->id}",
+                ]);
+            }
+
+            $booking->update($updateData);
+            $this->invalidateBookingCaches($booking);
+            return $booking->refresh();
+        } catch (\Throwable $e) {
+            Log::warning('Midtrans automatic sync failed for booking ' . $booking->id . ': ' . $e->getMessage());
+            return $booking;
+        }
+    }
+
 
     public function store(Request $request)
     {
@@ -127,11 +217,11 @@ class BookingController extends Controller
             'nama_pemesan'   => 'required|string',
             'perusahaan'     => 'nullable|string',
             'tanggal_mulai'  => 'required|date',
-            'tanggal_akhir'  => 'required|date',
+            'tanggal_akhir'  => 'required|date|after_or_equal:tanggal_mulai',
             'waktu_mulai'    => 'required',
-            'waktu_selesai'  => 'required',
-            'durasi'         => 'required|integer',
-            'total_harga'    => 'required|numeric',
+            'waktu_selesai'  => 'required|after:waktu_mulai',
+            'durasi'         => 'required|integer|min:1',
+            'total_harga'    => 'required|numeric|min:0',
             'coupon_code'    => 'nullable|string',
             'addon_ids'      => 'nullable|array',
             'addon_ids.*'    => 'exists:addons,id',
@@ -183,7 +273,8 @@ class BookingController extends Controller
                 }
             }
 
-            $finalTotal = $basePrice + $totalAddonPrice - $discountAmount;
+            $discountAmount = min($discountAmount, $basePrice + $totalAddonPrice);
+            $finalTotal = max(0, $basePrice + $totalAddonPrice - $discountAmount);
 
             $booking = Booking::create([
                 'office_id'         => $validated['id_ruangan'],
@@ -218,7 +309,7 @@ class BookingController extends Controller
                 'link'    => "/admin/pemesanan/{$booking->id}"
             ]);
 
-            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
+            $this->invalidateBookingCaches($booking);
 
             return response()->json($booking, 201);
         });
@@ -234,12 +325,12 @@ class BookingController extends Controller
             return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
         }
 
-        // Hanya admin/helpdesk yang bisa update detail pesanan lewat sini (biasanya status)
-        if (!in_array(strtolower($user->role), ['admin', 'helpdesk']) && $booking->user_id !== $user->id) {
+        // Hanya admin/helpdesk yang bisa update detail pesanan lewat endpoint ini.
+        if (!in_array(strtolower($user->role), ['admin', 'helpdesk'])) {
             return response()->json(['message' => 'Akses ditolak'], 403);
         }
 
-        $data = $request->all();
+        $data = $request->except(['payment_status', 'midtrans_order_id', 'midtrans_snap_token', 'midtrans_payment_type', 'paid_at']);
         if (isset($data['id_ruangan']))  $data['office_id'] = $data['id_ruangan'];
         
         $booking->update($data);
@@ -273,6 +364,10 @@ class BookingController extends Controller
             return response()->json(['message' => 'Pesanan tidak ditemukan.'], 404);
         }
 
+        $request->validate([
+            'status' => 'required|in:Pending,Dikonfirmasi,Selesai,Dibatalkan',
+        ]);
+
         $user = $request->user();
         $isAdmin = $user && strtolower($user->role) === 'admin';
 
@@ -284,16 +379,23 @@ class BookingController extends Controller
             if ($request->status !== 'Dibatalkan') {
                 return response()->json(['message' => 'Hanya admin yang dapat menyetujui pesanan.'], 403);
             }
+            if ($booking->status !== 'Pending' || strtolower((string) $booking->payment_status) === 'paid') {
+                return response()->json(['message' => 'Pesanan yang sudah dibayar atau diproses tidak dapat dibatalkan mandiri.'], 422);
+            }
         }
 
         $oldStatus = $booking->status;
         $newStatus = $request->status;
-        
+
+        if ($isAdmin && in_array($newStatus, ['Dikonfirmasi', 'Selesai']) && strtolower((string) $booking->payment_status) !== 'paid') {
+            return response()->json(['message' => 'Pesanan belum dibayar, status tidak dapat dikonfirmasi.'], 422);
+        }
+
         $updateData = ['status' => $newStatus];
         
         if ($newStatus === 'Dibatalkan' && $oldStatus !== 'Dibatalkan') {
             if ($booking->coupon_id) {
-                \App\Models\Coupon::where('id', $booking->coupon_id)->decrement('used_count');
+                \App\Models\Coupon::where('id', $booking->coupon_id)->where('used_count', '>', 0)->decrement('used_count');
             }
         }
 
@@ -308,8 +410,8 @@ class BookingController extends Controller
             'link'    => "/pesanan-saya/{$booking->id}"
         ]);
 
-        // Invalidate cache
-        \Illuminate\Support\Facades\Cache::flush();
+        // Invalidate cache terkait booking saja, tanpa menghapus semua cache aplikasi.
+        $this->invalidateBookingCaches($booking);
 
         return response()->json($booking);
     }
@@ -324,31 +426,64 @@ class BookingController extends Controller
             return response()->json(['message' => 'Anda tidak memiliki akses ke pesanan ini'], 403);
         }
 
+        $paymentStatus = strtolower((string) $booking->payment_status);
+        $isPaid = $paymentStatus === 'paid';
+        $canAddBeforePayment = $booking->status === 'Pending' && !$isPaid;
+
+        if ($isPaid && $booking->status !== 'Dikonfirmasi') {
+            return response()->json(['message' => 'Fasilitas tambahan hanya dapat dibayar setelah pesanan dikonfirmasi. Muat ulang halaman dan coba lagi.'], 422);
+        }
+
+        if (!$isPaid && !$canAddBeforePayment) {
+            return response()->json(['message' => 'Fasilitas tambahan hanya dapat ditambahkan sebelum pembayaran atau setelah pesanan aktif.'], 422);
+        }
+
         $validated = $request->validate([
             'addon_ids'   => 'required|array',
             'addon_ids.*' => 'exists:addons,id',
         ]);
 
-        $addons = \App\Models\Addon::whereIn('id', $validated['addon_ids'])->get();
+        $existingAddonIds = $booking->addons()->pluck('addons.id')->all();
+        $addons = \App\Models\Addon::whereIn('id', $validated['addon_ids'])
+            ->whereNotIn('id', $existingAddonIds)
+            ->get();
+
+        if ($addons->isEmpty()) {
+            return response()->json(['message' => 'Fasilitas yang dipilih sudah ada pada pesanan ini.'], 422);
+        }
+
         $syncData = [];
+        $addedTotal = 0;
 
         foreach ($addons as $addon) {
-            // Set status PENDING untuk addon baru (agar tidak langsung update total harga)
             $syncData[$addon->id] = [
                 'price_at_booking' => $addon->harga,
-                'status'           => 'pending'
+                'status'           => $isPaid ? 'pending' : 'confirmed',
             ];
+            $addedTotal += (float) $addon->harga;
         }
 
         $booking->addons()->syncWithoutDetaching($syncData);
-        
-        // Buat notifikasi untuk ADMIN
-        \App\Models\Notification::create([
-            'title'   => 'Permintaan Fasilitas Baru',
-            'message' => "Pesanan #{$booking->id} meminta tambahan fasilitas. Segera konfirmasi pembayaran.",
-            'user_id' => null, // Untuk admin
-            'link'    => "/admin/pemesanan/{$booking->id}"
-        ]);
+
+        if ($isPaid) {
+            // Booking sudah lunas: addon baru perlu pembayaran terpisah.
+            \App\Models\Notification::create([
+                'title'   => 'Permintaan Fasilitas Baru',
+                'message' => "Pesanan #{$booking->id} meminta tambahan fasilitas. Menunggu pembayaran fasilitas tambahan.",
+                'user_id' => null,
+                'link'    => "/admin/pemesanan/{$booking->id}"
+            ]);
+        } else {
+            // Booking belum dibayar: addon langsung masuk ke total pembayaran utama.
+            $booking->increment('total_harga', $addedTotal);
+            $booking->increment('total_addon_price', $addedTotal);
+            $booking->update([
+                'payment_status' => 'Pending',
+                'midtrans_order_id' => null,
+                'midtrans_snap_token' => null,
+                'midtrans_payment_type' => null,
+            ]);
+        }
 
         $booking->refresh();
         return response()->json($booking->load('addons', 'office'));
@@ -396,11 +531,10 @@ class BookingController extends Controller
             if (!in_array(strtolower($user->role), ['admin', 'helpdesk']) && $booking->user_id !== $user->id) {
                 return response()->json(['message' => 'Akses ditolak'], 403);
             }
+            $deletedBooking = clone $booking;
             $booking->delete();
-            // Invalidate office listing and analytics cache
-            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
-            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
-            \Illuminate\Support\Facades\Cache::flush();
+            // Invalidate cache terkait booking saja, tanpa menghapus semua cache aplikasi.
+            $this->invalidateBookingCaches($deletedBooking);
         }
         return response()->json(['message' => 'Pesanan berhasil dihapus']);
     }

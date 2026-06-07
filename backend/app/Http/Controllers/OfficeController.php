@@ -16,14 +16,17 @@ class OfficeController extends Controller
         return \Illuminate\Support\Facades\Cache::remember('offices_list_' . $today, 3600, function () use ($today) {
             $offices = Office::with(['bookings' => function($query) use ($today) {
                 $query->where('status', '!=', 'Dibatalkan')
-                      ->where('tanggal_mulai', '<=', $today)
-                      ->where('tanggal_akhir', '>=', $today);
+                      ->where('tanggal_akhir', '>=', $today)
+                      ->orderBy('tanggal_mulai');
             }])->get();
 
-            $offices->transform(function($office) {
-                $current = $office->bookings->first();
-                $office->is_booked = $current ? true : false;
-                $office->booked_until = $current ? $current->tanggal_akhir : null;
+            $offices->transform(function($office) use ($today) {
+                $booking = $office->bookings->first(function($booking) use ($today) {
+                    return $booking->tanggal_mulai <= $today && $booking->tanggal_akhir >= $today;
+                }) ?: $office->bookings->first();
+
+                $office->is_booked = $booking ? true : false;
+                $office->booked_until = $booking ? $booking->tanggal_akhir : null;
                 return $office;
             });
 
@@ -42,13 +45,18 @@ class OfficeController extends Controller
             }])->find($id);
 
             if ($data) {
-                // Cari apakah hari ini sedang dipesan
                 $current = $data->bookings->filter(function($b) use ($today) {
                     return $b->tanggal_mulai <= $today && $b->tanggal_akhir >= $today;
                 })->first();
 
-                $data->is_booked = $current ? true : false;
-                $data->booked_until = $current ? $current->tanggal_akhir : null;
+                $future = $data->bookings
+                    ->filter(fn ($b) => $b->tanggal_akhir >= $today)
+                    ->sortBy('tanggal_mulai')
+                    ->first();
+
+                $booking = $current ?: $future;
+                $data->is_booked = $booking ? true : false;
+                $data->booked_until = $booking ? $booking->tanggal_akhir : null;
             }
             return $data;
         });
@@ -56,6 +64,30 @@ class OfficeController extends Controller
         if (!$office) {
             return response()->json(['message' => 'Ruangan tidak ditemukan'], 404);
         }
+
+        // Periode booking dibuat fresh di luar cache supaya kalender/detail tidak telat update.
+        $bookedPeriods = \Illuminate\Support\Facades\Cache::remember("office_booked_periods_{$id}_{$today}", 3600, function () use ($id, $today) {
+            return \App\Models\Booking::where('office_id', $id)
+                ->where('status', '!=', 'Dibatalkan')
+                ->where('tanggal_akhir', '>=', $today)
+                ->orderBy('tanggal_mulai')
+                ->get(['id', 'tanggal_mulai', 'tanggal_akhir', 'status'])
+                ->map(fn ($booking) => [
+                    'id' => $booking->id,
+                    'start' => $booking->tanggal_mulai->toDateString(),
+                    'end' => $booking->tanggal_akhir->toDateString(),
+                    'status' => $booking->status,
+                ])
+                ->values();
+        });
+
+        $currentPeriod = $bookedPeriods->first(function ($booking) use ($today) {
+            return $booking['start'] <= $today && $booking['end'] >= $today;
+        }) ?: $bookedPeriods->first();
+
+        $office->booked_periods = $bookedPeriods;
+        $office->is_booked = $currentPeriod ? true : false;
+        $office->booked_until = $currentPeriod['end'] ?? null;
 
         // Cek status review di luar cache karena tergantung user yang sedang login
         $user = auth('sanctum')->user();
@@ -71,6 +103,17 @@ class OfficeController extends Controller
         return response()->json($office);
     }
 
+    private function forgetOfficeCache(?int $officeId = null): void
+    {
+        $today = date('Y-m-d');
+        \Illuminate\Support\Facades\Cache::forget('offices_list_' . $today);
+
+        if ($officeId) {
+            \Illuminate\Support\Facades\Cache::forget("office_detail_{$officeId}_{$today}_basic");
+            \Illuminate\Support\Facades\Cache::forget("office_booked_periods_{$officeId}_{$today}");
+        }
+    }
+
     public function store(Request $request)
     {
         $data = $request->all();
@@ -82,8 +125,8 @@ class OfficeController extends Controller
 
         $office = Office::create($data);
         
-        // Invalidate cache
-        \Illuminate\Support\Facades\Cache::flush();
+        // Invalidate cache khusus ruangan, tanpa menghapus cache lain.
+        $this->forgetOfficeCache($office->id);
         
         return response()->json($office, 201);
     }
@@ -104,8 +147,8 @@ class OfficeController extends Controller
 
         $office->update($data);
 
-        // Invalidate cache
-        \Illuminate\Support\Facades\Cache::flush();
+        // Invalidate cache khusus ruangan, tanpa menghapus cache lain.
+        $this->forgetOfficeCache($office->id);
         
         return response()->json($office);
     }
@@ -115,8 +158,8 @@ class OfficeController extends Controller
         $office = Office::find($id);
         if ($office) {
             $office->delete();
-            // Invalidate cache
-            \Illuminate\Support\Facades\Cache::flush();
+            // Invalidate cache khusus ruangan, tanpa menghapus cache lain.
+            $this->forgetOfficeCache($id);
         }
         return response()->json(['message' => 'Ruangan berhasil dihapus']);
     }

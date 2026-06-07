@@ -21,7 +21,7 @@
 }
 
 .react-calendar__tile:disabled {
-  background-color: #fee2e2 !important;
+  background-color: rgba(239, 68, 68, 0.16) !important;
   color: #ef4444 !important;
   cursor: not-allowed !important;
   text-decoration: line-through !important;
@@ -32,7 +32,18 @@
   font-weight: bold !important;
 }
 
-.occupied-date {
+.occupied-date,
+.react-calendar__tile.occupied-date,
+.react-calendar__tile.occupied-date:enabled:hover,
+.react-calendar__tile.occupied-date:enabled:focus,
+.react-calendar__tile.occupied-date:disabled {
   background-color: #fee2e2 !important;
   color: #ef4444 !important;
+  cursor: not-allowed !important;
+  text-decoration: line-through !important;
+}
+
+.react-calendar__tile--active.occupied-date {
+  background-color: #fecaca !important;
+  color: #dc2626 !important;
 }

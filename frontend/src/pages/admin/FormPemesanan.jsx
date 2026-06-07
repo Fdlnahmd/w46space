@@ -130,14 +130,14 @@ const FormPemesanan = () => {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-        <button onClick={() => navigate(id ? `/admin/pemesanan/${id}` : '/admin/pemesanan')} className="btn btn-outline" style={{ padding: '0.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+        <button onClick={() => navigate(id ? `/admin/pemesanan/${id}` : '/admin/pemesanan')} className="btn btn-outline" style={{ padding: '0.5rem', flexShrink: 0 }}>
           <ArrowLeft size={20} />
         </button>
-        <h1 style={{ margin: 0 }}>Edit / Perpanjang Kontrak Pemesanan</h1>
+        <h1 style={{ margin: 0, fontSize: 'clamp(1.25rem, 5vw, 2rem)', wordBreak: 'break-word', flex: 1 }}>Edit / Perpanjang Kontrak Pemesanan</h1>
       </div>
 
-      <div className="card" style={{ padding: '2rem' }}>
+      <div className="card" style={{ padding: 'clamp(1rem, 4vw, 2rem)' }}>
         <form onSubmit={handleSubmit} className="grid md:grid-cols-2" style={{ gap: '1.5rem' }}>
 
           {/* Nama Pemesan */}
@@ -168,7 +168,7 @@ const FormPemesanan = () => {
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <CalendarIcon size={18} color="var(--color-primary)" /> Tanggal Mulai Kontrak
             </label>
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.5rem', width: '100%', overflowX: 'auto' }}>
               <Calendar 
                 onChange={(date) => {
                   const yyyy = date.getFullYear();
@@ -222,7 +222,7 @@ const FormPemesanan = () => {
           {/* Add-ons / Fasilitas Tambahan */}
           <div className="form-group" style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--color-border)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
             <label className="form-label" style={{ fontWeight: 600, fontSize: '0.95rem' }}>Add-ons / Fasilitas Tambahan</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginTop: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '1rem', marginTop: '0.75rem' }}>
               {allAddons.map(addon => {
                 const isChecked = selectedAddonIds.includes(addon.id);
                 return (
@@ -281,11 +281,18 @@ const FormPemesanan = () => {
           </div>
 
           {/* Submit */}
-          <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-            <button type="button" onClick={() => navigate(`/admin/pemesanan/${id}`)} className="btn btn-outline">
+          <div style={{ 
+            gridColumn: '1 / -1', 
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            gap: '1rem', 
+            flexWrap: 'wrap',
+            marginTop: '0.5rem'
+          }}>
+            <button type="button" onClick={() => navigate(`/admin/pemesanan/${id}`)} className="btn btn-outline" style={{ flex: '1 1 120px' }}>
               Batal
             </button>
-            <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem' }}>
+            <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', flex: '1 1 200px' }}>
               <Save size={18} /> Simpan Perubahan
             </button>
           </div>

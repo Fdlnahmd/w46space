@@ -30,6 +30,6 @@ class Coupon extends Model
 
     public function isLimitReached()
     {
-        return $this->used_count >= $this->usage_limit;
+        return $this->usage_limit !== null && $this->used_count >= $this->usage_limit;
     }
 }

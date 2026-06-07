@@ -61,7 +61,7 @@ class CouponController extends Controller
             return response()->json(['message' => 'Kupon sudah kadaluarsa'], 400);
         }
 
-        if ($coupon->used_count >= $coupon->usage_limit) {
+        if ($coupon->isLimitReached()) {
             return response()->json(['message' => 'Kuota kupon sudah habis'], 400);
         }
 

@@ -86,7 +86,7 @@ const KelolaRuangan = () => {
                 <td style={{ padding: '1rem' }}>Rp {(item.harga ?? 0).toLocaleString('id-ID')}</td>
                 <td style={{ padding: '1rem' }}>
                   {item.is_booked ? (
-                    <span className="badge badge-danger">{lang === 'id' ? 'Penuh' : 'Fully Booked'}</span>
+                    <span className="badge badge-danger">{lang === 'id' ? 'Dibook' : 'Booked'}</span>
                   ) : item.status === 'Maintenance' || item.status === 'Pemeliharaan' ? (
                     <span className="badge badge-warning">{lang === 'id' ? 'Pemeliharaan' : 'Maintenance'}</span>
                   ) : (
@@ -133,7 +133,7 @@ const KelolaRuangan = () => {
               <div>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-main)', marginBottom: '0.35rem', lineHeight: '1.3' }}>{item.nama}</h3>
                 {item.is_booked ? (
-                  <span className="badge badge-danger" style={{ fontSize: '0.75rem' }}>{lang === 'id' ? 'Penuh' : 'Fully Booked'}</span>
+                  <span className="badge badge-danger" style={{ fontSize: '0.75rem' }}>{lang === 'id' ? 'Dibook' : 'Booked'}</span>
                 ) : item.status === 'Maintenance' || item.status === 'Pemeliharaan' ? (
                   <span className="badge badge-warning" style={{ fontSize: '0.75rem' }}>{lang === 'id' ? 'Pemeliharaan' : 'Maintenance'}</span>
                 ) : (

@@ -21,6 +21,18 @@ class PaymentController extends Controller
         MidtransConfig::$is3ds        = true;
     }
 
+    private function invalidateBookingCaches(?Booking $booking = null): void
+    {
+        $today = date('Y-m-d');
+        \Illuminate\Support\Facades\Cache::forget('admin_dashboard_stats');
+        \Illuminate\Support\Facades\Cache::forget('offices_list_' . $today);
+
+        if ($booking && $booking->office_id) {
+            \Illuminate\Support\Facades\Cache::forget("office_detail_{$booking->office_id}_{$today}_basic");
+            \Illuminate\Support\Facades\Cache::forget("office_booked_periods_{$booking->office_id}_{$today}");
+        }
+    }
+
     /**
      * Buat Snap Token untuk booking yang belum dibayar atau addon yang pending.
      * Dipanggil user saat klik tombol "Bayar Sekarang" atau "Bayar Fasilitas Tambahan".
@@ -157,6 +169,7 @@ class PaymentController extends Controller
 
             if ($isPayingAddons) {
                 $booking->update([
+                    'midtrans_order_id'   => $orderId,
                     'midtrans_snap_token' => $snapToken,
                 ]);
             } else {
@@ -226,6 +239,9 @@ class PaymentController extends Controller
                 return response()->json(['message' => 'Booking tidak ditemukan.'], 404);
             }
 
+            $oldPaymentStatus = strtolower((string) $booking->payment_status);
+            $oldBookingStatus = $booking->status;
+
             // Tentukan payment_status berdasarkan status dari Midtrans
             $paymentStatus = match(true) {
                 $transactionStatus === 'capture' && $fraudStatus === 'accept' => 'paid',
@@ -241,6 +257,10 @@ class PaymentController extends Controller
             if ($isAddonPayment) {
                 if ($paymentStatus === 'paid') {
                     $pendingAddons = $booking->addons()->wherePivot('status', 'pending')->get();
+                    if ($pendingAddons->isEmpty()) {
+                        return response()->json(['status' => 'ok']);
+                    }
+
                     $addonNames = [];
                     foreach ($pendingAddons as $addon) {
                         $booking->addons()->updateExistingPivot($addon->id, ['status' => 'confirmed']);
@@ -250,6 +270,7 @@ class PaymentController extends Controller
                         $addonNames[] = $addon->nama;
                     }
                     $addonsList = implode(', ', $addonNames);
+                    $booking->update(['midtrans_payment_type' => $resolvedPaymentType]);
 
                     // Kirim notifikasi ke user bahwa pembayaran addon berhasil
                     Notification::create([
@@ -278,43 +299,50 @@ class PaymentController extends Controller
             ];
 
             if ($paymentStatus === 'paid') {
-                $updateData['paid_at'] = now();
+                $updateData['paid_at'] = $booking->paid_at ?: now();
+                $updateData['status'] = 'Dikonfirmasi';
 
-                // Kirim notifikasi ke user bahwa pembayaran berhasil
-                Notification::create([
-                    'user_id' => $booking->user_id,
-                    'title'   => 'Pembayaran Berhasil ✅',
-                    'message' => "Pembayaran untuk pesanan #{$booking->id} telah dikonfirmasi. Menunggu konfirmasi admin.",
-                    'type'    => 'success',
-                    'link'    => "/pesanan-saya/{$booking->id}",
-                ]);
+                if ($oldPaymentStatus !== 'paid') {
+                    // Kirim notifikasi ke user bahwa pembayaran berhasil
+                    Notification::create([
+                        'user_id' => $booking->user_id,
+                        'title'   => 'Pembayaran Berhasil ✅',
+                        'message' => "Pembayaran untuk pesanan #{$booking->id} telah dikonfirmasi dan pesanan otomatis aktif.",
+                        'type'    => 'success',
+                        'link'    => "/pesanan-saya/{$booking->id}",
+                    ]);
 
-                // Notifikasi ke admin
-                Notification::create([
-                    'user_id' => null,
-                    'title'   => 'Pembayaran Diterima 💰',
-                    'message' => "Pesanan #{$booking->id} dari {$booking->nama_pemesan} telah dibayar via {$resolvedPaymentType}.",
-                    'type'    => 'success',
-                    'link'    => "/admin/pemesanan/{$booking->id}",
-                ]);
+                    // Notifikasi ke admin
+                    Notification::create([
+                        'user_id' => null,
+                        'title'   => 'Pembayaran Diterima 💰',
+                        'message' => "Pesanan #{$booking->id} dari {$booking->nama_pemesan} telah dibayar via {$resolvedPaymentType}.",
+                        'type'    => 'success',
+                        'link'    => "/admin/pemesanan/{$booking->id}",
+                    ]);
+                }
             } elseif (in_array($paymentStatus, ['failed', 'expired'])) {
                 $updateData['status'] = 'Dibatalkan';
-                
-                if ($booking->coupon_id) {
-                    \App\Models\Coupon::where('id', $booking->coupon_id)->decrement('used_count');
+                $alreadyCanceled = $oldBookingStatus === 'Dibatalkan' || in_array($oldPaymentStatus, ['failed', 'expired']);
+
+                if (!$alreadyCanceled && $booking->coupon_id) {
+                    \App\Models\Coupon::where('id', $booking->coupon_id)->where('used_count', '>', 0)->decrement('used_count');
                 }
 
-                // Notifikasi ke user bahwa pembayaran gagal/expired
-                Notification::create([
-                    'user_id' => $booking->user_id,
-                    'title'   => 'Pembayaran Gagal ❌',
-                    'message' => "Pembayaran untuk pesanan #{$booking->id} " . ($paymentStatus === 'expired' ? 'kedaluwarsa' : 'gagal') . ". Silakan coba lagi.",
-                    'type'    => 'danger',
-                    'link'    => "/pesanan-saya/{$booking->id}",
-                ]);
+                if (!$alreadyCanceled) {
+                    // Notifikasi ke user bahwa pembayaran gagal/expired
+                    Notification::create([
+                        'user_id' => $booking->user_id,
+                        'title'   => 'Pembayaran Gagal ❌',
+                        'message' => "Pembayaran untuk pesanan #{$booking->id} " . ($paymentStatus === 'expired' ? 'kedaluwarsa' : 'gagal') . ". Silakan coba lagi.",
+                        'type'    => 'danger',
+                        'link'    => "/pesanan-saya/{$booking->id}",
+                    ]);
+                }
             }
 
             $booking->update($updateData);
+            $this->invalidateBookingCaches($booking);
 
             return response()->json(['status' => 'ok']);
         } catch (\Exception $e) {

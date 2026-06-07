@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  getPemesananById, 
-  updateStatusPemesanan, 
-  getAddons, 
+import {
+  getPemesananById,
+  updateStatusPemesanan,
+  getAddons,
   addAddonsToBooking,
   downloadInvoicePdf,
   createSnapToken,
@@ -31,11 +31,11 @@ const statusConfig = {
 // Hitung sisa waktu dan status kontrak
 const hitungSisaWaktuKontrak = (tanggalMulai, tanggalAkhir) => {
   if (!tanggalMulai || !tanggalAkhir) return null;
-  
+
   const sekarang = new Date().getTime();
   const mulai = new Date(tanggalMulai.split('T')[0] + 'T00:00:00').getTime();
   const akhir = new Date(tanggalAkhir.split('T')[0] + 'T23:59:59').getTime();
-  
+
   let target, type;
 
   if (sekarang < mulai) {
@@ -130,6 +130,24 @@ const DetailPesanan = () => {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
 
+
+  const getPaymentErrorMessage = (error) => {
+    const message = error?.response?.data?.message || '';
+    const status = error?.response?.status;
+
+    if (status === 422 && message.includes('sudah dibayar')) {
+      return lang === 'id'
+        ? 'Pesanan ini sudah dibayar dan tidak ada fasilitas tambahan yang perlu dibayar.'
+        : 'This booking has already been paid and there are no additional services waiting for payment.';
+    }
+
+    if (status === 422 && message) {
+      return lang === 'id' ? message : 'Payment cannot be started for this booking.';
+    }
+
+    return lang === 'id' ? 'Terjadi kesalahan sistem pembayaran.' : 'Payment system error occurred.';
+  };
+
   // Ambil data pesanan
   const fetchDetail = useCallback(async () => {
     try {
@@ -137,7 +155,7 @@ const DetailPesanan = () => {
       if (!data) { navigate('/pesanan-saya'); return; }
       setPesanan(data);
       setLoading(false);
-    } catch (err) { 
+    } catch (err) {
       console.error(err);
       navigate('/pesanan-saya');
     }
@@ -152,7 +170,7 @@ const DetailPesanan = () => {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const loadData = async () => {
       await Promise.all([fetchDetail(), fetchAddons()]);
     };
@@ -166,13 +184,22 @@ const DetailPesanan = () => {
 
   const handleAddAddons = async () => {
     if (selectedAddons.length === 0) return;
+    const shouldPayAddons = String(pesanan?.payment_status || '').toLowerCase() === 'paid';
+
     setProcessing(true);
     try {
       await addAddonsToBooking(pesanan.id, selectedAddons);
-      showToast(lang === 'id' ? 'Permintaan fasilitas terkirim! Menunggu konfirmasi admin.' : 'Facility request sent! Awaiting admin confirmation.');
       setShowAddonModal(false);
       setSelectedAddons([]);
-      fetchDetail();
+      await fetchDetail();
+
+      if (shouldPayAddons) {
+        setProcessing(false);
+        await handlePayment(pesanan.id, 'addons');
+        return;
+      }
+
+      showToast(lang === 'id' ? 'Fasilitas ditambahkan ke total pembayaran.' : 'Facility added to the payment total.');
     } catch (error) {
       console.error(error);
       showToast(lang === 'id' ? 'Gagal menambahkan fasilitas' : 'Failed to add facilities', 'error');
@@ -187,7 +214,7 @@ const DetailPesanan = () => {
   };
 
   const toggleAddon = (id) => {
-    setSelectedAddons(prev => 
+    setSelectedAddons(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
   };
@@ -196,15 +223,15 @@ const DetailPesanan = () => {
     const isConfirm = newStatus === 'Dikonfirmasi';
     setModalState({
       isOpen: true,
-      title: isConfirm 
-        ? (lang === 'id' ? 'Konfirmasi Pesanan' : 'Confirm Booking') 
+      title: isConfirm
+        ? (lang === 'id' ? 'Konfirmasi Pesanan' : 'Confirm Booking')
         : (lang === 'id' ? 'Batalkan/Tolak Pesanan' : 'Cancel/Reject Booking'),
-      message: isConfirm 
-        ? (lang === 'id' ? 'Apakah Anda yakin ingin menyetujui dan mengonfirmasi pesanan ini?' : 'Are you sure you want to approve and confirm this booking?') 
+      message: isConfirm
+        ? (lang === 'id' ? 'Apakah Anda yakin ingin menyetujui dan mengonfirmasi pesanan ini?' : 'Are you sure you want to approve and confirm this booking?')
         : (lang === 'id' ? 'Apakah Anda yakin ingin membatalkan/menolak pesanan ini?' : 'Are you sure you want to cancel/reject this booking?'),
       type: isConfirm ? 'success' : 'danger',
-      confirmText: isConfirm 
-        ? (lang === 'id' ? 'Ya, Konfirmasi' : 'Yes, Confirm') 
+      confirmText: isConfirm
+        ? (lang === 'id' ? 'Ya, Konfirmasi' : 'Yes, Confirm')
         : (lang === 'id' ? 'Ya, Tolak' : 'Yes, Reject'),
       cancelText: lang === 'id' ? 'Batal' : 'Cancel',
       onConfirm: async () => {
@@ -232,10 +259,11 @@ const DetailPesanan = () => {
     });
   };
 
-  const handlePayment = async () => {
+  const handlePayment = async (bookingId = pesanan.id, paymentMode = 'booking') => {
+    const isAddonPayment = paymentMode === 'addons';
     setProcessing(true);
     try {
-      const data = await createSnapToken(pesanan.id);
+      const data = await createSnapToken(bookingId);
       if (data && data.snap_token) {
         await ensureMidtransSnap(data.client_key, data.snap_url);
 
@@ -250,11 +278,18 @@ const DetailPesanan = () => {
 
         window.snap.pay(data.snap_token, {
           onSuccess: async function () {
+            await fetchDetail();
             showCustomAlert(
-              lang === 'id' ? 'Pembayaran Berhasil' : 'Payment Success',
-              lang === 'id' 
-                ? 'Pembayaran Anda berhasil diproses! Sistem akan memperbarui status pembayaran setelah notifikasi Midtrans diterima, lalu admin akan memproses pesanan Anda.' 
-                : 'Your payment has been successfully processed! The system will update your payment status after the Midtrans notification is received, then admin will process your booking.',
+              isAddonPayment
+                ? (lang === 'id' ? 'Pembayaran Fasilitas Berhasil' : 'Add-on Payment Success')
+                : (lang === 'id' ? 'Pembayaran Berhasil' : 'Payment Success'),
+              isAddonPayment
+                ? (lang === 'id'
+                  ? 'Pembayaran fasilitas tambahan berhasil diproses. Sistem akan mengaktifkan fasilitas setelah notifikasi Midtrans diterima.'
+                  : 'Your add-on payment has been processed. The system will activate the services after the Midtrans notification is received.')
+                : (lang === 'id'
+                  ? 'Pembayaran Anda berhasil diproses! Sistem akan memperbarui status pembayaran setelah notifikasi Midtrans diterima dan pesanan akan otomatis dikonfirmasi.'
+                  : 'Your payment has been successfully processed! The system will update your payment status after the Midtrans notification is received and confirm your booking automatically.'),
               'success',
               () => fetchDetail()
             );
@@ -293,10 +328,15 @@ const DetailPesanan = () => {
       }
     } catch (error) {
       console.error(error);
+      if (error?.response?.status === 422) {
+        await fetchDetail();
+      }
       showCustomAlert(
-        lang === 'id' ? 'Kesalahan Sistem' : 'System Error',
-        lang === 'id' ? 'Terjadi kesalahan sistem pembayaran.' : 'Payment system error occurred.',
-        'danger'
+        error?.response?.status === 422
+          ? (lang === 'id' ? 'Pembayaran Tidak Diperlukan' : 'Payment Not Required')
+          : (lang === 'id' ? 'Kesalahan Sistem' : 'System Error'),
+        getPaymentErrorMessage(error),
+        error?.response?.status === 422 ? 'warning' : 'danger'
       );
     } finally {
       setProcessing(false);
@@ -339,15 +379,16 @@ const DetailPesanan = () => {
   ];
 
   const paymentStatusLower = String(pesanan.payment_status || 'Pending').toLowerCase();
-  const paymentStatusLabel = paymentStatusLower === 'paid' 
-    ? (lang === 'id' ? 'Lunas (Sudah Dibayar)' : 'Paid') 
-    : (paymentStatusLower === 'failed' 
+  const paymentStatusLabel = paymentStatusLower === 'paid'
+    ? (lang === 'id' ? 'Lunas (Sudah Dibayar)' : 'Paid')
+    : (paymentStatusLower === 'failed'
       ? (lang === 'id' ? 'Gagal' : 'Failed')
       : (paymentStatusLower === 'expired'
         ? (lang === 'id' ? 'Kedaluwarsa' : 'Expired')
         : (lang === 'id' ? 'Belum Dibayar (Pending)' : 'Unpaid (Pending)')));
 
   const paymentStatusColor = paymentStatusLower === 'paid' ? '#059669' : (paymentStatusLower === 'failed' || paymentStatusLower === 'expired' ? '#dc2626' : '#d97706');
+  const canAddAddons = (pesanan.status === 'Pending' && paymentStatusLower !== 'paid') || (pesanan.status === 'Dikonfirmasi' && !isExpired);
 
   detailItems.push({
     icon: CheckCircle,
@@ -393,7 +434,7 @@ const DetailPesanan = () => {
                   {pesanan.office?.nama || 'Ruangan'}
                 </h1>
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <div className="detail-order-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: '0.5rem',
                   padding: '0.5rem 1rem', borderRadius: '9999px',
@@ -405,20 +446,18 @@ const DetailPesanan = () => {
                 </div>
 
                 {user?.role === 'admin' && pesanan.status === 'Pending' && (
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button 
+                  <div className="detail-admin-actions" style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
                       onClick={() => handleStatusUpdate('Dikonfirmasi')}
                       disabled={processing}
-                      className="btn btn-primary" 
-                      style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+                      className="btn btn-primary btn-sm"
                     >
                       <Check size={16} /> {processing ? '...' : (lang === 'id' ? 'Terima' : 'Accept')}
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleStatusUpdate('Dibatalkan')}
                       disabled={processing}
-                      className="btn btn-outline" 
-                      style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
+                      className="btn btn-outline-danger btn-sm"
                     >
                       <X size={16} /> {processing ? '...' : (lang === 'id' ? 'Tolak' : 'Reject')}
                     </button>
@@ -426,53 +465,29 @@ const DetailPesanan = () => {
                 )}
 
                 {user?.role !== 'admin' && user?.role !== 'helpdesk' && pesanan.status === 'Pending' && paymentStatusLower !== 'paid' && (
-                  <button 
-                    onClick={handlePayment} 
+                  <button
+                    onClick={() => handlePayment()}
                     disabled={processing}
-                    className="btn btn-success" 
-                    style={{ 
-                      padding: '0.5rem 1rem', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '0.4rem', 
-                      fontSize: '0.85rem',
-                      backgroundColor: '#10b981',
-                      borderColor: '#10b981',
-                      color: 'white'
-                    }}
+                    className="btn btn-success btn-sm"
                   >
                     <CreditCard size={16} /> {processing ? '...' : (lang === 'id' ? 'Bayar Sekarang' : 'Pay Now')}
                   </button>
                 )}
 
                 {user?.role !== 'admin' && user?.role !== 'helpdesk' && paymentStatusLower === 'paid' && pesanan.addons?.some(a => a.pivot?.status === 'pending') && (
-                  <button 
-                    onClick={handlePayment} 
+                  <button
+                    onClick={() => handlePayment(pesanan.id, 'addons')}
                     disabled={processing}
-                    className="btn btn-primary" 
-                    style={{ 
-                      padding: '0.5rem 1rem', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '0.4rem', 
-                      fontSize: '0.85rem',
-                      backgroundColor: 'var(--color-primary)',
-                      borderColor: 'var(--color-primary)',
-                      color: 'white'
-                    }}
+                    className="btn btn-primary btn-sm"
                   >
                     <CreditCard size={16} /> {processing ? '...' : (lang === 'id' ? 'Bayar Fasilitas Tambahan' : 'Pay Additional Services')}
                   </button>
                 )}
 
                 {(pesanan.status === 'Dikonfirmasi' || pesanan.status === 'Selesai') && (
-                  <button 
-                    onClick={handleDownloadInvoice} 
-                    className="btn btn-outline" 
-                    style={{ 
-                      display: 'flex', alignItems: 'center', gap: '0.4rem', 
-                      fontSize: '0.85rem', padding: '0.5rem 1rem'
-                    }}
+                  <button
+                    onClick={handleDownloadInvoice}
+                    className="btn btn-outline btn-sm"
                   >
                     <Printer size={16} /> Invoice
                   </button>
@@ -564,7 +579,7 @@ const DetailPesanan = () => {
                       <CountdownBox value={statusWaktu.detik} label={lang === 'id' ? 'Detik' : 'Secs'} />
                     </div>
                     <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-                      {isUpcoming 
+                      {isUpcoming
                         ? (lang === 'id' ? `Kontrak akan dimulai pada ${formatDate(pesanan.tanggal_mulai)}` : `Contract starts on ${formatDate(pesanan.tanggal_mulai)}`)
                         : (lang === 'id' ? `Kontrak berakhir pada ${formatDate(pesanan.tanggal_akhir)}` : `Contract ends on ${formatDate(pesanan.tanggal_akhir)}`)
                       }
@@ -593,12 +608,12 @@ const DetailPesanan = () => {
 
           {/* Fasilitas Ruangan & Addons */}
           <div className="card" style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div className="detail-services-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>{lang === 'id' ? 'Fasilitas & Layanan' : 'Facilities & Services'}</h3>
-              {pesanan.status === 'Dikonfirmasi' && !isExpired && (
-                <button 
+              {canAddAddons && (
+                <button
                   onClick={() => setShowAddonModal(true)}
-                  className="btn btn-outline" 
+                  className="btn btn-outline"
                   style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
                 >
                   <Plus size={16} /> {lang === 'id' ? 'Tambah Fasilitas' : 'Add Facilities'}
@@ -633,9 +648,9 @@ const DetailPesanan = () => {
                       <span key={addon.id} style={{
                         display: 'flex', alignItems: 'center', gap: '0.3rem',
                         padding: '0.4rem 0.75rem', fontSize: '0.85rem',
-                        backgroundColor: addon.pivot?.status === 'pending' ? 'rgba(245, 158, 11, 0.06)' : 'rgba(37,99,235,0.06)', 
+                        backgroundColor: addon.pivot?.status === 'pending' ? 'rgba(245, 158, 11, 0.06)' : 'rgba(37,99,235,0.06)',
                         borderRadius: 'var(--border-radius)',
-                        border: `1px solid ${addon.pivot?.status === 'pending' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(37,99,235,0.2)'}`, 
+                        border: `1px solid ${addon.pivot?.status === 'pending' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(37,99,235,0.2)'}`,
                         color: addon.pivot?.status === 'pending' ? 'var(--color-warning)' : 'var(--color-primary)'
                       }}>
                         {addon.pivot?.status === 'pending' ? <Hourglass size={14} /> : <CheckCircle size={14} />}
@@ -660,7 +675,7 @@ const DetailPesanan = () => {
           backdropFilter: 'blur(4px)'
         }}>
           <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '2rem', position: 'relative' }}>
-            <button 
+            <button
               onClick={() => { setShowAddonModal(false); setSelectedAddons([]); }}
               style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}
             >
@@ -675,9 +690,9 @@ const DetailPesanan = () => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.5rem' }}>
                 {availableAddons.filter(addon => !pesanan.addons?.find(a => a.id === addon.id)).length === 0 ? (
-                  <div style={{ 
-                    textAlign: 'center', padding: '2rem', backgroundColor: 'var(--color-secondary)', 
-                    borderRadius: 'var(--border-radius)', border: '1px dashed var(--color-border)' 
+                  <div style={{
+                    textAlign: 'center', padding: '2rem', backgroundColor: 'var(--color-secondary)',
+                    borderRadius: 'var(--border-radius)', border: '1px dashed var(--color-border)'
                   }}>
                     <BadgeCheck size={40} color="var(--color-success)" style={{ marginBottom: '1rem', opacity: 0.5 }} />
                     <p style={{ margin: 0, fontWeight: 600 }}>{lang === 'id' ? 'Semua fasilitas telah ditambahkan' : 'All facilities added'}</p>
@@ -689,7 +704,7 @@ const DetailPesanan = () => {
                   availableAddons
                     .filter(addon => !pesanan.addons?.find(a => a.id === addon.id))
                     .map(addon => (
-                      <div 
+                      <div
                         key={addon.id}
                         onClick={() => toggleAddon(addon.id)}
                         style={{
@@ -701,8 +716,8 @@ const DetailPesanan = () => {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <div style={{ 
-                            width: '40px', height: '40px', borderRadius: '10px', 
+                          <div style={{
+                            width: '40px', height: '40px', borderRadius: '10px',
                             backgroundColor: selectedAddons.includes(addon.id) ? 'var(--color-primary)' : 'var(--color-border)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
                           }}>
@@ -725,8 +740,8 @@ const DetailPesanan = () => {
               </div>
 
               {availableAddons.filter(addon => !pesanan.addons?.find(a => a.id === addon.id)).length > 0 && (
-                <div style={{ 
-                  backgroundColor: 'var(--color-secondary)', padding: '1rem', 
+                <div style={{
+                  backgroundColor: 'var(--color-secondary)', padding: '1rem',
                   borderRadius: 'var(--border-radius)', marginBottom: '1.5rem',
                   border: '1px dashed var(--color-border)'
                 }}>
@@ -742,7 +757,7 @@ const DetailPesanan = () => {
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '1rem' }}>
+              <div className="addon-modal-actions" style={{ display: 'flex', gap: '1rem' }}>
                 {availableAddons.filter(addon => !pesanan.addons?.find(a => a.id === addon.id)).length === 0 ? (
                   <button onClick={() => setShowAddonModal(false)} className="btn btn-primary" style={{ flex: 1 }}>
                     {lang === 'id' ? 'Tutup' : 'Close'}
@@ -750,13 +765,17 @@ const DetailPesanan = () => {
                 ) : (
                   <>
                     <button onClick={() => { setShowAddonModal(false); setSelectedAddons([]); }} className="btn btn-outline" style={{ flex: 1 }}>{lang === 'id' ? 'Batal' : 'Cancel'}</button>
-                    <button 
+                    <button
                       onClick={handleAddAddons}
                       disabled={selectedAddons.length === 0 || processing}
-                      className="btn btn-primary" 
+                      className="btn btn-primary"
                       style={{ flex: 2 }}
                     >
-                      {processing ? t('submitting') : (lang === 'id' ? 'Kirim Permintaan' : 'Send Request')}
+                      {processing
+                        ? t('submitting')
+                        : String(pesanan?.payment_status || '').toLowerCase() === 'paid'
+                          ? (lang === 'id' ? 'Tambah & Bayar' : 'Add & Pay')
+                          : (lang === 'id' ? 'Tambah ke Total' : 'Add to Total')}
                     </button>
                   </>
                 )}
@@ -765,6 +784,36 @@ const DetailPesanan = () => {
           </div>
         </div>
       )}
+
+      <style>{`
+        @media (max-width: 640px) {
+          .detail-order-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch !important;
+          }
+
+          .detail-order-actions > .btn,
+          .detail-order-actions > a.btn,
+          .detail-admin-actions,
+          .detail-admin-actions .btn {
+            width: 100%;
+            justify-content: center;
+          }
+
+          .detail-admin-actions,
+          .detail-services-header,
+          .addon-modal-actions {
+            flex-direction: column;
+            align-items: stretch !important;
+          }
+
+          .detail-services-header .btn,
+          .addon-modal-actions .btn {
+            width: 100%;
+          }
+        }
+      `}</style>
       {/* Toast Notification */}
       {toast.show && (
         <div style={{
@@ -787,8 +836,8 @@ const DetailPesanan = () => {
         </div>
       )}
       {/* Modal Notification / Dialog */}
-      <Modal 
-        isOpen={modalState.isOpen} 
+      <Modal
+        isOpen={modalState.isOpen}
         onClose={() => {
           if (modalState.onClose) modalState.onClose();
           setModalState(prev => ({ ...prev, isOpen: false }));

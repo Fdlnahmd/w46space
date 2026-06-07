@@ -98,7 +98,7 @@ a:hover {
 
 @media (max-width: 767px) {
   .card {
-    margin-bottom: 0.5rem; /* Tambahan margin bawah untuk keamanan */
+    margin-bottom: 0;
   }
 }
 
@@ -119,10 +119,18 @@ a:hover {
   transition: var(--transition);
   font-size: 0.95rem;
   gap: 0.5rem;
+  min-height: 40px;
+  max-width: 100%;
 }
 
 .btn:hover * {
   color: inherit !important;
+}
+
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-primary {
@@ -155,6 +163,30 @@ a:hover {
   opacity: 0.9;
 }
 
+.btn-success {
+  background-color: var(--color-success);
+  color: white !important;
+}
+
+.btn-success:hover {
+  opacity: 0.9;
+}
+
+.btn-warning {
+  background-color: var(--color-warning);
+  color: white !important;
+}
+
+.btn-warning:hover {
+  opacity: 0.9;
+}
+
+.btn-sm {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.9rem;
+  gap: 0.35rem;
+}
+
 .btn-outline-danger {
   background-color: transparent;
   border: 1px solid var(--color-danger);
@@ -163,6 +195,17 @@ a:hover {
 
 .btn-outline-danger:hover {
   background-color: var(--color-danger);
+  color: white !important;
+}
+
+.btn-outline-warning {
+  background-color: transparent;
+  border: 1px solid var(--color-warning);
+  color: var(--color-warning);
+}
+
+.btn-outline-warning:hover {
+  background-color: var(--color-warning);
   color: white !important;
 }
 
@@ -206,6 +249,7 @@ a:hover {
 
 .form-control {
   width: 100%;
+  max-width: 100%;
   padding: 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
@@ -237,7 +281,7 @@ a:hover {
 
 .react-calendar__tile {
   color: var(--color-text-main) !important;
-  padding: 1.25rem 0.5rem !important;
+  padding: 0.85rem 0.25rem !important;
   font-weight: 500;
 }
 
@@ -261,7 +305,7 @@ a:hover {
 }
 
 .react-calendar__month-view__weekdays__weekday {
-  padding: 0.75rem !important;
+  padding: 0.5rem 0.25rem !important;
   color: var(--color-primary) !important;
   font-weight: 700;
   text-transform: uppercase;
@@ -301,7 +345,90 @@ a:hover {
 
 @media (max-width: 767px) {
   .grid {
-    gap: 2.5rem; /* Jarak jauh lebih besar di mobile */
+    gap: 1.25rem;
+  }
+}
+
+.room-card-title-row,
+.room-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.room-card-footer {
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
+}
+
+.admin-filter-bar {
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.admin-filter-search {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+}
+
+.admin-filter-group,
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pagination-controls {
+  margin-top: 1.5rem;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .room-card-title-row,
+  .room-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .room-card-title-row .badge {
+    align-self: flex-start;
+  }
+
+  .room-card-footer .btn {
+    width: 100%;
+  }
+
+  .admin-filter-search {
+    min-width: 100%;
+  }
+
+  .admin-filter-group {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-filter-group select {
+    width: 100% !important;
+  }
+
+  .pagination-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .pagination-controls .btn {
+    width: 100%;
   }
 }
 
