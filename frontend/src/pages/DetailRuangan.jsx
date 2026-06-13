@@ -70,6 +70,7 @@ const DetailRuangan = () => {
   const [couponCode, setCouponCode] = useState('');
   const [couponData, setCouponData] = useState(null);
   const [couponError, setCouponError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Ambil extend_from dari query param
   const queryParams = new URLSearchParams(location.search);
@@ -266,15 +267,29 @@ const DetailRuangan = () => {
   const handleBooking = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+    setFieldErrors({});
+
+    const nextFieldErrors = {};
     if (!formData.tanggalMulai) {
+      nextFieldErrors.tanggalMulai = lang === 'id'
+        ? 'Tanggal mulai wajib dipilih melalui kalender.'
+        : 'Start date must be selected from the calendar.';
+    }
+    if (!formData.waktuMulai) {
+      nextFieldErrors.waktuMulai = lang === 'id' ? 'Jam masuk wajib diisi.' : 'Check-in time is required.';
+    }
+    if (!formData.waktuSelesai) {
+      nextFieldErrors.waktuSelesai = lang === 'id' ? 'Jam keluar wajib diisi.' : 'Check-out time is required.';
+    }
+    if (formData.waktuMulai && formData.waktuSelesai && formData.waktuSelesai <= formData.waktuMulai) {
+      nextFieldErrors.waktuSelesai = lang === 'id'
+        ? 'Jam keluar harus lebih besar dari jam masuk.'
+        : 'Check-out time must be later than check-in time.';
+    }
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
       setLoading(false);
-      setModal({
-        isOpen: true,
-        type: 'error',
-        title: lang === 'id' ? 'Tanggal Belum Dipilih' : 'Date Not Selected',
-        message: lang === 'id' ? 'Silakan pilih tanggal mulai kontrak terlebih dahulu melalui kalender yang tersedia.' : 'Please select the contract start date first using the available calendar.'
-      });
       return;
     }
 
@@ -465,6 +480,7 @@ const DetailRuangan = () => {
               const dd = String(date.getDate()).padStart(2, '0');
               const formattedDate = `${yyyy}-${mm}-${dd}`;
               setFormData({ ...formData, tanggalMulai: formattedDate });
+              setFieldErrors(prev => ({ ...prev, tanggalMulai: '' }));
             }}
             value={formData.tanggalMulai ? new Date(formData.tanggalMulai) : new Date()}
             tileDisabled={isStartDateUnavailable}
@@ -583,11 +599,15 @@ const DetailRuangan = () => {
           <label className="form-label">{lang === 'id' ? 'Tanggal Mulai Kontrak' : 'Contract Start Date'}</label>
           <div style={{ 
             padding: '0.75rem', backgroundColor: 'var(--color-secondary)', 
-            borderRadius: 'var(--border-radius)', border: '1px solid var(--color-border)',
+            borderRadius: 'var(--border-radius)',
+            border: fieldErrors.tanggalMulai ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
             fontWeight: 600, color: formData.tanggalMulai ? 'var(--color-text-main)' : 'var(--color-text-muted)'
           }}>
             {formData.tanggalMulai ? new Date(formData.tanggalMulai).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : (lang === 'id' ? 'Pilih di kalender' : 'Select on calendar')}
           </div>
+          {fieldErrors.tanggalMulai && (
+            <p style={{ color: 'var(--color-danger)', fontSize: '0.8rem', marginTop: '0.35rem' }}>{fieldErrors.tanggalMulai}</p>
+          )}
         </div>
 
         <div className="form-group">
@@ -609,11 +629,35 @@ const DetailRuangan = () => {
         <div className="time-input-group" style={{ display: 'flex', gap: '1rem', gridColumn: '1 / -1' }}>
           <div className="form-group" style={{ flex: 1 }}>
             <label className="form-label">{lang === 'id' ? 'Jam Masuk' : 'Check-in Time'}</label>
-            <input type="time" className="form-control" style={{ minHeight: '45px' }} value={formData.waktuMulai} onChange={(e) => setFormData({ ...formData, waktuMulai: e.target.value })} />
+            <input
+              type="time"
+              className="form-control"
+              style={{ minHeight: '45px', borderColor: fieldErrors.waktuMulai ? 'var(--color-danger)' : undefined }}
+              value={formData.waktuMulai}
+              onChange={(e) => {
+                setFormData({ ...formData, waktuMulai: e.target.value });
+                setFieldErrors(prev => ({ ...prev, waktuMulai: '', waktuSelesai: '' }));
+              }}
+            />
+            {fieldErrors.waktuMulai && (
+              <p style={{ color: 'var(--color-danger)', fontSize: '0.8rem', marginTop: '0.35rem' }}>{fieldErrors.waktuMulai}</p>
+            )}
           </div>
           <div className="form-group" style={{ flex: 1 }}>
             <label className="form-label">{lang === 'id' ? 'Jam Keluar' : 'Check-out Time'}</label>
-            <input type="time" className="form-control" style={{ minHeight: '45px' }} value={formData.waktuSelesai} onChange={(e) => setFormData({ ...formData, waktuSelesai: e.target.value })} />
+            <input
+              type="time"
+              className="form-control"
+              style={{ minHeight: '45px', borderColor: fieldErrors.waktuSelesai ? 'var(--color-danger)' : undefined }}
+              value={formData.waktuSelesai}
+              onChange={(e) => {
+                setFormData({ ...formData, waktuSelesai: e.target.value });
+                setFieldErrors(prev => ({ ...prev, waktuSelesai: '' }));
+              }}
+            />
+            {fieldErrors.waktuSelesai && (
+              <p style={{ color: 'var(--color-danger)', fontSize: '0.8rem', marginTop: '0.35rem' }}>{fieldErrors.waktuSelesai}</p>
+            )}
           </div>
         </div>
 
