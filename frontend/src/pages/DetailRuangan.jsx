@@ -226,6 +226,43 @@ const DetailRuangan = () => {
     return isNaN(total) ? 0 : total;
   };
 
+  const getBookingErrorMessage = (error) => {
+    const backendMessage = error.response?.data?.message || '';
+    const validationMessages = error.response?.data?.errors
+      ? Object.values(error.response.data.errors).flat().join(' ')
+      : '';
+    const message = `${backendMessage} ${validationMessages}`.trim();
+    const lower = message.toLowerCase();
+
+    if (lower.includes('waktu selesai') && (lower.includes('after') || lower.includes('setelah'))) {
+      return lang === 'id'
+        ? 'Waktu selesai harus lebih lambat dari waktu mulai.'
+        : 'End time must be later than start time.';
+    }
+
+    if (lower.includes('tanggal akhir') && (lower.includes('after') || lower.includes('setelah'))) {
+      return lang === 'id'
+        ? 'Tanggal selesai harus setelah tanggal mulai.'
+        : 'End date must be after start date.';
+    }
+
+    if (lower.includes('already booked') || lower.includes('sudah dipesan') || lower.includes('sudah dibook')) {
+      return lang === 'id'
+        ? 'Ruangan sudah dipesan pada periode tersebut. Silakan pilih tanggal lain.'
+        : 'This room is already booked for that period. Please choose another date.';
+    }
+
+    if (lower.includes('required') || lower.includes('wajib')) {
+      return lang === 'id'
+        ? 'Mohon lengkapi semua field wajib sebelum memesan.'
+        : 'Please complete all required fields before booking.';
+    }
+
+    return message || (lang === 'id'
+      ? 'Terjadi kesalahan saat memproses pesanan Anda. Silakan coba lagi.'
+      : 'An error occurred while processing your booking. Please try again.');
+  };
+
   const handleBooking = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -290,7 +327,7 @@ const DetailRuangan = () => {
         isOpen: true,
         type: 'error',
         title: lang === 'id' ? 'Pemesanan Gagal' : 'Booking Failed',
-        message: error.response?.data?.message || (lang === 'id' ? 'Terjadi kesalahan saat memproses pesanan Anda. Silakan coba lagi.' : 'An error occurred while processing your booking. Please try again.')
+        message: getBookingErrorMessage(error)
       });
     } finally {
       setLoading(false);

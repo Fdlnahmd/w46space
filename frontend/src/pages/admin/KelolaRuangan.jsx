@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getRuangan, deleteRuangan } from '../../services/apiService';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { Plus, Edit, Trash2, Star, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Star, Search, CheckCircle, AlertCircle } from 'lucide-react';
 import Modal from '../../components/Modal';
 
 const KelolaRuangan = () => {
@@ -10,6 +10,7 @@ const KelolaRuangan = () => {
   const [ruangan, setRuangan] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
+  const [banner, setBanner] = useState({ show: false, type: 'success', message: '' });
 
   const loadData = () => {
     getRuangan().then(data => setRuangan(data));
@@ -21,9 +22,28 @@ const KelolaRuangan = () => {
 
   const handleDelete = () => {
     if (deleteModal.id) {
-      deleteRuangan(deleteModal.id).then(() => {
+      const deletedId = deleteModal.id;
+      deleteRuangan(deletedId).then(() => {
         loadData();
         setDeleteModal({ isOpen: false, id: null });
+        setBanner({
+          show: true,
+          type: 'success',
+          message: lang === 'id'
+            ? `Ruangan #${deletedId} berhasil dihapus dari daftar.`
+            : `Room #${deletedId} was successfully removed from the list.`
+        });
+        setTimeout(() => setBanner({ show: false, type: 'success', message: '' }), 3500);
+      }).catch((err) => {
+        setDeleteModal({ isOpen: false, id: null });
+        setBanner({
+          show: true,
+          type: 'error',
+          message: err.response?.data?.message || (lang === 'id'
+            ? 'Gagal menghapus ruangan. Silakan coba lagi.'
+            : 'Failed to delete room. Please try again.')
+        });
+        setTimeout(() => setBanner({ show: false, type: 'success', message: '' }), 4500);
       });
     }
   };
@@ -41,6 +61,27 @@ const KelolaRuangan = () => {
           <Plus size={18} /> {lang === 'id' ? 'Tambah Ruangan' : 'Add Room'}
         </Link>
       </div>
+
+      {banner.show && (
+        <div
+          role="status"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            marginBottom: '1.25rem',
+            padding: '0.95rem 1rem',
+            borderRadius: 'var(--border-radius)',
+            backgroundColor: banner.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+            border: banner.type === 'success' ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(239, 68, 68, 0.35)',
+            color: banner.type === 'success' ? 'var(--color-success)' : 'var(--color-danger)',
+            fontWeight: 600
+          }}
+        >
+          {banner.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+          <span>{banner.message}</span>
+        </div>
+      )}
 
       {/* Search Bar */}
       <div className="card" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -191,6 +232,7 @@ const KelolaRuangan = () => {
           ? 'Apakah Anda yakin ingin menghapus ruangan ini? Data yang sudah dihapus tidak dapat dikembalikan.' 
           : 'Are you sure you want to delete this room? Deleted data cannot be recovered.'}
         confirmText={lang === 'id' ? 'Ya, Hapus' : 'Yes, Delete'}
+        cancelText={lang === 'id' ? 'Batal' : 'Cancel'}
       />
     </div>
   );

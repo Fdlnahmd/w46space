@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getPemesanan, updateStatusPemesanan, deletePemesanan } from '../../services/apiService';
-import { Trash2, Eye, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, Eye, Search, Filter, ChevronLeft, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react';
 import Modal from '../../components/Modal';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -41,6 +41,7 @@ const KelolaPemesanan = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Semua');
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
+  const [banner, setBanner] = useState({ show: false, type: 'success', message: '' });
   const [errorModal, setErrorModal] = useState(() => ({
     isOpen: !!location.state?.error,
     title: lang === 'id' ? 'Pesanan Tidak Ditemukan' : 'Booking Not Found',
@@ -82,9 +83,28 @@ const KelolaPemesanan = () => {
 
   const handleDelete = () => {
     if (deleteModal.id) {
-      deletePemesanan(deleteModal.id).then(() => {
+      const deletedId = deleteModal.id;
+      deletePemesanan(deletedId).then(() => {
         loadData(pagination.current_page);
         setDeleteModal({ isOpen: false, id: null });
+        setBanner({
+          show: true,
+          type: 'success',
+          message: lang === 'id'
+            ? `Pemesanan #${deletedId} berhasil dihapus dari daftar.`
+            : `Booking #${deletedId} was successfully removed from the list.`
+        });
+        setTimeout(() => setBanner({ show: false, type: 'success', message: '' }), 3500);
+      }).catch((err) => {
+        setDeleteModal({ isOpen: false, id: null });
+        setBanner({
+          show: true,
+          type: 'error',
+          message: err.response?.data?.message || (lang === 'id'
+            ? 'Gagal menghapus pemesanan. Silakan coba lagi.'
+            : 'Failed to delete booking. Please try again.')
+        });
+        setTimeout(() => setBanner({ show: false, type: 'success', message: '' }), 4500);
       });
     }
   };
@@ -120,6 +140,27 @@ const KelolaPemesanan = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1>{lang === 'id' ? 'Kelola Pemesanan' : 'Manage Bookings'}</h1>
       </div>
+
+      {banner.show && (
+        <div
+          role="status"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            marginBottom: '1.25rem',
+            padding: '0.95rem 1rem',
+            borderRadius: 'var(--border-radius)',
+            backgroundColor: banner.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+            border: banner.type === 'success' ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(239, 68, 68, 0.35)',
+            color: banner.type === 'success' ? 'var(--color-success)' : 'var(--color-danger)',
+            fontWeight: 600
+          }}
+        >
+          {banner.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+          <span>{banner.message}</span>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="card admin-filter-bar">
@@ -452,6 +493,7 @@ const KelolaPemesanan = () => {
         title={lang === 'id' ? 'Hapus Pemesanan' : 'Delete Booking'}
         message={lang === 'id' ? 'Apakah Anda yakin ingin menghapus data pemesanan ini? Tindakan ini tidak dapat dibatalkan.' : 'Are you sure you want to delete this booking? This action cannot be undone.'}
         type="danger"
+        confirmText={lang === 'id' ? 'Ya, Hapus' : 'Yes, Delete'}
       />
 
       <Modal 
