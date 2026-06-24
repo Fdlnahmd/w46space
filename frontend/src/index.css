@@ -8,7 +8,7 @@
   --color-background: #f1f5f9;    /* Slate 100 */
   --color-surface: #ffffff;       /* Pure White */
   --color-text-main: #0f172a;     /* Slate 900 */
-  --color-text-muted: #64748b;    /* Slate 500 */
+  --color-text-muted: #4b5563;    /* Slate 500 -> Darker for contrast compliance */
   --color-border: #e2e8f0;        /* Slate 200 */
   
   /* Status Colors */
@@ -39,7 +39,7 @@
   --color-background: #0f172a;    /* Slate 900 */
   --color-surface: #1e293b;       /* Slate 800 */
   --color-text-main: #f1f5f9;     /* Slate 100 */
-  --color-text-muted: #94a3b8;    /* Slate 400 */
+  --color-text-muted: #cbd5e1;    /* Slate 300 for dark mode contrast */
   --color-border: #334155;        /* Slate 700 */
   --color-secondary: #1e293b;
   
@@ -332,9 +332,9 @@ a:hover {
   flex-shrink: 0;
 }
 
-.badge-success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-.badge-warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-.badge-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+.badge-success { background: rgba(16, 185, 129, 0.15); color: #065f46; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; }
+.badge-warning { background: rgba(245, 158, 11, 0.15); color: #92400e; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 600; }
+.badge-danger { background: rgba(239, 68, 68, 0.15); color: #991b1b; border: 1px solid rgba(239, 68, 68, 0.3); font-weight: 600; }
 .badge-neutral { background: var(--color-background); color: var(--color-text-muted); border: 1px solid var(--color-border); }
 
 /* Responsive Grid */

@@ -199,7 +199,7 @@ const Home = () => {
                     <Star key={i} size={18} fill={i < r.rating ? 'var(--color-warning)' : 'transparent'} color={i < r.rating ? 'var(--color-warning)' : '#cbd5e1'} />
                   ))}
                 </div>
-                <p style={{ fontStyle: 'italic', color: 'var(--color-text-muted)', flex: 1, lineHeight: 1.6 }}>
+                <p style={{ fontStyle: 'italic', color: 'var(--color-text-main)', flex: 1, lineHeight: 1.6 }}>
                   "{r.comment}"
                 </p>
                 <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem', marginTop: '0.5rem' }}>

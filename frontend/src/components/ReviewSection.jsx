@@ -143,7 +143,7 @@ const ReviewSection = ({ officeId, canReview }) => {
                   </span>
                 </div>
                 {renderStars(review.rating)}
-                <p style={{ marginTop: '0.75rem', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+                <p style={{ marginTop: '0.75rem', color: 'var(--color-text-main)', lineHeight: 1.5 }}>
                   {review.comment}
                 </p>
               </div>

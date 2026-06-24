@@ -182,6 +182,7 @@ const Navbar = () => {
             <button 
               onClick={toggleTheme} 
               className="theme-toggle nav-actions-desktop"
+              aria-label="Toggle Theme"
               style={{ 
                 background: 'none', border: 'none', cursor: 'pointer', 
                 color: 'var(--color-text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -196,6 +197,7 @@ const Navbar = () => {
             <button
               onClick={toggleLang}
               className="nav-actions-desktop"
+              aria-label="Toggle Language"
               style={{
                 background: 'none', border: '1.5px solid var(--color-border)', cursor: 'pointer',
                 color: 'var(--color-text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -205,15 +207,16 @@ const Navbar = () => {
               }}
               title={lang === 'id' ? 'Switch to English' : 'Ganti ke Indonesia'}
             >
-              <span style={{ opacity: lang === 'id' ? 1 : 0.4 }}>ID</span>
+              <span style={{ opacity: lang === 'id' ? 1 : 0.65 }}>ID</span>
               <span style={{ color: 'var(--color-border)' }}>|</span>
-              <span style={{ opacity: lang === 'en' ? 1 : 0.4 }}>EN</span>
+              <span style={{ opacity: lang === 'en' ? 1 : 0.65 }}>EN</span>
             </button>
 
             {user && (
               <div style={{ position: 'relative' }} ref={notifRef}>
                 <button 
                   onClick={() => setIsNotifOpen(!isNotifOpen)}
+                  aria-label="Toggle Notifications"
                   style={{ 
                     background: 'none', border: 'none', cursor: 'pointer', 
                     color: 'var(--color-text-main)', position: 'relative', 
@@ -294,11 +297,11 @@ const Navbar = () => {
             <Link to="/populer" 
               className="populer-link"
               style={{ 
-                color: 'var(--color-warning)', fontWeight: 600, fontSize: '0.95rem',
+                color: '#b45309', fontWeight: 600, fontSize: '0.95rem',
                 display: 'flex', alignItems: 'center', gap: '0.3rem'
               }}
             >
-              {t('nav_popular')} <Star size={16} fill="var(--color-warning)" />
+              {t('nav_popular')} <Star size={16} fill="#b45309" color="#b45309" />
             </Link>
 
             {user ? (
@@ -320,7 +323,7 @@ const Navbar = () => {
                 }}>
                   <User size={14} color="var(--color-primary)" /> {user.name.split(' ')[0]}
                 </Link>
-                <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', padding: '0.5rem' }}>
+                <button onClick={handleLogout} aria-label="Logout" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', padding: '0.5rem' }}>
                   <LogOut size={20} />
                 </button>
               </div>
@@ -336,6 +339,7 @@ const Navbar = () => {
           <button 
             className="nav-mobile-toggle" 
             onClick={toggleMenu} 
+            aria-label="Toggle Menu"
             style={{ 
               background: 'none', border: 'none', cursor: 'pointer', 
               color: 'var(--color-text-main)', display: 'flex', alignItems: 'center',
@@ -368,14 +372,15 @@ const Navbar = () => {
           <Link to="/" onClick={closeMenu} style={{ fontSize: '1.1rem', fontWeight: 600 }}>{t('nav_home')}</Link>
           <Link to="/ruangan" onClick={closeMenu} style={{ fontSize: '1.1rem', fontWeight: 600 }}>{t('nav_rooms')}</Link>
           <Link to="/populer" onClick={closeMenu} className="populer-link" style={{ 
-            fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-warning)',
+            fontSize: '1.1rem', fontWeight: 600, color: '#b45309',
             display: 'flex', alignItems: 'center', gap: '0.75rem' 
           }}>
-            {t('nav_popular')} <Star size={20} fill="var(--color-warning)" />
+            {t('nav_popular')} <Star size={20} fill="#b45309" color="#b45309" />
           </Link>
 
           <button 
             onClick={toggleTheme} 
+            aria-label="Toggle Theme"
             style={{ 
               display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', fontWeight: 600,
               background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-main)', padding: 0
@@ -386,6 +391,7 @@ const Navbar = () => {
 
           <button 
             onClick={toggleLang} 
+            aria-label="Toggle Language"
             style={{ 
               display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', fontWeight: 600,
               background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-primary)', padding: 0
@@ -411,7 +417,7 @@ const Navbar = () => {
               <Link to="/profile" onClick={closeMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', fontWeight: 600 }}>
                 <User size={20} /> {t('nav_profile')}
               </Link>
-              <button onClick={handleLogout} className="btn btn-danger" style={{ width: '100%', marginTop: 'auto', padding: '0.75rem' }}>
+              <button onClick={handleLogout} aria-label="Logout" className="btn btn-danger" style={{ width: '100%', marginTop: 'auto', padding: '0.75rem' }}>
                 <LogOut size={18} /> {t('nav_logout')}
               </button>
             </>

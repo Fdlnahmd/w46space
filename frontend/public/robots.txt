@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://w46space.nexvol.xyz/sitemap.xml

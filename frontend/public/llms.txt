@@ -1,0 +1,9 @@
+# Wisma 46 Space
+
+Wisma 46 Space is a modern workspace booking platform located in Kota BNI Jakarta. Users can rent private offices, meeting rooms, and coworking spaces, apply coupons, select addon amenities, and pay online.
+
+## Key Information
+- [Workspace Listings](https://w46space.nexvol.xyz/ruangan) - Browse available offices, meeting rooms, and coworking spaces.
+- [Popular Workspaces](https://w46space.nexvol.xyz/populer) - View the highest-rated and featured rooms.
+- [User Login](https://w46space.nexvol.xyz/login) - Sign in manually or via Google OAuth.
+- [Register Account](https://w46space.nexvol.xyz/register) - Register a new customer account.
