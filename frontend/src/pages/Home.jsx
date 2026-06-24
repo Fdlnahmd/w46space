@@ -76,44 +76,6 @@ const Home = () => {
         <div style={{ position: 'absolute', bottom: '0.75rem', right: '1rem', fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', zIndex: 5 }}>
           📷 Photo: wisma46.com
         </div>
-
-        <style>{`
-          .hero-section {
-            background: ${theme === 'dark'
-              ? "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(10,30,80,0.72) 100%), url('/hero-banner.webp') center center / cover no-repeat"
-              : "linear-gradient(to bottom, rgba(37,99,235,0.65) 0%, rgba(15,50,130,0.55) 100%), url('/hero-banner.webp') center center / cover no-repeat"};
-            color: white;
-            padding: 7rem 0;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-          }
-          .btn-hero-cta {
-            background: rgba(255, 255, 255, 0.08);
-            color: #ffffff;
-            border: 2px solid #ffffff;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
-          }
-          .btn-hero-cta:hover {
-            background: #ffffff;
-            color: var(--color-primary, #2563eb);
-            transform: translateY(-2px);
-            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.3);
-          }
-          .btn-hero-cta:active {
-            transform: translateY(0);
-          }
-          @media (max-width: 768px) {
-            .hero-section {
-              padding: 4.5rem 0 !important;
-              background-position: 70% center !important; /* Keep the Wisma 46 building tower in frame on mobile */
-            }
-            h1 { font-size: 2rem !important; }
-            p { font-size: 0.95rem !important; }
-          }
-        `}</style>
       </section>
 
       {/* Featured Section */}
@@ -204,7 +166,12 @@ const Home = () => {
                       <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>{t('per_day')}</span>
                     </p>
                   </div>
-                  <Link to={`/ruangan/${item.id}`} className="btn btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                  <Link 
+                    to={`/ruangan/${item.id}`} 
+                    className="btn btn-outline" 
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                    aria-label={`${t('detail')} ${item.nama}`}
+                  >
                     {t('detail')}
                   </Link>
                 </div>

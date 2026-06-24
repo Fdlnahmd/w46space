@@ -213,7 +213,12 @@ const DaftarRuangan = () => {
                       <div>
                         <p style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '1.1rem' }}>Rp {(item.harga ?? 0).toLocaleString('id-ID')}<span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--color-text-muted)' }}>{t('per_day')}</span></p>
                       </div>
-                      <Link to={`/ruangan/${item.id}`} className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>
+                      <Link 
+                        to={`/ruangan/${item.id}`} 
+                        className="btn btn-primary" 
+                        style={{ padding: '0.5rem 1rem' }}
+                        aria-label={`${t('detail')} ${item.nama}`}
+                      >
                         {t('detail')}
                       </Link>
                     </div>
