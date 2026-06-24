@@ -346,7 +346,7 @@ a:hover {
 /* Room Category Badge (Contrast Compliance) */
 .room-category-badge {
   font-weight: 600;
-  color: var(--color-primary);
+  color: #1d4ed8; /* Blue 700 - high contrast in light mode */
   background-color: rgba(37, 99, 235, 0.1);
   border-radius: 4px;
   display: inline-block;

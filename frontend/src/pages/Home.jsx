@@ -87,7 +87,7 @@ const Home = () => {
           </div>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <Link to="/populer" className="btn btn-popular">
-                {t('home_popular_btn')} <Star size={18} fill="var(--color-warning)" />
+                {t('home_popular_btn')} <Star size={18} fill="var(--color-popular-text)" color="var(--color-popular-text)" />
             </Link>
             <Link to="/ruangan" className="btn btn-primary">
               {t('home_see_all')} <ArrowRight size={18} />
