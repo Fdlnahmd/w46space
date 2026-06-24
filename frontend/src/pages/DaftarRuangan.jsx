@@ -174,10 +174,9 @@ const DaftarRuangan = () => {
                   </div>
                   <div style={{ padding: '1.5rem' }}>
                     {item.kategori && (
-                      <span style={{ 
-                        fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-primary)', 
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)', padding: '0.2rem 0.6rem', 
-                        borderRadius: '4px', marginBottom: '0.5rem', display: 'inline-block' 
+                      <span className="room-category-badge" style={{ 
+                        fontSize: '0.75rem', padding: '0.2rem 0.6rem', 
+                        marginBottom: '0.5rem'
                       }}>
                         {item.kategori}
                       </span>

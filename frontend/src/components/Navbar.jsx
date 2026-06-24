@@ -297,11 +297,11 @@ const Navbar = () => {
             <Link to="/populer" 
               className="populer-link"
               style={{ 
-                color: '#b45309', fontWeight: 600, fontSize: '0.95rem',
+                color: 'var(--color-popular-text)', fontWeight: 600, fontSize: '0.95rem',
                 display: 'flex', alignItems: 'center', gap: '0.3rem'
               }}
             >
-              {t('nav_popular')} <Star size={16} fill="#b45309" color="#b45309" />
+              {t('nav_popular')} <Star size={16} fill="var(--color-popular-text)" color="var(--color-popular-text)" />
             </Link>
 
             {user ? (
@@ -372,10 +372,10 @@ const Navbar = () => {
           <Link to="/" onClick={closeMenu} style={{ fontSize: '1.1rem', fontWeight: 600 }}>{t('nav_home')}</Link>
           <Link to="/ruangan" onClick={closeMenu} style={{ fontSize: '1.1rem', fontWeight: 600 }}>{t('nav_rooms')}</Link>
           <Link to="/populer" onClick={closeMenu} className="populer-link" style={{ 
-            fontSize: '1.1rem', fontWeight: 600, color: '#b45309',
+            fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-popular-text)',
             display: 'flex', alignItems: 'center', gap: '0.75rem' 
           }}>
-            {t('nav_popular')} <Star size={20} fill="#b45309" color="#b45309" />
+            {t('nav_popular')} <Star size={20} fill="var(--color-popular-text)" color="var(--color-popular-text)" />
           </Link>
 
           <button 

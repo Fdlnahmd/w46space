@@ -11,16 +11,32 @@ const Home = () => {
   const { t } = useLanguage();
   const [ruangan, setRuangan] = useState([]);
   const [latestReviews, setLatestReviews] = useState([]);
+  const [ruanganLoading, setRuanganLoading] = useState(true);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
 
   useEffect(() => {
-    getRuangan().then(data => {
-      // Tampilkan 3 ruangan terbaru di beranda
-      setRuangan(data.slice(-3).reverse());
-    });
+    getRuangan()
+      .then(data => {
+        // Tampilkan 3 ruangan terbaru di beranda
+        setRuangan(data.slice(-3).reverse());
+      })
+      .catch(err => {
+        console.error('Error fetching rooms:', err);
+      })
+      .finally(() => {
+        setRuanganLoading(false);
+      });
 
-    getLatestReviews().then(data => {
-      setLatestReviews(data);
-    });
+    getLatestReviews()
+      .then(data => {
+        setLatestReviews(data);
+      })
+      .catch(err => {
+        console.error('Error fetching latest reviews:', err);
+      })
+      .finally(() => {
+        setReviewsLoading(false);
+      });
   }, []);
 
   return (
@@ -64,8 +80,8 @@ const Home = () => {
         <style>{`
           .hero-section {
             background: ${theme === 'dark'
-              ? "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(10,30,80,0.72) 100%), url('https://www.wisma46.com/lib/images/banner/slide-website-30th.png') center center / cover no-repeat"
-              : "linear-gradient(to bottom, rgba(37,99,235,0.65) 0%, rgba(15,50,130,0.55) 100%), url('https://www.wisma46.com/lib/images/banner/slide-website-30th.png') center center / cover no-repeat"};
+              ? "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(10,30,80,0.72) 100%), url('/hero-banner.webp') center center / cover no-repeat"
+              : "linear-gradient(to bottom, rgba(37,99,235,0.65) 0%, rgba(15,50,130,0.55) 100%), url('/hero-banner.webp') center center / cover no-repeat"};
             color: white;
             padding: 7rem 0;
             text-align: center;
@@ -129,17 +145,34 @@ const Home = () => {
         `}</style>
 
         <div className="grid md:grid-cols-3">
-          {ruangan.map(item => (
+          {ruanganLoading ? (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="card skeleton" style={{ minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
+                <div className="skeleton-text" style={{ height: '200px', width: '100%' }}></div>
+                <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div className="skeleton-text" style={{ height: '14px', width: '25%', borderRadius: '4px' }}></div>
+                  <div className="skeleton-text" style={{ height: '22px', width: '70%', borderRadius: '4px' }}></div>
+                  <div className="skeleton-text" style={{ height: '14px', width: '45%', borderRadius: '4px' }}></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '1rem', marginTop: 'auto' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '40%' }}>
+                      <div className="skeleton-text" style={{ height: '10px', width: '50%' }}></div>
+                      <div className="skeleton-text" style={{ height: '16px', width: '100%' }}></div>
+                    </div>
+                    <div className="skeleton-text" style={{ height: '35px', width: '30%', borderRadius: '4px' }}></div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : ruangan.map(item => (
             <div key={item.id} className="card">
               <div style={{ height: '200px', overflow: 'hidden' }}>
                 <LazyImage src={item.gambar} alt={item.nama} />
               </div>
               <div style={{ padding: '1.5rem' }}>
                 {item.kategori && (
-                  <span style={{ 
-                    fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-primary)', 
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)', padding: '0.15rem 0.5rem', 
-                    borderRadius: '4px', marginBottom: '0.5rem', display: 'inline-block' 
+                  <span className="room-category-badge" style={{ 
+                    fontSize: '0.7rem', padding: '0.15rem 0.5rem', 
+                    marginBottom: '0.5rem'
                   }}>
                     {item.kategori}
                   </span>
@@ -192,22 +225,36 @@ const Home = () => {
           </div>
 
           <div className="grid md:grid-cols-3" style={{ gap: '1.5rem' }}>
-            {latestReviews.length > 0 ? latestReviews.map(r => (
-              <div key={r.id} className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', gap: '2px', marginBottom: '0.5rem' }}>
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={18} fill={i < r.rating ? 'var(--color-warning)' : 'transparent'} color={i < r.rating ? 'var(--color-warning)' : '#cbd5e1'} />
-                  ))}
+            {reviewsLoading ? (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="card" style={{ padding: '2rem', height: '220px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', gap: '2px', marginBottom: '0.5rem', height: '18px', width: '100px' }} className="skeleton-text"></div>
+                  <div style={{ height: '16px', width: '100%' }} className="skeleton-text"></div>
+                  <div style={{ height: '16px', width: '80%' }} className="skeleton-text"></div>
+                  <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem', marginTop: 'auto' }}>
+                    <div style={{ height: '16px', width: '120px', marginBottom: '0.25rem' }} className="skeleton-text"></div>
+                    <div style={{ height: '12px', width: '80px' }} className="skeleton-text"></div>
+                  </div>
                 </div>
-                <p style={{ fontStyle: 'italic', color: 'var(--color-text-main)', flex: 1, lineHeight: 1.6 }}>
-                  "{r.comment}"
-                </p>
-                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
-                  <p style={{ fontWeight: 600, marginBottom: '0.1rem' }}>{r.user?.name}</p>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--color-primary)' }}>{t('home_tenant_of')} {r.office?.nama}</p>
+              ))
+            ) : latestReviews.length > 0 ? (
+              latestReviews.map(r => (
+                <div key={r.id} className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', gap: '2px', marginBottom: '0.5rem' }}>
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} size={18} fill={i < r.rating ? 'var(--color-warning)' : 'transparent'} color={i < r.rating ? 'var(--color-warning)' : '#cbd5e1'} />
+                    ))}
+                  </div>
+                  <p style={{ fontStyle: 'italic', color: 'var(--color-text-main)', flex: 1, lineHeight: 1.6 }}>
+                    "{r.comment}"
+                  </p>
+                  <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                    <p style={{ fontWeight: 600, marginBottom: '0.1rem' }}>{r.user?.name}</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--color-primary)' }}>{t('home_tenant_of')} {r.office?.nama}</p>
+                  </div>
                 </div>
-              </div>
-            )) : (
+              ))
+            ) : (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem' }}>
                 <p style={{ color: 'var(--color-text-muted)' }}>{t('home_no_reviews')}</p>
               </div>

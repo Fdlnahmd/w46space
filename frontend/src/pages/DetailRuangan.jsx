@@ -730,10 +730,9 @@ const DetailRuangan = () => {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {ruangan.kategori && (
-                  <span style={{ 
-                    alignSelf: 'flex-start', fontSize: '0.85rem', fontWeight: 600, 
-                    color: 'var(--color-primary)', backgroundColor: 'rgba(37, 99, 235, 0.1)', 
-                    padding: '0.25rem 0.75rem', borderRadius: '4px' 
+                  <span className="room-category-badge" style={{ 
+                    alignSelf: 'flex-start', fontSize: '0.85rem', 
+                    padding: '0.25rem 0.75rem' 
                   }}>
                     {ruangan.kategori}
                   </span>
