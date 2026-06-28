@@ -25,9 +25,9 @@ build/
 *.log
 docker-compose.override.yml
 
-# Google verification and sitemap
-google*.html
-sitemap.xml
+# Google verification and sitemap (commented out to allow git tracking and deployment)
+# google*.html
+# sitemap.xml
 *:Zone.Identifier
 
 # Flutter learning workspace (jangan masuk github)
